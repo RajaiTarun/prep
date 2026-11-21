@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Interview Strategy · C++ Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+</head>
+<body>
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">C++ <b>Prep</b> Notebook</a>
+  <nav aria-label="Pages">
+    <a href="index.html">Home</a>
+    <a href="strategy.html" aria-current="page">Interview Strategy</a>
+    <a href="foundations.html">Foundations</a>
+    <a href="gfg.html">GFG Questions</a>
+    <a href="raii.html">RAII</a>
+    <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="playlist.html">Playlist</a>
+    <a href="revision.html">Revision</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">MathWorks interview</p>
+  <h1>Interview Strategy</h1>
+  <p class="lede">Concept pata hona aadha kaam hai. Baaki aadha ye hai ki use kaise bolo, kahan rok do, aur jab pata na ho tab kya karo.</p>
+
+  <nav class="toc" aria-label="On this page">
+    <p>Is page pe</p>
+    <ol>
+      <li><a href="#t1">MathWorks se jodo</a></li>
+      <li><a href="#t2">Chhota answer + hook word</a></li>
+      <li><a href="#t3">GFG ka answer improve karo</a></li>
+      <li><a href="#t4">Jo pata nahi, use handle karo</a></li>
+      <li><a href="#t5">Design ki language bolo</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="t1">Tip 1: Har basic answer ko MathWorks se jodo</h2>
+  <p>MathWorks MATLAB aur Simulink banata hai, jinka core engine C/C++ mein hai. Toh "What is C++?" jaisa simple sawaal bhi ye dikhane ka mauka hai ki tum samajhte ho C++ unke liye kyun zaroori hai. Answer ke end mein <strong>ek line</strong> jod do:</p>
+  <div class="callout say"><span class="tag">Aise bolo</span>
+    <p>"...isliye mujhe lagta hai C++ MathWorks jaise products ke liye natural fit hai, jahan numerical computation fast honi chahiye, par users ko high-level, easy interface bhi chahiye. C++ ka zero-overhead idea dono ko balance karta hai."</p>
+  </div>
+  <p>Ek line, lecture nahi. Bas dikhata hai ki tumne socha hai.</p>
+
+  <h2 id="t2">Tip 2: Answer chhota rakho, ek "hook" word chhod do</h2>
+  <p>Interviewer ko 30 second mein clear answer do, aur end mein ek interesting word chhod do, jaise "zero-overhead" ya "RAII". Agar wo poochta hai "RAII kya hai?", toh conversation tumhare comfort zone mein aa gayi. Is tarah <strong>interview tum steer kar rahe ho</strong>.</p>
+  <div class="tbl"><table>
+    <tr><th>❌ Mat karo</th><th>✅ Karo</th></tr>
+    <tr><td>3 minute tak saare features ginwana</td><td>30 sec clear answer + ek hook word + ruk jao</td></tr>
+  </table></div>
+  <div class="callout tip"><span class="tag">Rule</span>
+    <p>Hook word sirf wahi chhodo jo tum 2 level deep explain kar sako. Warna wahi word tumhe phasa dega.</p>
+  </div>
+
+  <h2 id="t3">Tip 3: GFG ka answer ek step improve karke bolo</h2>
+  <p>GFG likhta hai "C++ is an object-oriented language". Tum bolo "<strong>multi-paradigm</strong>", aur poochne pe batao ki pure OOP kyun nahi hai (<code>main()</code> aur global functions class ke bahar, <code>int</code> object nahi). Interviewer ko turant pata chal jaata hai ki tumne ratta nahi maara.</p>
+
+  <h2 id="t4">Tip 4: Jo pata nahi, use kaise handle karo</h2>
+  <ol>
+    <li><strong>Bina samjhe koi term mat bolo.</strong> Answer mein sirf wahi word daalo jo tum 2 level deep explain kar sako.</li>
+    <li><strong>Fasoge toh first principles se socho, out loud.</strong> Jaise: <em>"Exactly yaad nahi, par mujhe pata hai C++ native code banata hai aur Java bytecode, toh portability ka difference wahin se aana chahiye..."</em> MathWorks interviewers ko tumhari <strong>thinking process</strong> chahiye, ratta nahi.</li>
+    <li><strong>Nahi pata toh seedha bolo,</strong> phir jo related pata hai wo batao: <em>"Iska exact detail nahi pata, par main ye jaanta hoon ki..."</em> Bluff pakda jaata hai, honesty respect milti hai.</li>
+  </ol>
+
+  <h2 id="t5">Tip 5: Design ki language bolo, sirf syntax ki nahi</h2>
+  <p>Jab topic allow kare, ek line mein batao ki ye cheez <strong>bade codebase</strong> mein kyun kaam aati hai. Isse lagta hai tum design ke baare mein sochte ho.</p>
+  <div class="callout say"><span class="tag">Example: smart pointers</span>
+    <p>"Smart pointers ka sabse bada fayda mujhe safety se zyada readability lagta hai. Signature mein <code>unique_ptr</code> dekh ke turant pata chal jaata hai ki ownership transfer ho rahi hai, aur raw pointer ya reference dekh ke ki sirf use ho raha hai."</p>
+  </div>
+  <div class="callout say"><span class="tag">Example: RAII</span>
+    <p>"Bade, long-running software mein manual cleanup pe bharosa nahi kiya ja sakta. RAII se correctness compiler guarantee karta hai, programmer ki yaaddasht nahi."</p>
+  </div>
+
+  <div class="footer-nav">
+    <a href="index.html">← Home</a>
+    <a href="foundations.html">C++ Foundations →</a>
+  </div>
+</main>
+</body>
+</html>

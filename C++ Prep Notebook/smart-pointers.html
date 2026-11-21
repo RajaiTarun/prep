@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Pointers · C++ Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+</head>
+<body>
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">C++ <b>Prep</b> Notebook</a>
+  <nav aria-label="Pages">
+    <a href="index.html">Home</a>
+    <a href="strategy.html">Interview Strategy</a>
+    <a href="foundations.html">Foundations</a>
+    <a href="gfg.html">GFG Questions</a>
+    <a href="raii.html">RAII</a>
+    <a href="smart-pointers.html" aria-current="page">Smart Pointers</a>
+    <a href="playlist.html">Playlist</a>
+    <a href="revision.html">Revision</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">#include &lt;memory&gt;</p>
+  <h1>Smart Pointers</h1>
+  <p class="lede">Smart pointers <a href="raii.html">RAII</a> ka agla step hain. Inhe samajhne ke liye ek sawaal kaafi hai: <strong>"is memory ka malik kaun hai?"</strong> Har smart pointer is sawaal ka ek alag jawab hai.</p>
+
+  <nav class="toc" aria-label="On this page">
+    <p>Is page pe</p>
+    <ol>
+      <li><a href="#problem">Raw pointer ki dikkat</a></li>
+      <li><a href="#what">Smart pointer asal mein kya hai</a></li>
+      <li><a href="#three">Ownership ke 3 jawab</a></li>
+      <li><a href="#unique">unique_ptr</a></li>
+      <li><a href="#shared">shared_ptr</a></li>
+      <li><a href="#weak">Cycle problem aur weak_ptr</a></li>
+      <li><a href="#traps">Traps</a></li>
+      <li><a href="#choose">Kaunsa choose karein</a></li>
+      <li><a href="#interview">Interview mein kaise bolo</a></li>
+      <li><a href="#check">Self-check</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="problem">1. Problem: raw pointer mein dikkat kya hai?</h2>
+<pre><code><span class="k">void</span> f() {
+    Car* c = <span class="k">new</span> Car(<span class="c">"BMW"</span>);
+    c-&gt;drive();
+    <span class="k">if</span> (error) <span class="k">return</span>;     <span class="c">// delete bhool gaye → leak</span>
+    riskyFunction();       <span class="c">// exception aaya → delete kabhi nahi chalega</span>
+    <span class="k">delete</span> c;
+}</code></pre>
+  <p>Raw pointer ke saath teen bugs aate hain: <strong>leak</strong>, <strong>double free</strong>, <strong>dangling</strong>. Inse badi problem ek aur hai: function signature <code>Car* getCar();</code> se <strong>pata hi nahi chalta ki <code>delete</code> kisko karna hai</strong>, tumhe ya function ko. Raw pointer <strong>ownership</strong> nahi batata.</p>
+
+  <h2 id="what">2. Smart pointer asal mein hai kya?</h2>
+  <div class="callout say"><span class="tag">Definition</span>
+    <p><strong>Smart pointer = ek chhoti si class jo raw pointer ko pakad ke rakhti hai, aur uske destructor mein <code>delete</code> likha hota hai.</strong> Ye seedha RAII hai, jahan resource heap memory hai.</p>
+  </div>
+<pre><code><span class="k">template</span> &lt;<span class="k">typename</span> T&gt;
+<span class="k">class</span> MySmartPtr {
+    T* ptr;
+<span class="k">public</span>:
+    MySmartPtr(T* p) : ptr(p) { cout &lt;&lt; <span class="c">"Pakda\n"</span>; }
+    ~MySmartPtr() { cout &lt;&lt; <span class="c">"delete kiya\n"</span>; <span class="k">delete</span> ptr; }   <span class="c">// RAII</span>
+    T&amp; <span class="k">operator</span>*()  { <span class="k">return</span> *ptr; }    <span class="c">// *p kaam kare</span>
+    T* <span class="k">operator</span>-&gt;() { <span class="k">return</span> ptr; }     <span class="c">// p-&gt;x kaam kare</span>
+};
+
+<span class="k">struct</span> Point { <span class="k">int</span> x = 3, y = 4; };
+
+<span class="k">int</span> main() {
+    {
+        MySmartPtr&lt;Point&gt; p(<span class="k">new</span> Point());
+        cout &lt;&lt; p-&gt;x &lt;&lt; <span class="c">" "</span> &lt;&lt; (*p).y &lt;&lt; <span class="c">"\n"</span>;
+    }
+    cout &lt;&lt; <span class="c">"scope khatam\n"</span>;
+}</code></pre>
+<pre class="out">Pakda
+3 4
+delete kiya
+scope khatam</pre>
+  <ol>
+    <li><strong>Destructor</strong> ki wajah se <code>delete</code> apne aap hua (RAII).</li>
+    <li><strong><code>*</code> aur <code>-&gt;</code> overload kiye</strong> (operator overloading), isliye ye normal pointer jaisa use hota hai.</li>
+  </ol>
+  <div class="callout trap"><span class="tag">Isme ek bug hai</span>
+    <p><code>MySmartPtr&lt;Point&gt; q = p;</code> likha toh shallow copy hogi aur <strong>double free</strong> hoga (<a href="raii.html#trap2">RAII Trap 2</a>). Standard library ne ise do tareekon se solve kiya: <code>unique_ptr</code> (copy band) aur <code>shared_ptr</code> (counter).</p>
+  </div>
+
+  <h2 id="three">3. Ownership ke 3 jawab = 3 smart pointers</h2>
+  <div class="tbl"><table>
+    <tr><th>Sawaal: malik kaun?</th><th>Smart pointer</th><th>Copy ke saath kya karta hai</th></tr>
+    <tr><td><strong>Sirf ek</strong> malik</td><td><code>unique_ptr</code></td><td>Copy <strong>band</strong>, sirf move</td></tr>
+    <tr><td><strong>Kai</strong> malik, aakhri wala delete kare</td><td><code>shared_ptr</code></td><td>Copy allowed, <strong>counter</strong> badhta hai</td></tr>
+    <tr><td>Malik nahi, <strong>sirf dekh</strong> raha hai</td><td><code>weak_ptr</code></td><td>Counter nahi badhata</td></tr>
+  </table></div>
+
+  <h2 id="unique">4. <code>unique_ptr</code>: ek hi malik</h2>
+<pre><code>unique_ptr&lt;Car&gt; a = make_unique&lt;Car&gt;(<span class="c">"BMW"</span>);   <span class="c">// make_unique (C++14) khud new karta hai</span>
+a-&gt;drive();                                    <span class="c">// normal pointer jaisa</span>
+unique_ptr&lt;Car&gt; b = a;                         <span class="c">// ❌ compile error</span>
+unique_ptr&lt;Car&gt; b = move(a);                   <span class="c">// ✅ ownership a se b ko</span></code></pre>
+  <p>Copy ka actual compiler error:</p>
+<pre class="out err">error: use of deleted function 'std::unique_ptr&lt;_Tp, _Dp&gt;::unique_ptr(const std::unique_ptr&lt;_Tp, _Dp&gt;&amp;)'</pre>
+  <p>"<strong>deleted function</strong>" = wahi <code>= delete</code> jo humne <code>FileHandler</code> mein kiya tha. Do malik matlab double free.</p>
+  <p><strong><code>std::move</code></strong> khud kuch move nahi karta. Ye bas compiler ko bolta hai: <strong>"<code>a</code> ka maal le jaane ki permission hai."</strong> Phir <code>b</code> pointer le leta hai aur <code>a</code> ko <code>nullptr</code> set kar deta hai.</p>
+
+  <figure class="diag">
+    <svg viewBox="0 0 660 190" role="img" aria-label="Before the move, a points to the BMW object and b is null. After b = move(a), a is null and b points to the same BMW object. There is still exactly one owner.">
+      <defs>
+        <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-acc"/></marker>
+        <marker id="s1g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+      </defs>
+      <text class="d-tb" x="150" y="22" text-anchor="middle">Pehle</text>
+      <rect class="d-acc" x="20" y="44" width="90" height="38" rx="6"/><text class="d-m" x="65" y="68" text-anchor="middle">a</text>
+      <rect class="d-soft" x="20" y="116" width="90" height="38" rx="6"/><text class="d-m" x="65" y="140" text-anchor="middle">b = null</text>
+      <rect class="d-warn" x="190" y="78" width="100" height="40" rx="6"/><text class="d-tb" x="240" y="103" text-anchor="middle">BMW</text>
+      <path class="d-line-acc" d="M110 63 L189 92" marker-end="url(#s1)"/>
+      <line class="d-line" x1="306" y1="98" x2="352" y2="98" marker-end="url(#s1g)"/>
+      <text class="d-sacc" x="330" y="88" text-anchor="middle">move(a)</text>
+      <text class="d-tb" x="510" y="22" text-anchor="middle">Baad mein</text>
+      <rect class="d-soft" x="370" y="44" width="90" height="38" rx="6"/><text class="d-m" x="415" y="68" text-anchor="middle">a = null</text>
+      <rect class="d-acc" x="370" y="116" width="90" height="38" rx="6"/><text class="d-m" x="415" y="140" text-anchor="middle">b</text>
+      <rect class="d-warn" x="540" y="78" width="100" height="40" rx="6"/><text class="d-tb" x="590" y="103" text-anchor="middle">BMW</text>
+      <path class="d-line-acc" d="M460 135 L539 106" marker-end="url(#s1)"/>
+      <text class="d-s" x="330" y="182" text-anchor="middle">object wahi hai, copy nahi bana; sirf malik badla</text>
+    </svg>
+    <figcaption>Copy = photocopy (do kaagaz). Move = chaabi kisi aur ko dena (chaabi ek hi).</figcaption>
+  </figure>
+
+  <h3>Poora example</h3>
+<pre><code><span class="k">struct</span> Car {
+    string name;
+    Car(string n) : name(n) { cout &lt;&lt; <span class="c">"Car "</span> &lt;&lt; name &lt;&lt; <span class="c">" bani\n"</span>; }
+    ~Car() { cout &lt;&lt; <span class="c">"Car "</span> &lt;&lt; name &lt;&lt; <span class="c">" destroy\n"</span>; }
+    <span class="k">void</span> drive() { cout &lt;&lt; name &lt;&lt; <span class="c">" chal rahi hai\n"</span>; }
+};
+
+unique_ptr&lt;Car&gt; factory() { <span class="k">return</span> make_unique&lt;Car&gt;(<span class="c">"Factory"</span>); }
+<span class="k">void</span> takeOwnership(unique_ptr&lt;Car&gt; c) { cout &lt;&lt; <span class="c">"Function ke paas: "</span> &lt;&lt; c-&gt;name &lt;&lt; <span class="c">"\n"</span>; }
+<span class="k">void</span> justUse(Car* c)                  { cout &lt;&lt; <span class="c">"Sirf use: "</span> &lt;&lt; c-&gt;name &lt;&lt; <span class="c">"\n"</span>; }
+
+<span class="k">int</span> main() {
+    unique_ptr&lt;Car&gt; a = make_unique&lt;Car&gt;(<span class="c">"BMW"</span>);
+    a-&gt;drive();
+    unique_ptr&lt;Car&gt; b = move(a);
+    cout &lt;&lt; <span class="c">"a null hai? "</span> &lt;&lt; (a == <span class="k">nullptr</span> ? <span class="c">"haan"</span> : <span class="c">"nahi"</span>) &lt;&lt; <span class="c">"\n"</span>;
+    b-&gt;drive();
+    justUse(b.get());           <span class="c">// malik nahi badla, sirf udhaar diya</span>
+    takeOwnership(move(b));     <span class="c">// malik function ko de diya</span>
+    cout &lt;&lt; <span class="c">"takeOwnership ke baad\n"</span>;
+    <span class="k">auto</span> f = factory();         <span class="c">// function se return</span>
+    f.reset();                  <span class="c">// abhi delete karo</span>
+    cout &lt;&lt; <span class="c">"reset ke baad f null? "</span> &lt;&lt; (f == <span class="k">nullptr</span> ? <span class="c">"haan"</span> : <span class="c">"nahi"</span>) &lt;&lt; <span class="c">"\n"</span>;
+}</code></pre>
+<pre class="out">Car BMW bani
+BMW chal rahi hai
+a null hai? haan
+BMW chal rahi hai
+Sirf use: BMW
+Function ke paas: BMW
+<span class="hl">Car BMW destroy</span>             ← takeOwnership khatam = malik khatam = delete
+takeOwnership ke baad
+Car Factory bani
+Car Factory destroy         ← reset() ne turant delete kiya
+reset ke baad f null? haan</pre>
+  <p><code>Car BMW destroy</code> <strong><code>takeOwnership</code> ke andar</strong> hua, <code>main</code> ke end pe nahi. Malik function ban gaya tha, toh function khatam hote hi delete.</p>
+
+  <h3>Function ko <code>unique_ptr</code> dene ke 3 tareeke</h3>
+  <div class="tbl"><table>
+    <tr><th>Kya chahte ho</th><th>Signature</th><th>Call</th></tr>
+    <tr><td>Sirf use karna, malik nahi banna</td><td><code>void f(Car* c)</code> / <code>void f(Car&amp; c)</code></td><td><code>f(p.get())</code> / <code>f(*p)</code></td></tr>
+    <tr><td>Malik <strong>function</strong> ko de dena</td><td><code>void f(unique_ptr&lt;Car&gt; c)</code></td><td><code>f(move(p))</code></td></tr>
+    <tr><td>Function se naya object lena</td><td><code>unique_ptr&lt;Car&gt; f()</code></td><td><code>auto p = f();</code> (return pe move apne aap)</td></tr>
+  </table></div>
+
+  <h3>Kaam ke functions</h3>
+  <div class="tbl"><table>
+    <tr><th>Function</th><th>Kya karta hai</th></tr>
+    <tr><td><code>get()</code></td><td>Andar ka raw pointer deta hai, ownership <strong>nahi</strong> chhodta</td></tr>
+    <tr><td><code>reset()</code></td><td>Abhi delete karo, aur <code>nullptr</code> ho jao</td></tr>
+    <tr><td><code>reset(new_ptr)</code></td><td>Purana delete karo, naya pakdo</td></tr>
+    <tr><td><code>release()</code></td><td>Ownership chhodo <strong>bina delete kiye</strong>, raw pointer return. Ab <code>delete</code> tumhari zimmedari</td></tr>
+  </table></div>
+
+  <h3>Cost: bilkul zero</h3>
+<pre class="out">sizeof(unique_ptr&lt;Car&gt;) = 8, sizeof(Car*) = 8</pre>
+  <p>Raw pointer jitna hi size, aur compiler sab inline kar deta hai. Ye <a href="foundations.html#zero">zero-overhead principle</a> ka perfect example hai. Isliye <strong>default choice hamesha <code>unique_ptr</code></strong>. Array ke liye <code>make_unique&lt;int[]&gt;(10)</code> (ye <code>delete[]</code> call karega), par zyaada tar <code>vector</code> hi better hai.</p>
+
+  <h2 id="shared">5. <code>shared_ptr</code>: kai malik, aakhri wala band kare</h2>
+  <p><strong>Reference counting:</strong> ek counter rakho, "abhi kitne log is object ke malik hain?" Copy hua → <strong>+1</strong>. Koi <code>shared_ptr</code> destroy/reset hua → <strong>−1</strong>. Counter <strong>0</strong> → object <code>delete</code>. Analogy: room mein jo aakhri insaan bahar nikle, wo light band kare.</p>
+<pre><code><span class="k">int</span> main() {
+    shared_ptr&lt;Car&gt; a = make_shared&lt;Car&gt;(<span class="c">"Audi"</span>);
+    cout &lt;&lt; <span class="c">"count = "</span> &lt;&lt; a.use_count() &lt;&lt; <span class="c">"\n"</span>;
+    {
+        shared_ptr&lt;Car&gt; b = a;          <span class="c">// copy allowed!</span>
+        cout &lt;&lt; <span class="c">"copy ke baad count = "</span> &lt;&lt; a.use_count() &lt;&lt; <span class="c">"\n"</span>;
+        shared_ptr&lt;Car&gt; c = a;
+        cout &lt;&lt; <span class="c">"ek aur copy, count = "</span> &lt;&lt; a.use_count() &lt;&lt; <span class="c">"\n"</span>;
+    }
+    cout &lt;&lt; <span class="c">"b, c scope se bahar, count = "</span> &lt;&lt; a.use_count() &lt;&lt; <span class="c">"\n"</span>;
+    a.reset();
+    cout &lt;&lt; <span class="c">"a.reset() ke baad\n"</span>;
+}</code></pre>
+<pre class="out">Car Audi bani
+count = 1
+copy ke baad count = 2
+ek aur copy, count = 3
+b, c scope se bahar, count = 1
+<span class="hl">Car Audi destroy</span>          ← count 0 hua, tab delete
+a.reset() ke baad</pre>
+
+  <h3>Counter rehta kahan hai? Control block</h3>
+  <p>Counter kisi ek <code>shared_ptr</code> ke andar nahi reh sakta (sab ko same number dikhna chahiye). Isliye heap pe ek alag <strong>control block</strong> banta hai, aur har <code>shared_ptr</code> <strong>do pointer</strong> rakhta hai.</p>
+  <figure class="diag">
+    <svg viewBox="0 0 640 230" role="img" aria-label="Three shared_ptr objects a, b and c each hold two pointers: one to the Car object and one to a shared control block whose strong count is 3.">
+      <defs>
+        <marker id="s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-acc"/></marker>
+        <marker id="s2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+      </defs>
+      <rect class="d-acc" x="30" y="30" width="100" height="40" rx="6"/><text class="d-m" x="80" y="55" text-anchor="middle">a</text>
+      <rect class="d-acc" x="30" y="95" width="100" height="40" rx="6"/><text class="d-m" x="80" y="120" text-anchor="middle">b</text>
+      <rect class="d-acc" x="30" y="160" width="100" height="40" rx="6"/><text class="d-m" x="80" y="185" text-anchor="middle">c</text>
+      <rect class="d-warn" x="420" y="24" width="190" height="56" rx="6"/><text class="d-tb" x="515" y="48" text-anchor="middle">Car "Audi"</text><text class="d-s" x="515" y="66" text-anchor="middle">asli object</text>
+      <rect class="d-box" x="420" y="140" width="190" height="64" rx="6"/><text class="d-tb" x="515" y="162" text-anchor="middle">Control block</text><text class="d-m" x="515" y="180" text-anchor="middle">strong count = 3</text><text class="d-m" x="515" y="196" text-anchor="middle">weak count = 0</text>
+      <path class="d-line-acc" d="M130 44 L419 46" marker-end="url(#s2)"/>
+      <path class="d-line-acc" d="M130 109 L419 54" marker-end="url(#s2)"/>
+      <path class="d-line-acc" d="M130 174 L419 62" marker-end="url(#s2)"/>
+      <path class="d-line" d="M130 56 L419 160" marker-end="url(#s2g)"/>
+      <path class="d-line" d="M130 121 L419 172" marker-end="url(#s2g)"/>
+      <path class="d-line" d="M130 186 L419 184" marker-end="url(#s2g)"/>
+      <text class="d-sacc" x="80" y="18" text-anchor="middle">har ek = 2 pointers</text>
+    </svg>
+    <figcaption>Har <code>shared_ptr</code> ke andar do pointers: ek object ki taraf, ek control block ki taraf. Isliye <code>sizeof</code> 16 hai.</figcaption>
+  </figure>
+<pre class="out">sizeof(shared_ptr&lt;Car&gt;) = 16      ← do pointers (object + control block)</pre>
+
+  <h3><code>make_shared</code> kyun?</h3>
+  <ul>
+    <li><code>shared_ptr&lt;Car&gt;(new Car(...))</code> → <strong>do</strong> heap allocations (ek <code>Car</code>, ek control block).</li>
+    <li><code>make_shared&lt;Car&gt;(...)</code> → <strong>ek</strong> allocation, dono saath mein. Fast aur cache-friendly, aur code mein raw <code>new</code> nahi.</li>
+  </ul>
+  <h3>Keemat</h3>
+  <p><code>unique_ptr</code> free hai, par <code>shared_ptr</code> ki keemat hai: size double (16 bytes), control block ki extra memory, aur counter <strong>atomic</strong> hota hai (thread-safe, par normal <code>+1/−1</code> se slow).</p>
+  <div class="callout tip"><span class="tag">Depth point</span>
+    <p>Counter thread-safe hai, par <strong>object nahi</strong>. Do threads ek hi <code>Car</code> ko modify karein toh mutex chahiye hi.</p>
+  </div>
+
+  <h2 id="weak">6. Cycle problem aur <code>weak_ptr</code></h2>
+<pre><code><span class="k">struct</span> B;
+<span class="k">struct</span> A { shared_ptr&lt;B&gt; b; ~A() { cout &lt;&lt; <span class="c">"~A\n"</span>; } };
+<span class="k">struct</span> B { shared_ptr&lt;A&gt; a; ~B() { cout &lt;&lt; <span class="c">"~B\n"</span>; } };
+
+<span class="k">int</span> main() {
+    {
+        <span class="k">auto</span> a = make_shared&lt;A&gt;();
+        <span class="k">auto</span> b = make_shared&lt;B&gt;();
+        a-&gt;b = b;  b-&gt;a = a;              <span class="c">// ek doosre ko pakda</span>
+        cout &lt;&lt; <span class="c">"a count = "</span> &lt;&lt; a.use_count() &lt;&lt; <span class="c">", b count = "</span> &lt;&lt; b.use_count() &lt;&lt; <span class="c">"\n"</span>;
+    }
+    cout &lt;&lt; <span class="c">"scope khatam (koi destructor nahi chala?)\n"</span>;
+}</code></pre>
+<pre class="out crash">a count = 2, b count = 2
+scope khatam (koi destructor nahi chala?)     ← ~A, ~B kabhi nahi → leak</pre>
+  <p><strong>Fix:</strong> ek taraf ka link <code>weak_ptr</code> kar do. <code>weak_ptr</code> object ko point karta hai par strong count <strong>nahi badhata</strong>.</p>
+<pre><code><span class="k">struct</span> B { weak_ptr&lt;A&gt; a; ~B() { cout &lt;&lt; <span class="c">"~B\n"</span>; } };   <span class="c">// sirf ye line badli</span></code></pre>
+<pre class="out">a count = 1, b count = 2       ← A ka count ab sirf 1
+lock() se A mila, count abhi = 2
+~A
+~B                              ← dono destroy, leak khatam
+scope khatam</pre>
+
+  <figure class="diag">
+    <svg viewBox="0 0 700 220" role="img" aria-label="Left: A and B hold each other with shared_ptr; after the locals go, both counts stay at 1 and nothing is freed. Right: B holds A with a weak_ptr; when the local a goes, A's count reaches 0, A is destroyed, which releases B too.">
+      <defs>
+        <marker id="s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+        <marker id="s3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-bad"/></marker>
+      </defs>
+      <text class="d-tb" x="175" y="22" text-anchor="middle">shared ⇄ shared (leak)</text>
+      <rect class="d-bad" x="40" y="70" width="110" height="60" rx="8"/><text class="d-tb" x="95" y="96" text-anchor="middle">A</text><text class="d-m" x="95" y="116" text-anchor="middle">count = 1</text>
+      <rect class="d-bad" x="200" y="70" width="110" height="60" rx="8"/><text class="d-tb" x="255" y="96" text-anchor="middle">B</text><text class="d-m" x="255" y="116" text-anchor="middle">count = 1</text>
+      <line class="d-line-bad" x1="150" y1="84" x2="199" y2="84" marker-end="url(#s3b)"/>
+      <line class="d-line-bad" x1="200" y1="116" x2="151" y2="116" marker-end="url(#s3b)"/>
+      <text class="d-s" x="175" y="62" text-anchor="middle">shared</text>
+      <text class="d-s" x="175" y="146" text-anchor="middle">shared</text>
+      <text class="d-sbad" x="175" y="180" text-anchor="middle">locals gaye, dono count 1 pe atke</text>
+      <text class="d-sbad" x="175" y="198" text-anchor="middle">0 kabhi nahi → destructor kabhi nahi</text>
+
+      <line class="d-line" x1="350" y1="30" x2="350" y2="200" stroke-dasharray="3 4"/>
+
+      <text class="d-tb" x="535" y="22" text-anchor="middle">shared → , ← weak (fix)</text>
+      <rect class="d-good" x="400" y="70" width="110" height="60" rx="8"/><text class="d-tb" x="455" y="96" text-anchor="middle">A</text><text class="d-m" x="455" y="116" text-anchor="middle">count = 1</text>
+      <rect class="d-good" x="560" y="70" width="110" height="60" rx="8"/><text class="d-tb" x="615" y="96" text-anchor="middle">B</text><text class="d-m" x="615" y="116" text-anchor="middle">count = 2</text>
+      <line class="d-line" x1="510" y1="84" x2="559" y2="84" marker-end="url(#s3)"/>
+      <line class="d-line d-dash" x1="560" y1="116" x2="511" y2="116" marker-end="url(#s3)"/>
+      <text class="d-s" x="535" y="62" text-anchor="middle">shared</text>
+      <text class="d-s" x="535" y="146" text-anchor="middle">weak (count nahi badhata)</text>
+      <text class="d-sgood" x="535" y="180" text-anchor="middle">local a gaya → A count 0 → ~A</text>
+      <text class="d-sgood" x="535" y="198" text-anchor="middle">A ka member b gaya → B count 0 → ~B</text>
+    </svg>
+    <figcaption>Farak sirf ek arrow ka hai: B → A ka link weak hone se A ka count kabhi B ki wajah se 1 pe nahi atakta.</figcaption>
+  </figure>
+
+  <h3><code>weak_ptr</code> ko use kaise karte hain</h3>
+  <p><code>weak_ptr</code> ko direct <code>-&gt;</code> se use nahi kar sakte, kyunki ho sakta hai object mar chuka ho. Pehle <code>lock()</code> karo:</p>
+<pre><code><span class="k">if</span> (<span class="k">auto</span> sp = w.lock()) {     <span class="c">// object zinda hai → shared_ptr mila</span>
+    sp-&gt;doSomething();
+} <span class="k">else</span> {                      <span class="c">// object mar chuka → nullptr mila</span>
+    ...
+}</code></pre>
+<pre class="out">expired? 0                          ← object zinda
+s gaya, expired? 1, lock null? 1    ← object gaya, weak_ptr ko pata chal gaya</pre>
+  <p>Raw pointer ko kabhi pata nahi chalta ki object mar gaya (dangling), par <code>weak_ptr</code> ko chalta hai. <strong>Real use:</strong> tree mein child → parent link, observer pattern, cache.</p>
+
+  <h2 id="traps">7. Traps (interviewer yahan pakadta hai)</h2>
+  <h3>Trap 1: Same raw pointer se do <code>shared_ptr</code></h3>
+<pre><code><span class="k">int</span>* raw = <span class="k">new int</span>(5);
+shared_ptr&lt;<span class="k">int</span>&gt; p1(raw);
+shared_ptr&lt;<span class="k">int</span>&gt; p2(raw);    <span class="c">// ❌ naya control block</span></code></pre>
+  <figure class="diag narrow">
+    <svg viewBox="0 0 620 200" role="img" aria-label="p1 and p2 were both built from the same raw pointer, so each has its own control block with count 1. Both think they are the only owner, and both delete the same int: double free.">
+      <defs><marker id="s4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+      <marker id="s4b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-bad"/></marker></defs>
+      <rect class="d-acc" x="20" y="30" width="90" height="40" rx="6"/><text class="d-m" x="65" y="55" text-anchor="middle">p1</text>
+      <rect class="d-acc" x="20" y="130" width="90" height="40" rx="6"/><text class="d-m" x="65" y="155" text-anchor="middle">p2</text>
+      <rect class="d-box" x="170" y="20" width="210" height="44" rx="6"/><text class="d-m" x="275" y="47" text-anchor="middle">control block 1: count=1</text>
+      <rect class="d-box" x="170" y="136" width="210" height="44" rx="6"/><text class="d-m" x="275" y="163" text-anchor="middle">control block 2: count=1</text>
+      <rect class="d-warn" x="470" y="78" width="130" height="44" rx="6"/><text class="d-m" x="535" y="105" text-anchor="middle">int 5 (raw)</text>
+      <line class="d-line" x1="110" y1="42" x2="169" y2="42" marker-end="url(#s4)"/>
+      <line class="d-line" x1="110" y1="158" x2="169" y2="158" marker-end="url(#s4)"/>
+      <path class="d-line" d="M380 50 L469 92" marker-end="url(#s4)"/>
+      <path class="d-line-bad" d="M380 150 L469 108" marker-end="url(#s4b)"/>
+      <text class="d-s" x="436" y="58" text-anchor="middle">① delete</text>
+      <text class="d-sbad" x="440" y="154" text-anchor="middle">② delete ✗</text>
+    </svg>
+    <figcaption>Do control blocks ek doosre ko nahi jaante, toh dono count 1 pe hain aur dono same memory delete karte hain.</figcaption>
+  </figure>
+<pre class="out crash">p1 count = 1, p2 count = 1        ← dono sochte hain wo akele malik hain
+free(): double free detected in tcache 2
+Aborted</pre>
+  <p><strong>Fix:</strong> hamesha <code>make_shared</code>, aur copy karna ho toh <code>shared_ptr</code> se karo (<code>p2 = p1</code>), raw se nahi.</p>
+
+  <div class="tbl"><table>
+    <tr><th>Trap</th><th>Kya hota hai</th><th>Fix</th></tr>
+    <tr><td>2. <code>delete p.get();</code></td><td>Smart pointer bhi baad mein delete karega → double free</td><td><code>get()</code> sirf use ke liye</td></tr>
+    <tr><td>3. <code>release()</code> = delete samajhna</td><td><code>release()</code> delete nahi karta, sirf ownership chhodta hai. Return value nahi pakdi → leak</td><td>Delete chahiye → <code>reset()</code></td></tr>
+    <tr><td>4. <code>auto_ptr</code></td><td>Purana smart pointer, copy pe chupke se ownership transfer. C++11 mein deprecated, <strong>C++17 mein removed</strong></td><td><code>unique_ptr</code> (transfer explicit <code>std::move</code> se)</td></tr>
+    <tr><td>5. Har jagah <code>shared_ptr</code></td><td>Ownership unclear, extra cost, cycles ka risk</td><td>Default <code>unique_ptr</code>; <code>shared_ptr</code> sirf jab sach mein kai malik</td></tr>
+  </table></div>
+
+  <h2 id="choose">8. Kaunsa choose karein?</h2>
+  <figure class="diag narrow">
+    <svg viewBox="0 0 640 300" role="img" aria-label="Decision flow: if the pointer does not own the memory, use a raw pointer or reference, or weak_ptr if the object can die. If it owns it and there is one owner, use unique_ptr, the default. If there are many owners, use shared_ptr, and break any cycle with a weak_ptr.">
+      <defs><marker id="s5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker></defs>
+      <rect class="d-acc" x="190" y="10" width="260" height="46" rx="8"/><text class="d-tb" x="320" y="38" text-anchor="middle">Ye pointer memory ka MALIK hai?</text>
+      <rect class="d-box" x="20" y="110" width="220" height="56" rx="8"/><text class="d-tb" x="130" y="134" text-anchor="middle">raw pointer / reference</text><text class="d-s" x="130" y="153" text-anchor="middle">object mar sakta hai → weak_ptr</text>
+      <rect class="d-acc" x="410" y="110" width="200" height="46" rx="8"/><text class="d-tb" x="510" y="138" text-anchor="middle">Ek hi malik?</text>
+      <rect class="d-good" x="290" y="210" width="180" height="56" rx="8"/><text class="d-tb" x="380" y="234" text-anchor="middle">unique_ptr</text><text class="d-sgood" x="380" y="253" text-anchor="middle">DEFAULT</text>
+      <rect class="d-warn" x="490" y="210" width="140" height="56" rx="8"/><text class="d-tb" x="560" y="234" text-anchor="middle">shared_ptr</text><text class="d-s" x="560" y="253" text-anchor="middle">kai malik</text>
+      <path class="d-line" d="M280 56 L150 109" marker-end="url(#s5)"/><text class="d-s" x="178" y="74" text-anchor="middle">Nahi, sirf use</text>
+      <path class="d-line" d="M360 56 L490 109" marker-end="url(#s5)"/><text class="d-s" x="446" y="78" text-anchor="middle">Haan</text>
+      <path class="d-line" d="M480 156 L400 209" marker-end="url(#s5)"/><text class="d-s" x="420" y="182" text-anchor="middle">Haan</text>
+      <path class="d-line" d="M540 156 L560 209" marker-end="url(#s5)"/><text class="d-s" x="582" y="182" text-anchor="middle">Nahi</text>
+      <text class="d-s" x="560" y="288" text-anchor="middle">cycle bane → ek link weak_ptr</text>
+    </svg>
+    <figcaption>Pehla sawaal hamesha ownership ka hai. Malik nahi toh smart pointer ki zaroorat hi nahi.</figcaption>
+  </figure>
+
+  <h2 id="interview">9. Interview mein kaise bolo</h2>
+  <div class="callout say"><span class="tag">30-second answer</span>
+    <p>"Smart pointers RAII wrappers hain jo heap memory ki ownership manage karte hain. Inka destructor apne aap delete karta hai, toh leak, double free aur dangling pointer jaise bugs khatam ho jaate hain. <code>unique_ptr</code> exclusive ownership deta hai: copy nahi hota, sirf move hota hai, aur iska size raw pointer jitna hai, toh zero overhead. <code>shared_ptr</code> shared ownership deta hai reference counting se, aur aakhri owner jaate hi object delete hota hai. <code>weak_ptr</code> non-owning hai aur <code>shared_ptr</code> cycles todne ke liye use hota hai. Mera default <code>unique_ptr</code> hai, <code>shared_ptr</code> sirf tab jab sach mein shared ownership chahiye."</p>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Interviewer poochega</th><th>Jawab</th></tr>
+    <tr><td><code>unique_ptr</code> copy kyun nahi hota?</td><td>Do owners → double delete. Copy constructor <code>= delete</code> hai, transfer <code>std::move</code> se</td></tr>
+    <tr><td><code>shared_ptr</code> kaise kaam karta hai?</td><td>Heap pe control block mein atomic reference count. Copy pe +1, destroy pe −1, 0 pe delete</td></tr>
+    <tr><td><code>make_shared</code> kyun?</td><td>Ek allocation (object + control block saath), aur raw <code>new</code> code mein nahi</td></tr>
+    <tr><td><code>shared_ptr</code> thread-safe hai?</td><td>Reference count haan (atomic), par pointed object nahi. Uske liye mutex</td></tr>
+    <tr><td><code>shared_ptr</code> ke saath leak ho sakta hai?</td><td>Haan, cycle se. Fix: ek link <code>weak_ptr</code></td></tr>
+    <tr><td><code>weak_ptr</code> direct use kyun nahi?</td><td>Object mar chuka ho sakta hai. <code>lock()</code> se <code>shared_ptr</code> lo, null check karo</td></tr>
+    <tr><td><code>sizeof</code> kitna?</td><td><code>unique_ptr</code> = 8 (raw jitna), <code>shared_ptr</code> = 16 (object + control block pointer), 64-bit pe</td></tr>
+  </table></div>
+  <div class="callout tip"><span class="tag">MathWorks angle</span>
+    <p>"Mujhe smart pointers ka sabse bada fayda safety se zyada <strong>readability</strong> lagta hai. Function signature mein <code>unique_ptr</code> dekh ke turant pata chal jaata hai ki ownership transfer ho rahi hai, aur raw pointer ya reference dekh ke pata chalta hai ki sirf use ho raha hai. Bade codebase mein ye clarity bahut kaam aati hai."</p>
+  </div>
+
+  <h2 id="check">Self-check</h2>
+  <details class="qa"><summary>1. <code>unique_ptr&lt;Car&gt; b = a;</code> compile kyun nahi hota? Fix kya, aur uske baad <code>a</code> ka kya hoga?</summary><div>
+    <p>Copy constructor <code>= delete</code> hai, kyunki do owners double delete karenge. Fix: <code>unique_ptr&lt;Car&gt; b = move(a);</code>. Uske baad <code>a</code> <code>nullptr</code> hai.</p></div></details>
+  <details class="qa"><summary>2. <code>shared_ptr</code> ka <code>sizeof</code> 16 kyun, jabki <code>unique_ptr</code> ka 8?</summary><div>
+    <p><code>shared_ptr</code> do pointers rakhta hai: ek object ka, ek control block (ref count) ka. <code>unique_ptr</code> sirf ek raw pointer hai.</p></div></details>
+  <details class="qa"><summary>3. Do objects ek doosre ko <code>shared_ptr</code> se pakde hain. Kya hoga, fix?</summary><div>
+    <p>Cycle: locals jaane ke baad bhi dono ka count 1 rehta hai, kabhi 0 nahi, toh destructors nahi chalte → leak. Fix: ek link <code>weak_ptr</code> bana do.</p></div></details>
+  <details class="qa"><summary>4. <code>reset()</code> vs <code>release()</code>?</summary><div>
+    <p><code>reset()</code> object delete karta hai aur pointer null karta hai. <code>release()</code> delete nahi karta, sirf ownership chhod ke raw pointer return karta hai; ab delete tumhari zimmedari.</p></div></details>
+  <details class="qa"><summary>5. Same raw pointer se do <code>shared_ptr</code> banaye. Kya hoga, kyun?</summary><div>
+    <p>Do alag control blocks bante hain, dono ka count 1. Dono khud ko akela malik maante hain aur dono delete karte hain → double free crash.</p></div></details>
+
+  <div class="footer-nav">
+    <a href="raii.html">← RAII</a>
+    <a href="playlist.html">Playlist →</a>
+  </div>
+</main>
+</body>
+</html>

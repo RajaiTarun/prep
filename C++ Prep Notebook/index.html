@@ -1,0 +1,150 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>C++ Prep Notebook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+<style>
+  .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 28px 0 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+  .stat .k { font: 600 11.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .stat .v { font: 700 26px/1.2 var(--display); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .stat .v small { font: 500 14px var(--body); color: var(--muted); }
+  .stat.next { border-color: var(--accent); background: var(--accent-soft); }
+  .stat.next .v { font-size: 18px; color: var(--accent); }
+  .bar { height: 6px; border-radius: 99px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--good); border-radius: 99px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 16px 0; }
+  .card { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; text-decoration: none; color: var(--fg); min-width: 0; transition: border-color .15s; }
+  .card:hover { border-color: var(--accent); }
+  .card h3 { margin: 0; font-size: 18px; }
+  .card p { margin: 0; font-size: 14.5px; color: var(--muted); }
+  .card .meta { margin-top: auto; padding-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .file { font-family: var(--mono); font-size: 13.5px; }
+</style>
+
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">C++ <b>Prep</b> Notebook</a>
+  <nav aria-label="Pages">
+    <a href="index.html" aria-current="page">Home</a>
+    <a href="strategy.html">Interview Strategy</a>
+    <a href="foundations.html">Foundations</a>
+    <a href="gfg.html">GFG Questions</a>
+    <a href="raii.html">RAII</a>
+    <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="playlist.html">Playlist</a>
+    <a href="revision.html">Revision</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">MathWorks prep · C++</p>
+  <h1>C++ Prep Notebook</h1>
+  <p class="lede">Har concept first principles se, Hinglish mein, interview depth ke saath. Saare code outputs GCC (<code>-std=c++17</code>) pe compile karke verify kiye hain.</p>
+
+  <div class="status">
+    <div class="stat">
+      <div class="k">Playlist</div>
+      <div class="v"><span id="pl-done">0</span><small> / 82 videos</small></div>
+      <div class="bar"><span id="pl-bar" style="width:0%"></span></div>
+    </div>
+    <div class="stat">
+      <div class="k">GFG questions</div>
+      <div class="v">1<small> / 77</small></div>
+      <div class="bar"><span style="width:1.3%"></span></div>
+    </div>
+    <div class="stat">
+      <div class="k">Topics done</div>
+      <div class="v">4<small> pages</small></div>
+    </div>
+    <div class="stat next">
+      <div class="k">Next up</div>
+      <div class="v" id="pl-next">Batch A · #2 Compilation</div>
+    </div>
+  </div>
+
+  <h2>Pages</h2>
+  <div class="cards">
+    <a class="card" href="revision.html">
+      <h3>Interview Revision</h3>
+      <p>Saare interview answers ek jagah, English mein, chhote examples ke saath. Practice mode mein answers chhupe rehte hain.</p>
+      <div class="meta"><span class="pill next">Interview day</span></div>
+    </a>
+    <a class="card" href="playlist.html">
+      <h3>CppNuts Playlist</h3>
+      <p>82 videos, topic-wise batches A–K. Har video ka checkbox aur uske notes yahin.</p>
+      <div class="meta"><span class="pill next">Active</span><span class="pill">~5.3 hrs at 1.5x</span></div>
+    </a>
+    <a class="card" href="strategy.html">
+      <h3>Interview Strategy</h3>
+      <p>MathWorks ke liye answer kaise bolein: hook word, MathWorks se jodna, jo pata nahi use handle karna.</p>
+      <div class="meta"><span class="pill done">5 tips</span></div>
+    </a>
+    <a class="card" href="foundations.html">
+      <h3>C++ Foundations</h3>
+      <p>Machine code, compilation ke 5 steps, memory layout, JVM vs native, portability, zero-overhead, paradigms.</p>
+      <div class="meta"><span class="pill done">Done</span><span class="pill">5 diagrams</span></div>
+    </a>
+    <a class="card" href="gfg.html">
+      <h3>GFG Questions</h3>
+      <p>77 questions ka checklist. Q1 done; baaki playlist ke baad quick revision ki tarah.</p>
+      <div class="meta"><span class="pill">1 / 77</span></div>
+    </a>
+    <a class="card" href="raii.html">
+      <h3>RAII</h3>
+      <p>Constructor lo, destructor chhodo. FileHandler example, 5 traps with crash outputs, RAII vs GC.</p>
+      <div class="meta"><span class="pill done">Done</span><span class="pill">4 diagrams</span></div>
+    </a>
+    <a class="card" href="smart-pointers.html">
+      <h3>Smart Pointers</h3>
+      <p><code>unique_ptr</code>, <code>shared_ptr</code>, <code>weak_ptr</code>: ownership, move, control block, cycles, traps.</p>
+      <div class="meta"><span class="pill done">Done</span><span class="pill">5 diagrams</span></div>
+    </a>
+  </div>
+
+  <h2>Workflow</h2>
+  <ol>
+    <li>Playlist ka ek batch dekho (<a href="playlist.html">Playlist</a> page pe order diya hai).</li>
+    <li>Mujhe batao "#37 done" aur jo doubts hain. Main video ko tick karke uske notes usi entry mein bhar dunga.</li>
+    <li>Batch khatam hone pe 4-5 sawaal ka recall check.</li>
+    <li>Poori playlist ke baad GFG questions quick revision ki tarah.</li>
+  </ol>
+
+  <h2>Abhi baaki hai (GFG se karenge)</h2>
+  <p class="muted">Ye topics playlist mein nahi hain:</p>
+  <ul>
+    <li>STL: <code>map</code>, <code>set</code>, <code>unordered_map</code>, iterators (GFG Q49–53)</li>
+    <li>Lambdas (Q52)</li>
+    <li>Move semantics / rvalue references</li>
+    <li>Exceptions (Q56–64)</li>
+    <li>Multithreading: thread, mutex, race condition, deadlock (Q65–75)</li>
+    <li><code>const</code>/<code>mutable</code>, <code>inline</code>, storage classes</li>
+  </ul>
+
+  <h2>Purani notes (Mathworks Prep project mein)</h2>
+  <p class="muted">Pichhli OOP sessions ki files. Zaroorat ho toh inke bhi pages bana sakte hain.</p>
+  <ul>
+    <li><span class="file">mathworks_oops_cpp_top30.md</span> — OOP top 30</li>
+    <li><span class="file">mathworks_set2_revision.md</span> · <span class="file">mathworks_set2_coding.md</span> — Set 2</li>
+    <li><span class="file">oops_dynamic_polymorphism_revision.md</span> — vtable, virtual functions</li>
+    <li><span class="file">oops_mistakes_log.md</span> — galtiyon ka log</li>
+  </ul>
+</main>
+
+<script>
+  // Playlist progress is read from playlist.html so it never goes stale here.
+  fetch("playlist.html").then(r => r.ok ? r.text() : Promise.reject()).then(html => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const vids = [...doc.querySelectorAll("article.vid")];
+    if (!vids.length) return;
+    const done = vids.filter(v => v.dataset.done === "true").length;
+    document.getElementById("pl-done").textContent = done;
+    document.getElementById("pl-bar").style.width = (done / vids.length * 100).toFixed(1) + "%";
+    const next = vids.find(v => v.dataset.done !== "true");
+    if (next) document.getElementById("pl-next").textContent =
+      "Batch " + next.dataset.batch + " · #" + next.dataset.num + " " + next.dataset.short;
+  }).catch(() => {});
+</script>
+
+</body></html>

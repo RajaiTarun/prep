@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GFG Questions · C++ Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+<style>
+  .qnum { font: 600 13px var(--mono); color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.rel { font-size: 13.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">C++ <b>Prep</b> Notebook</a>
+  <nav aria-label="Pages">
+    <a href="index.html">Home</a>
+    <a href="strategy.html">Interview Strategy</a>
+    <a href="foundations.html">Foundations</a>
+    <a href="gfg.html" aria-current="page">GFG Questions</a>
+    <a href="raii.html">RAII</a>
+    <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="playlist.html">Playlist</a>
+    <a href="revision.html">Revision</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">geeksforgeeks.org/cpp/cpp-interview-questions</p>
+  <h1>GFG Questions</h1>
+  <p class="lede">77 questions: Freshers 1–26, Intermediate 27–55, Expert 56–77. Playlist ke baad inhe quick revision ki tarah karenge. Har answer ka format: first principle, 30-sec interview answer, traps.</p>
+
+  <nav class="toc" aria-label="On this page">
+    <p>Is page pe</p>
+    <ol>
+      <li><a href="#answers">Answers</a></li>
+      <li><a href="#q1">Q1. What is C++?</a></li>
+      <li><a href="#list">Poori checklist (77)</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="answers">Answers</h2>
+  <p class="muted">Jaise-jaise questions karenge, unke answers yahan add honge.</p>
+
+  <h3 id="q1">Q1. What is C++? <span class="pill done">Done</span></h3>
+  <p><strong>C++ ek general-purpose, compiled, multi-paradigm programming language hai jo Bjarne Stroustrup ne C ke extension ke roop mein banayi (pehle naam "C with Classes" tha).</strong> Ye procedural, object-oriented aur generic programming (templates) teeno support karti hai, isliye system-level aur application-level dono kaam ke liye use hoti hai.</p>
+  <p><strong>Origin:</strong> 1979, Bell Labs. C fast tha par bade programs organize karna mushkil; Simula mein classes thi par slow thi. Idea: "C ki speed + Simula ki organization." 1983 mein naam C++ pada (<code>++</code> = C ka next version).</p>
+
+  <h4>Advantages: yaad rakho <span class="mnemonic">POP-MS</span></h4>
+  <ul>
+    <li><strong>P — Performance:</strong> Seedha machine code mein compile hoti hai, koi VM nahi. Hardware ke paas hai, isliye fast.</li>
+    <li><strong>O — Object-Oriented:</strong> Encapsulation, inheritance, polymorphism, abstraction, toh code modular aur reusable.</li>
+    <li><strong>P — Portability:</strong> Same source code alag platforms pe chal jaata hai, bas har platform ke liye <strong>recompile</strong>.</li>
+    <li><strong>M — Memory Control:</strong> Pointers, <code>new</code>/<code>delete</code>, stack vs heap tumhare haath mein. Garbage collector nahi, cleanup <a href="raii.html">RAII</a> se, timing predictable.</li>
+    <li><strong>S — STL:</strong> Ready-made containers (<code>vector</code>, <code>map</code>), algorithms (<code>sort</code>, <code>find</code>), iterators.</li>
+  </ul>
+  <p><strong>Depth line:</strong> C++ <strong>zero-overhead principle</strong> follow karti hai: jo feature use nahi karte, uski keemat nahi dete. (Har word ka matlab: <a href="foundations.html">Foundations</a>.)</p>
+  <p><strong>Standards:</strong> C++98 → 03 → <strong>11</strong> (sabse bada jump: <code>auto</code>, lambdas, smart pointers, move semantics, <code>&lt;thread&gt;</code>) → 14 → 17 → 20 → 23. Har 3 saal mein naya.</p>
+  <p><strong>Kahan use hoti hai:</strong> OS components, game engines (Unreal), browsers (Chrome), databases (MySQL), compilers, embedded, high-frequency trading, simulation tools.</p>
+
+  <div class="callout say"><span class="tag">Interview mein (30 sec)</span>
+    <p>"C++ ek compiled, multi-paradigm language hai jo C ke upar bani hai. Isme C jaisi speed aur low-level memory control milta hai, saath mein OOP aur templates jaisi high-level abstractions bhi. Iska core idea zero-overhead abstraction hai. Isliye performance-critical software, jaise engines, databases, browsers, simulation tools, mein use hoti hai. Isliye mujhe lagta hai MathWorks jaise products ke liye ye natural fit hai."</p>
+  </div>
+
+  <div class="tbl"><table>
+    <tr><th>Interviewer poochega</th><th>Jawab</th></tr>
+    <tr><td>"Purely OOP hai?"</td><td><strong>Nahi.</strong> <code>main()</code> aur global functions class ke bahar hote hain, <code>int</code> jaise primitive types objects nahi hain. "Multi-paradigm" bolo.</td></tr>
+    <tr><td>"Java jaisi portable hai?"</td><td>Source portable hai, <strong>binary nahi</strong>. Java bytecode ek baar compile hoke JVM pe kahin bhi chalta hai.</td></tr>
+    <tr><td>"Garbage collection kyun nahi?"</td><td>Performance aur predictability. RAII + smart pointers se cleanup deterministic hota hai.</td></tr>
+  </table></div>
+
+  <h2 id="list">Poori checklist</h2>
+  <p class="muted">"Related" column batata hai ki ye concept kahan pehle aa chuka hai ya playlist ki kaunsi video mein aayega.</p>
+
+  <h3>Freshers (1–26)</h3>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>Question</th><th>Status</th><th>Related</th></tr>
+    <tr><td class="qnum">1</td><td><a href="#q1">What is C++?</a></td><td><span class="pill done">Done</span></td><td class="rel"><a href="foundations.html">Foundations</a></td></tr>
+    <tr><td class="qnum">2</td><td>Different data types in C++</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">3</td><td>Define token in C++</td><td><span class="pill">—</span></td><td class="rel"><a href="playlist.html#v2">Playlist #2</a> (lexical analyzer)</td></tr>
+    <tr><td class="qnum">4</td><td>Define <code>std</code></td><td><span class="pill">—</span></td><td class="rel">Playlist #60</td></tr>
+    <tr><td class="qnum">5</td><td>What is a namespace?</td><td><span class="pill">—</span></td><td class="rel">Playlist #60</td></tr>
+    <tr><td class="qnum">6</td><td>Difference between C and C++</td><td><span class="pill">—</span></td><td class="rel"><a href="foundations.html#paradigm">Foundations</a></td></tr>
+    <tr><td class="qnum">7</td><td>Function of the keyword <code>auto</code></td><td><span class="pill">—</span></td><td class="rel">Playlist #38</td></tr>
+    <tr><td class="qnum">8</td><td><code>mutable</code> storage class specifier</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">9</td><td>When is the <code>void</code> return type used?</td><td><span class="pill">—</span></td><td class="rel">Playlist #13</td></tr>
+    <tr><td class="qnum">10</td><td>Classes and objects</td><td><span class="pill">—</span></td><td class="rel">Playlist #69</td></tr>
+    <tr><td class="qnum">11</td><td>Block scope variable</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">12</td><td>struct vs class</td><td><span class="pill">—</span></td><td class="rel">Playlist #54</td></tr>
+    <tr><td class="qnum">13</td><td>OOPs concepts in C++</td><td><span class="pill">—</span></td><td class="rel">OOP notes · Playlist #68–71</td></tr>
+    <tr><td class="qnum">14</td><td>Array vs linked list</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">15</td><td>Storage classes</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">16</td><td>Virtual vs pure virtual functions</td><td><span class="pill">—</span></td><td class="rel">OOP notes</td></tr>
+    <tr><td class="qnum">17</td><td>Function overriding</td><td><span class="pill">—</span></td><td class="rel">Playlist #44</td></tr>
+    <tr><td class="qnum">18</td><td>Inheritance</td><td><span class="pill">—</span></td><td class="rel">OOP notes</td></tr>
+    <tr><td class="qnum">19</td><td>Encapsulation</td><td><span class="pill">—</span></td><td class="rel">Playlist #71</td></tr>
+    <tr><td class="qnum">20</td><td>Polymorphism</td><td><span class="pill">—</span></td><td class="rel">OOP notes</td></tr>
+    <tr><td class="qnum">21</td><td>Types of polymorphism</td><td><span class="pill">—</span></td><td class="rel">OOP notes · <a href="foundations.html#paradigm">templates</a></td></tr>
+    <tr><td class="qnum">22</td><td>Compile-time vs run-time polymorphism</td><td><span class="pill">—</span></td><td class="rel">Playlist #33</td></tr>
+    <tr><td class="qnum">23</td><td>Abstract class</td><td><span class="pill">—</span></td><td class="rel">Playlist #68</td></tr>
+    <tr><td class="qnum">24</td><td>Constructor and its types</td><td><span class="pill">—</span></td><td class="rel">Playlist #22, #29, #58</td></tr>
+    <tr><td class="qnum">25</td><td>Destructor</td><td><span class="pill">—</span></td><td class="rel"><a href="raii.html">RAII</a></td></tr>
+    <tr><td class="qnum">26</td><td>Virtual destructor</td><td><span class="pill">—</span></td><td class="rel">Top30 Q5 · Playlist #51</td></tr>
+  </table></div>
+
+  <h3>Intermediate (27–55)</h3>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>Question</th><th>Status</th><th>Related</th></tr>
+    <tr><td class="qnum">27</td><td>References in C++</td><td><span class="pill">—</span></td><td class="rel">Playlist #4</td></tr>
+    <tr><td class="qnum">28</td><td>Reference vs pointer</td><td><span class="pill">—</span></td><td class="rel">Playlist #4, #20</td></tr>
+    <tr><td class="qnum">29</td><td>Void pointers</td><td><span class="pill">—</span></td><td class="rel">Playlist #13</td></tr>
+    <tr><td class="qnum">30</td><td>Call by value vs call by reference</td><td><span class="pill">—</span></td><td class="rel">Playlist #59</td></tr>
+    <tr><td class="qnum">31</td><td>Operations allowed on pointers</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">32</td><td><code>new</code> vs <code>malloc()</code></td><td><span class="pill">—</span></td><td class="rel">Playlist #56, #52</td></tr>
+    <tr><td class="qnum">33</td><td>Purpose of <code>delete</code></td><td><span class="pill">—</span></td><td class="rel"><a href="foundations.html#memory">Stack vs heap</a></td></tr>
+    <tr><td class="qnum">34</td><td><code>delete[]</code> vs <code>delete</code></td><td><span class="pill">—</span></td><td class="rel">Playlist #3</td></tr>
+    <tr><td class="qnum">35</td><td>Shallow copy vs deep copy</td><td><span class="pill">—</span></td><td class="rel">Top30 Q10 · <a href="raii.html#trap2">RAII Trap 2</a> · Playlist #72</td></tr>
+    <tr><td class="qnum">36</td><td>Static data members &amp; static member functions</td><td><span class="pill">—</span></td><td class="rel">Playlist #57, #81</td></tr>
+    <tr><td class="qnum">37</td><td><code>const</code> vs <code>#define</code></td><td><span class="pill">—</span></td><td class="rel"><a href="foundations.html#compile">Preprocessor</a> · <a href="playlist.html#v2">macro example</a></td></tr>
+    <tr><td class="qnum">38</td><td>Virtual inheritance</td><td><span class="pill">—</span></td><td class="rel">Playlist #32</td></tr>
+    <tr><td class="qnum">39</td><td>When to use multiple inheritance</td><td><span class="pill">—</span></td><td class="rel">Playlist #32</td></tr>
+    <tr><td class="qnum">40</td><td>Virtual function call from constructor</td><td><span class="pill">—</span></td><td class="rel">OOP notes (vtable)</td></tr>
+    <tr><td class="qnum">41</td><td>Multiple destructors?</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">42</td><td>Function vs operator overloading</td><td><span class="pill">—</span></td><td class="rel">Playlist #12 · <a href="playlist.html#v37">#37 name mangling</a></td></tr>
+    <tr><td class="qnum">43</td><td>Prefix vs postfix</td><td><span class="pill">—</span></td><td class="rel">Playlist #62, #66</td></tr>
+    <tr><td class="qnum">44</td><td>Scope resolution operator <code>::</code></td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">45</td><td>Access modifiers</td><td><span class="pill">—</span></td><td class="rel">Playlist #70</td></tr>
+    <tr><td class="qnum">46</td><td>Friend classes and functions</td><td><span class="pill">—</span></td><td class="rel">Playlist #7</td></tr>
+    <tr><td class="qnum">47</td><td>Compile without <code>main()</code>?</td><td><span class="pill">—</span></td><td class="rel">Playlist #21</td></tr>
+    <tr><td class="qnum">48</td><td>Inline function; recursive inline?</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">49</td><td>What is STL?</td><td><span class="pill">—</span></td><td class="rel">Playlist #46</td></tr>
+    <tr><td class="qnum">50</td><td>STL containers and types</td><td><span class="pill">—</span></td><td class="rel">Playlist #6, #45</td></tr>
+    <tr><td class="qnum">51</td><td>Iterators and their types</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">52</td><td>Lambda expressions and STL</td><td><span class="pill">—</span></td><td class="rel">Playlist #39 (functor)</td></tr>
+    <tr><td class="qnum">53</td><td>Duplicate key in <code>set</code>/<code>map</code>; detect insert success</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">54</td><td>Can a function template throw exceptions?</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">55</td><td>Overflow error</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+  </table></div>
+
+  <h3>Expert (56–77)</h3>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>Question</th><th>Status</th><th>Related</th></tr>
+    <tr><td class="qnum">56</td><td>Error vs exception</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">57</td><td>What is an exception?</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">58</td><td><code>throw</code>, <code>try</code>, <code>catch</code></td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">59</td><td>Exception propagation</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">60</td><td>Stack unwinding</td><td><span class="pill">—</span></td><td class="rel"><a href="raii.html#example">RAII example</a> · Top30 Q29</td></tr>
+    <tr><td class="qnum">61</td><td><code>throw</code> vs <code>throws</code></td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">62</td><td><code>noexcept</code></td><td><span class="pill">—</span></td><td class="rel"><a href="raii.html#trap4">RAII Trap 4</a></td></tr>
+    <tr><td class="qnum">63</td><td>Custom exception</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">64</td><td>Nested exceptions</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">65</td><td>Multithreading</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">66</td><td>Process vs thread</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">67</td><td>Create and join a thread</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">68</td><td>Race condition</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">69</td><td>Mutex vs semaphore</td><td><span class="pill">—</span></td><td class="rel"><a href="raii.html#stdlib">lock_guard</a></td></tr>
+    <tr><td class="qnum">70</td><td>Condition variable</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">71</td><td>Deadlock</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">72</td><td>Atomic variables vs mutex</td><td><span class="pill">—</span></td><td class="rel"><a href="smart-pointers.html#shared">shared_ptr ka atomic count</a></td></tr>
+    <tr><td class="qnum">73</td><td>False sharing</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">74</td><td>Producer-consumer problem</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">75</td><td><code>volatile</code></td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">76</td><td>Rethrow vs throw new exception</td><td><span class="pill">—</span></td><td class="rel"></td></tr>
+    <tr><td class="qnum">77</td><td>try-with-resources</td><td><span class="pill">—</span></td><td class="rel"><a href="raii.html#gc">RAII vs GC</a></td></tr>
+  </table></div>
+
+  <div class="footer-nav">
+    <a href="foundations.html">← C++ Foundations</a>
+    <a href="raii.html">RAII →</a>
+  </div>
+</main>
+</body>
+</html>

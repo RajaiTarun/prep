@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>C++ Foundations · C++ Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+</head>
+<body>
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">C++ <b>Prep</b> Notebook</a>
+  <nav aria-label="Pages">
+    <a href="index.html">Home</a>
+    <a href="strategy.html">Interview Strategy</a>
+    <a href="foundations.html" aria-current="page">Foundations</a>
+    <a href="gfg.html">GFG Questions</a>
+    <a href="raii.html">RAII</a>
+    <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="playlist.html">Playlist</a>
+    <a href="revision.html">Revision</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">First principles</p>
+  <h1>C++ Foundations</h1>
+  <p class="lede">"What is C++?" ke answer ka har word: compiled, close to hardware, portable, memory control, zero-overhead, multi-paradigm. Neeche se upar: pehle computer kya samajhta hai, phir C++ code wahan tak kaise pahunchta hai.</p>
+
+  <nav class="toc" aria-label="On this page">
+    <p>Is page pe</p>
+    <ol>
+      <li><a href="#machine">Machine code</a></li>
+      <li><a href="#compile">Compilation process</a></li>
+      <li><a href="#layout">Memory layout</a></li>
+      <li><a href="#hardware">Close to hardware</a></li>
+      <li><a href="#vm">VM, JVM, javac</a></li>
+      <li><a href="#java">C++ vs Java</a></li>
+      <li><a href="#portable">Portability</a></li>
+      <li><a href="#memory">Stack vs heap</a></li>
+      <li><a href="#zero">Zero-overhead</a></li>
+      <li><a href="#paradigm">Paradigms &amp; templates</a></li>
+      <li><a href="#general">General-purpose</a></li>
+      <li><a href="#system">System vs application</a></li>
+      <li><a href="#check">Self-check</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="machine">1. Machine code: computer actually kya samajhta hai?</h2>
+  <p>CPU sirf <strong>0 aur 1</strong> samajhta hai. Har CPU ke paas kuch fixed instructions hoti hain, jaise "do numbers jodo", "memory se value lao", "is address pe jump karo". In instructions ki list ko <strong>Instruction Set</strong> kehte hain.</p>
+  <ul>
+    <li><strong>Machine code</strong> = wo binary instructions jo CPU <strong>seedha</strong> chala sakta hai, bina kisi translator ke.</li>
+    <li><strong>Assembly</strong> = machine code ka human-readable roop (<code>add eax, ebx</code>). 1 assembly line ≈ 1 machine instruction.</li>
+    <li>Har CPU family ka instruction set <strong>alag</strong> hai: <strong>x86-64</strong> (Intel/AMD laptops), <strong>ARM</strong> (mobiles, Apple M-series). x86 ka machine code ARM pe nahi chalega. Ye baat portability mein kaam aayegi.</li>
+  </ul>
+  <p>Insaan binary mein bada software nahi likh sakta, isliye high-level languages bani. High-level code machine code kaise banta hai, iske 3 tareeke hain:</p>
+  <div class="tbl"><table>
+    <tr><th>Tareeka</th><th>Kaise</th><th>Example</th></tr>
+    <tr><td><strong>Compiler</strong></td><td>Pehle poora code ek baar machine code mein, phir directly chalao</td><td>C, C++</td></tr>
+    <tr><td><strong>Interpreter</strong></td><td>Line-by-line padho aur saath-saath chalao</td><td>Python (roughly)</td></tr>
+    <tr><td><strong>VM (bytecode)</strong></td><td>Pehle beech wali language (bytecode), phir ek software (VM) usse chalata hai</td><td>Java, C#</td></tr>
+  </table></div>
+
+  <!-- 2 -->
+  <h2 id="compile">2. C++ program ka safar: likhne se chalne tak</h2>
+  <p>Maan lo do files hain: <code>main.cpp</code> aur <code>math.cpp</code>. Dono alag-alag compile hoti hain, aur linker unhe jodta hai.</p>
+
+  <figure class="diag narrow">
+    <svg viewBox="0 0 640 575" role="img" aria-label="C++ compilation pipeline: main.cpp goes through preprocessor, compiler, assembler to main.o; linker joins main.o and math.o into a.out; loader puts it in RAM for the CPU. Compile errors come from the compiler stage, undefined reference errors from the linker.">
+      <defs><marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker></defs>
+      <!-- files and stages -->
+      <rect class="d-soft" x="210" y="10" width="140" height="30" rx="6"/><text class="d-m" x="280" y="30" text-anchor="middle">main.cpp</text>
+      <line class="d-line" x1="280" y1="40" x2="280" y2="59" marker-end="url(#fa)"/>
+      <rect class="d-acc" x="180" y="60" width="200" height="44" rx="8"/><text class="d-tb" x="280" y="87" text-anchor="middle">1. Preprocessor</text>
+      <text class="d-s" x="400" y="80">#include paste, #define replace,</text><text class="d-s" x="400" y="95">comments hatao (sirf text kaam)</text>
+      <line class="d-line" x1="280" y1="104" x2="280" y2="123" marker-end="url(#fa)"/>
+      <rect class="d-soft" x="210" y="124" width="140" height="30" rx="6"/><text class="d-m" x="280" y="144" text-anchor="middle">main.i</text>
+      <line class="d-line" x1="280" y1="154" x2="280" y2="173" marker-end="url(#fa)"/>
+      <rect class="d-acc" x="180" y="174" width="200" height="44" rx="8"/><text class="d-tb" x="280" y="201" text-anchor="middle">2. Compiler</text>
+      <text class="d-s" x="400" y="193">parse, syntax + type check,</text><text class="d-s" x="400" y="208">optimize, assembly banao</text>
+      <text class="d-sbad" x="400" y="226">✗ compile error yahan</text>
+      <line class="d-line" x1="280" y1="218" x2="280" y2="237" marker-end="url(#fa)"/>
+      <rect class="d-soft" x="210" y="238" width="140" height="30" rx="6"/><text class="d-m" x="280" y="258" text-anchor="middle">main.s</text>
+      <line class="d-line" x1="280" y1="268" x2="280" y2="287" marker-end="url(#fa)"/>
+      <rect class="d-acc" x="180" y="288" width="200" height="44" rx="8"/><text class="d-tb" x="280" y="315" text-anchor="middle">3. Assembler</text>
+      <text class="d-s" x="400" y="307">assembly → machine code</text><text class="d-s" x="400" y="322">(adhoori: addresses baad mein)</text>
+      <line class="d-line" x1="280" y1="332" x2="280" y2="351" marker-end="url(#fa)"/>
+      <rect class="d-soft" x="210" y="352" width="140" height="30" rx="6"/><text class="d-m" x="280" y="372" text-anchor="middle">main.o</text>
+      <rect class="d-soft" x="30" y="352" width="120" height="30" rx="6"/><text class="d-m" x="90" y="372" text-anchor="middle">math.o</text>
+      <text class="d-s" x="90" y="345" text-anchor="middle">same 3 steps se</text>
+      <path class="d-line" d="M90 382 L90 424 L179 424" marker-end="url(#fa)"/>
+      <line class="d-line" x1="280" y1="382" x2="280" y2="401" marker-end="url(#fa)"/>
+      <rect class="d-acc" x="180" y="402" width="200" height="44" rx="8"/><text class="d-tb" x="280" y="429" text-anchor="middle">4. Linker</text>
+      <text class="d-s" x="400" y="421">saari .o + libraries jodo,</text><text class="d-s" x="400" y="436">missing addresses bharo</text>
+      <text class="d-sbad" x="400" y="454">✗ undefined reference yahan</text>
+      <line class="d-line" x1="280" y1="446" x2="280" y2="465" marker-end="url(#fa)"/>
+      <rect class="d-good" x="195" y="466" width="170" height="30" rx="6"/><text class="d-m" x="280" y="486" text-anchor="middle">a.out (executable)</text>
+      <line class="d-line" x1="280" y1="496" x2="280" y2="515" marker-end="url(#fa)"/>
+      <rect class="d-acc" x="180" y="516" width="200" height="44" rx="8"/><text class="d-tb" x="280" y="543" text-anchor="middle">5. Loader → CPU</text>
+      <text class="d-s" x="400" y="535">OS file ko RAM mein daalta hai,</text><text class="d-s" x="400" y="550">CPU main() se chalata hai</text>
+    </svg>
+    <figcaption>Har .cpp file pehle 3 steps se alag-alag object file banti hai. Linker unhe jodta hai. Galti kis step pe pakdi gayi, usse error ka type pata chalta hai.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <tr><th>Step</th><th>Kya karta hai</th><th>Command</th></tr>
+    <tr><td><strong>Preprocessor</strong></td><td>C++ samajhta hi nahi, sirf <strong>text copy-paste</strong>: <code>#include</code> ka content paste, <code>#define</code> replace, comments hatao</td><td><code>g++ -E main.cpp -o main.i</code></td></tr>
+    <tr><td><strong>Compiler</strong></td><td>Asli kaam: parse, <strong>syntax aur type check</strong>, optimize, assembly banao</td><td><code>g++ -S main.cpp</code></td></tr>
+    <tr><td><strong>Assembler</strong></td><td>Assembly → machine code (<code>.o</code>). Adhoori hai: "yahan <code>add</code> chahiye, address baad mein bharna"</td><td><code>g++ -c main.cpp</code></td></tr>
+    <tr><td><strong>Linker</strong></td><td>Saari <code>.o</code> + libraries (jaise <code>cout</code> ka code) jodo, gaps bharo</td><td><code>g++ main.o math.o</code></td></tr>
+    <tr><td><strong>Loader</strong></td><td>OS file ko RAM mein daalta hai, memory set karta hai, <code>main()</code> call</td><td><code>./a.out</code></td></tr>
+  </table></div>
+
+  <div class="callout link"><span class="tag">Connection</span>
+    <p>Static data member ko class ke bahar define nahi kiya → <strong>compile error nahi, linker error</strong>. Compiler ko declaration mil gayi, toh wo khush. Linker ko asli memory kisi <code>.o</code> mein nahi mili, toh error.</p>
+  </div>
+  <div class="callout say"><span class="tag">Interview one-liner</span>
+    <p>"C++ program 4 stages se guzarta hai: preprocessing, compilation, assembly aur linking. Result ek native executable hai jo OS loader memory mein daalta hai aur CPU directly chalata hai. Syntax/type galti compile time pe pakdi jaati hai, missing definitions link time pe."</p>
+  </div>
+  <div class="callout link"><span class="tag">Playlist #2 se extra</span>
+    <p>Lecture ke notes (har step ka kaam, libraries, <code>-save-temps</code>): <a href="playlist.html#v2">Playlist #2</a>.</p>
+  </div>
+
+  <!-- 3 -->
+  <h2 id="layout">3. Program chalte waqt RAM mein kaisa dikhta hai</h2>
+  <figure class="diag narrow">
+    <svg viewBox="0 0 560 370" role="img" aria-label="Process memory layout from high to low address: stack grows down, free space, heap grows up, then BSS, DATA and TEXT segments.">
+      <defs>
+        <marker id="ml" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+      </defs>
+      <text class="d-s" x="20" y="28">High</text><text class="d-s" x="20" y="42">address</text>
+      <text class="d-s" x="20" y="340">Low</text><text class="d-s" x="20" y="354">address</text>
+      <rect class="d-acc" x="80" y="16" width="210" height="60" rx="4"/>
+      <text class="d-tb" x="185" y="44" text-anchor="middle">STACK</text>
+      <line class="d-line" x1="185" y1="52" x2="185" y2="70" marker-end="url(#ml)"/>
+      <rect class="d-box d-dash" x="80" y="76" width="210" height="90"/>
+      <text class="d-s" x="185" y="125" text-anchor="middle">khaali jagah</text>
+      <rect class="d-warn" x="80" y="166" width="210" height="60" rx="4"/>
+      <line class="d-line" x1="185" y1="190" x2="185" y2="172" marker-end="url(#ml)"/>
+      <text class="d-tb" x="185" y="212" text-anchor="middle">HEAP</text>
+      <rect class="d-soft" x="80" y="226" width="210" height="40"/><text class="d-tb" x="185" y="251" text-anchor="middle">BSS</text>
+      <rect class="d-soft" x="80" y="266" width="210" height="40"/><text class="d-tb" x="185" y="291" text-anchor="middle">DATA</text>
+      <rect class="d-box" x="80" y="306" width="210" height="44" rx="4"/><text class="d-tb" x="185" y="333" text-anchor="middle">TEXT (code)</text>
+      <text class="d-t" x="310" y="40">local variables, function calls</text><text class="d-s" x="310" y="56">neeche ki taraf badhta hai</text>
+      <text class="d-t" x="310" y="190">new / malloc wali memory</text><text class="d-s" x="310" y="206">upar ki taraf badhta hai</text>
+      <text class="d-t" x="310" y="251">uninitialized global/static (0 se bhare)</text>
+      <text class="d-t" x="310" y="291">initialized global/static</text>
+      <text class="d-t" x="310" y="327">tumhara machine code</text><text class="d-s" x="310" y="343">read-only</text>
+    </svg>
+    <figcaption>Stack aur heap ek doosre ki taraf badhte hain. Stack compiler manage karta hai, heap tum.</figcaption>
+  </figure>
+
+  <!-- 4 -->
+  <h2 id="hardware">4. "Close to hardware" ka matlab</h2>
+  <p>C++ code aur CPU ke beech <strong>koi extra layer nahi</strong> hai. Teen concrete reasons:</p>
+  <ol>
+    <li><strong>Directly machine code:</strong> chalte waqt koi interpreter ya VM beech mein nahi.</li>
+    <li><strong>Pointers = asli memory addresses:</strong> <code>int* p = &amp;x;</code> mein <code>p</code> mein RAM ka actual address hai. Memory byte-by-byte padh/likh sakte ho. Hardware drivers isi se device registers control karte hain.</li>
+    <li><strong>Types hardware se map hote hain:</strong> <code>int</code> ek CPU register mein fit, <code>a + b</code> lagbhag ek <code>add</code> instruction. Object ka memory layout bhi tum control karte ho (padding).</li>
+  </ol>
+  <p>Python mein <code>a + b</code> likho toh runtime pe check hota hai a ka type kya hai, b ka kya, kaunsa <code>+</code> chalana hai. C++ mein ye sab compile time pe decide ho chuka hai.</p>
+
+  <!-- 5 -->
+  <h2 id="vm">5. VM, JVM aur <code>javac</code></h2>
+  <p><strong>VM (Virtual Machine)</strong> yahan matlab <strong>process VM</strong>: ek software jo "nakli CPU" ki tarah behave karta hai.</p>
+
+  <figure class="diag">
+    <svg viewBox="0 0 760 210" role="img" aria-label="C++ needs one translation: g++ turns main.cpp into machine code that the CPU runs directly. Java needs two: javac turns Hello.java into bytecode, then the JVM turns bytecode into machine code at run time.">
+      <defs><marker id="jv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker></defs>
+      <text class="d-tb" x="10" y="55">C++</text>
+      <rect class="d-soft" x="60" y="30" width="120" height="44" rx="6"/><text class="d-m" x="120" y="57" text-anchor="middle">main.cpp</text>
+      <line class="d-line" x1="180" y1="52" x2="259" y2="52" marker-end="url(#jv)"/><text class="d-sacc" x="220" y="44" text-anchor="middle">g++</text>
+      <rect class="d-good" x="260" y="30" width="160" height="44" rx="6"/><text class="d-m" x="340" y="50" text-anchor="middle">a.out</text><text class="d-s" x="340" y="66" text-anchor="middle">machine code</text>
+      <line class="d-line" x1="420" y1="52" x2="629" y2="52" marker-end="url(#jv)"/><text class="d-s" x="525" y="44" text-anchor="middle">seedha chalta hai</text>
+      <rect class="d-box" x="630" y="30" width="110" height="44" rx="6"/><text class="d-tb" x="685" y="57" text-anchor="middle">CPU</text>
+
+      <text class="d-tb" x="10" y="155">Java</text>
+      <rect class="d-soft" x="60" y="130" width="120" height="44" rx="6"/><text class="d-m" x="120" y="157" text-anchor="middle">Hello.java</text>
+      <line class="d-line" x1="180" y1="152" x2="259" y2="152" marker-end="url(#jv)"/><text class="d-sacc" x="220" y="144" text-anchor="middle">javac</text>
+      <rect class="d-warn" x="260" y="130" width="160" height="44" rx="6"/><text class="d-m" x="340" y="150" text-anchor="middle">Hello.class</text><text class="d-s" x="340" y="166" text-anchor="middle">bytecode (JVM ki language)</text>
+      <line class="d-line" x1="420" y1="152" x2="459" y2="152" marker-end="url(#jv)"/>
+      <rect class="d-acc" x="460" y="130" width="130" height="44" rx="6"/><text class="d-tb" x="525" y="150" text-anchor="middle">JVM</text><text class="d-s" x="525" y="166" text-anchor="middle">interpret + JIT</text>
+      <line class="d-line" x1="590" y1="152" x2="629" y2="152" marker-end="url(#jv)"/>
+      <rect class="d-box" x="630" y="130" width="110" height="44" rx="6"/><text class="d-tb" x="685" y="157" text-anchor="middle">CPU</text>
+      <text class="d-s" x="340" y="200" text-anchor="middle">translation 1: compile time</text>
+      <text class="d-s" x="525" y="200" text-anchor="middle">translation 2: run time</text>
+    </svg>
+    <figcaption>C++ mein ek translation, aur wo pehle hi ho chuka hota hai, isliye program turant fast start hota hai. Java mein do: <code>javac</code> compile time pe, JVM run time pe.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong><code>javac</code></strong> = Java ka compiler (<strong>java</strong> + <strong>c</strong>ompiler). Machine code nahi, <strong>bytecode</strong> banata hai.</li>
+    <li><strong>Bytecode</strong> = ek universal instruction set, kisi real CPU ka nahi, sirf JVM ka.</li>
+    <li><strong>JVM</strong> har platform ke liye alag bana hai, par sab same bytecode chalate hain.</li>
+    <li><strong>JIT (Just-In-Time) compiler:</strong> jo code baar-baar chalta hai, JVM use run time pe machine code bana deta hai.</li>
+    <li>JVM <strong>Garbage Collector</strong> bhi chalata hai.</li>
+  </ul>
+
+  <div class="tbl"><table>
+    <tr><th></th><th>C++</th><th>Java</th></tr>
+    <tr><td>Compiler</td><td><code>g++</code> (ya clang++, MSVC)</td><td><code>javac</code></td></tr>
+    <tr><td>Command</td><td><code>g++ main.cpp</code></td><td><code>javac Hello.java</code></td></tr>
+    <tr><td>Output</td><td><code>a.out</code> (machine code)</td><td><code>Hello.class</code> (bytecode)</td></tr>
+    <tr><td>Chalana</td><td><code>./a.out</code></td><td><code>java Hello</code></td></tr>
+  </table></div>
+
+  <h3>JDK, JRE, JVM</h3>
+  <figure class="diag narrow">
+    <svg viewBox="0 0 520 230" role="img" aria-label="JDK contains JRE plus javac and tools; JRE contains JVM plus libraries; JVM runs bytecode.">
+      <rect class="d-soft" x="10" y="10" width="500" height="210" rx="10"/>
+      <text class="d-tb" x="26" y="34">JDK</text><text class="d-s" x="62" y="34">= JRE + javac + tools (likhne / compile ke liye)</text>
+      <rect class="d-box" x="26" y="50" width="350" height="156" rx="8"/>
+      <text class="d-tb" x="42" y="74">JRE</text><text class="d-s" x="76" y="74">= JVM + libraries (sirf chalane ke liye)</text>
+      <rect class="d-acc" x="42" y="92" width="210" height="96" rx="8"/>
+      <text class="d-tb" x="147" y="132" text-anchor="middle">JVM</text>
+      <text class="d-s" x="147" y="152" text-anchor="middle">bytecode chalata hai</text>
+      <rect class="d-warn" x="268" y="110" width="94" height="34" rx="6"/><text class="d-s" x="315" y="131" text-anchor="middle">libraries</text>
+      <rect class="d-warn" x="394" y="70" width="100" height="34" rx="6"/><text class="d-m" x="444" y="92" text-anchor="middle">javac</text>
+      <rect class="d-warn" x="394" y="118" width="100" height="34" rx="6"/><text class="d-s" x="444" y="139" text-anchor="middle">debugger, tools</text>
+    </svg>
+    <figcaption>Dabbe ke andar dabba: JDK ⊃ JRE ⊃ JVM. <code>javac</code> sirf JDK mein milta hai.</figcaption>
+  </figure>
+  <div class="callout tip"><span class="tag">Confuse mat hona</span>
+    <p>VirtualBox/VMware wala "VM" (poora computer emulate karna) <strong>alag</strong> cheez hai. Java context mein VM = JVM.</p>
+  </div>
+
+  <!-- 6 -->
+  <h2 id="java">6. C++ vs Java</h2>
+  <div class="tbl"><table>
+    <tr><th></th><th>C++</th><th>Java</th></tr>
+    <tr><td>Output</td><td>Native machine code</td><td>Bytecode</td></tr>
+    <tr><td>Chalta kaise</td><td>CPU directly</td><td>JVM ke andar</td></tr>
+    <tr><td>Memory cleanup</td><td>Programmer / RAII</td><td>Garbage Collector</td></tr>
+    <tr><td>Pointers</td><td>Haan, raw addresses</td><td>Nahi (sirf references, address nahi dikhta)</td></tr>
+    <tr><td>Multiple inheritance (classes)</td><td>Haan</td><td>Nahi (sirf interfaces)</td></tr>
+    <tr><td>Startup</td><td>Turant</td><td>JVM start hone mein time</td></tr>
+    <tr><td>Portability</td><td>Source level (recompile)</td><td>Bytecode level</td></tr>
+    <tr><td>Default</td><td>Value semantics (object copy hota hai)</td><td>Objects hamesha reference se</td></tr>
+    <tr><td>Generic code</td><td>Templates: har type ka alag code compile time pe</td><td>Generics: type erasure, ek hi code</td></tr>
+  </table></div>
+
+  <!-- 7 -->
+  <h2 id="portable">7. Portability: source vs binary</h2>
+  <p><strong>Binary</strong> (<code>.exe</code>, <code>a.out</code>) do cheezon se bandha hai:</p>
+  <ol>
+    <li><strong>CPU:</strong> x86 ka machine code ARM pe nahi chalega.</li>
+    <li><strong>OS:</strong> executable formats alag (Windows = PE, Linux = ELF, Mac = Mach-O), aur OS se baat karne ke tareeke (system calls) bhi alag.</li>
+  </ol>
+  <div class="tbl"><table>
+    <tr><th></th><th>Source portable?</th><th>Binary portable?</th></tr>
+    <tr><td><strong>C++</strong></td><td>✅ Same <code>.cpp</code> har OS pe compile ho jaati hai (standard C++ use kiya ho toh)</td><td>❌ Har platform ke liye alag compile</td></tr>
+    <tr><td><strong>Java</strong></td><td>✅</td><td>✅ "Write once, run anywhere": <code>.class</code> kisi bhi JVM pe</td></tr>
+  </table></div>
+  <div class="callout trap"><span class="tag">Depth point: hidden portability trap</span>
+    <p>Standard sirf <strong>minimum size</strong> batata hai, exact nahi. <code>long</code> 64-bit Linux pe 8 bytes hai par 64-bit Windows pe 4 bytes. Exact size chahiye toh <code>int32_t</code>, <code>int64_t</code> (<code>&lt;cstdint&gt;</code>) use karo.</p>
+  </div>
+
+  <!-- 8 -->
+  <h2 id="memory">8. Memory control: stack vs heap</h2>
+<pre><code><span class="k">void</span> f() {
+    <span class="k">int</span> a = 5;              <span class="c">// STACK: function khatam → apne aap gayab</span>
+    <span class="k">int</span>* p = <span class="k">new</span> <span class="k">int</span>(10);   <span class="c">// HEAP: jab tak delete na karo</span>
+    <span class="k">delete</span> p;               <span class="c">// tumhari zimmedari</span>
+}</code></pre>
+
+  <figure class="diag narrow">
+    <svg viewBox="0 0 560 170" role="img" aria-label="Inside f(), a and the pointer p live on the stack; p holds the address of an int on the heap.">
+      <defs><marker id="sh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-acc"/></marker></defs>
+      <text class="d-tb" x="130" y="24" text-anchor="middle">STACK (f() ka frame)</text>
+      <rect class="d-acc" x="30" y="40" width="200" height="40" rx="4"/><text class="d-m" x="130" y="65" text-anchor="middle">int a = 5</text>
+      <rect class="d-acc" x="30" y="90" width="200" height="40" rx="4"/><text class="d-m" x="130" y="115" text-anchor="middle">int* p = 0x55a0</text>
+      <text class="d-tb" x="430" y="24" text-anchor="middle">HEAP</text>
+      <text class="d-s" x="430" y="84" text-anchor="middle">address 0x55a0</text>
+      <rect class="d-warn" x="350" y="90" width="160" height="40" rx="4"/><text class="d-m" x="430" y="115" text-anchor="middle">10</text>
+      <line class="d-line-acc" x1="230" y1="110" x2="349" y2="110" marker-end="url(#sh)"/><text class="d-sacc" x="290" y="102" text-anchor="middle">points to</text>
+      <text class="d-s" x="130" y="155" text-anchor="middle">f() khatam → ye dono gayab</text>
+      <text class="d-s" x="430" y="155" text-anchor="middle">delete na kiya → yahin pada rahega (leak)</text>
+    </svg>
+    <figcaption>Pointer variable <code>p</code> stack pe hai, par jis memory pe wo point karta hai wo heap pe hai. Function khatam hone pe <code>p</code> chala jaata hai, heap block nahi.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <tr><th></th><th>Stack</th><th>Heap</th></tr>
+    <tr><td>Kaun manage karta</td><td>Compiler (apne aap)</td><td>Tum (<code>new</code>/<code>delete</code>)</td></tr>
+    <tr><td>Lifetime</td><td>Scope khatam = khatam</td><td>Jab tak <code>delete</code> na karo</td></tr>
+    <tr><td>Speed</td><td>Bahut fast (bas ek pointer khiskao)</td><td>Slow (free block dhoondhna padta hai)</td></tr>
+    <tr><td>Size</td><td>Chhota (MBs)</td><td>Bada</td></tr>
+  </table></div>
+
+  <h3>Control ki keemat: 3 classic bugs</h3>
+  <ul>
+    <li><strong>Memory leak:</strong> <code>new</code> kiya, <code>delete</code> bhool gaye.</li>
+    <li><strong>Dangling pointer:</strong> delete ho chuki / scope se bahar memory use ki (Set 2 Q8: local ka address return).</li>
+    <li><strong>Double free:</strong> same memory do baar delete (Top30 Q10: shallow copy).</li>
+  </ul>
+  <p>Java mein ye bugs (mostly) nahi hote kyunki GC hai. C++ ka jawab GC nahi, <a href="raii.html">RAII</a> hai.</p>
+
+  <!-- 9 -->
+  <h2 id="zero">9. Zero-overhead principle</h2>
+  <p>Stroustrup ki definition ke do hisse hain:</p>
+  <ol>
+    <li><strong>"Jo use nahi karte, uski keemat nahi dete."</strong> Class mein <code>virtual</code> nahi → na vptr, na vtable, object ka size nahi badhta. Exceptions throw nahi hue → normal path pe (lagbhag) koi slowdown nahi.</li>
+    <li><strong>"Jo use karte ho, usse better haath se nahi likh sakte."</strong> <code>std::vector</code> ≈ haath se likha dynamic array. <code>std::sort</code> aksar C ke <code>qsort</code> se <strong>fast</strong> hota hai: <code>qsort</code> har comparison pe function pointer call karta hai, jabki <code>std::sort</code> template hai toh comparator <strong>inline</strong> ho jaata hai.</li>
+  </ol>
+  <p>Java/Python mein kuch keemat hamesha deni padti hai (JVM, GC, runtime type checks), chahe feature use karo ya nahi.</p>
+  <div class="callout tip"><span class="tag">Depth point</span>
+    <p>Ye principle har jagah 100% nahi hai. Exceptions aur RTTI (<code>dynamic_cast</code>, <code>typeid</code>) binary size badhate hain, isliye game/embedded wale kabhi-kabhi inhe compiler flags se band kar dete hain. Ye bolna dikhata hai ki tum blindly nahi maan rahe.</p>
+  </div>
+
+  <!-- 10 -->
+  <h2 id="paradigm">10. Paradigm, multi-paradigm, templates</h2>
+  <p><strong>Paradigm</strong> = code likhne aur sochne ka style. Ek hi problem (numbers ka sum) 4 styles mein:</p>
+<pre><code><span class="c">// 1. PROCEDURAL: data + functions alag, step-by-step</span>
+<span class="k">int</span> sum(<span class="k">int</span> arr[], <span class="k">int</span> n) {
+    <span class="k">int</span> s = 0;
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; n; i++) s += arr[i];
+    <span class="k">return</span> s;
+}
+
+<span class="c">// 2. OBJECT-ORIENTED: data aur uske functions ek object mein</span>
+<span class="k">class</span> Wallet {
+    <span class="k">int</span> total = 0;                     <span class="c">// data chhupa hua (encapsulation)</span>
+<span class="k">public</span>:
+    <span class="k">void</span> add(<span class="k">int</span> x) { total += x; }
+    <span class="k">int</span> get() <span class="k">const</span> { <span class="k">return</span> total; }
+};
+
+<span class="c">// 3. GENERIC (templates): ek code, kisi bhi type ke liye</span>
+<span class="k">template</span> &lt;<span class="k">typename</span> T&gt;
+T sum(<span class="k">const</span> std::vector&lt;T&gt;&amp; v) {
+    T s{};
+    <span class="k">for</span> (<span class="k">const</span> T&amp; x : v) s += x;
+    <span class="k">return</span> s;
+}
+
+<span class="c">// 4. FUNCTIONAL-ish: functions ko values ki tarah pass karo</span>
+<span class="k">int</span> s = std::accumulate(v.begin(), v.end(), 0,
+                        [](<span class="k">int</span> a, <span class="k">int</span> b) { <span class="k">return</span> a + b; });   <span class="c">// lambda</span></code></pre>
+  <p><strong>Multi-paradigm</strong> = language ek style force nahi karti, problem ke hisaab se choose karo. Java har cheez class mein likhwata hai, C++ nahi.</p>
+
+  <h3>Templates (first principle)</h3>
+  <p>Problem: <code>max</code> function chahiye int, double, string sab ke liye. Har type ke liye same logic copy-paste karna padega. Template = <strong>compiler ke liye ek saancha</strong>:</p>
+<pre><code><span class="k">template</span> &lt;<span class="k">typename</span> T&gt;
+T myMax(T a, T b) { <span class="k">return</span> a &gt; b ? a : b; }
+
+myMax(3, 5);        <span class="c">// compiler khud int version banata hai</span>
+myMax(2.5, 1.5);    <span class="c">// compiler khud double version banata hai</span></code></pre>
+  <ul>
+    <li>Code <strong>compile time pe</strong> har type ke liye alag generate hota hai → runtime pe zero cost (zero-overhead).</li>
+    <li>Isliye templates = <strong>static (compile-time) polymorphism</strong> (Set 2 Q18, Top30 Q28 se connect).</li>
+    <li>Poora <strong>STL templates pe bana hai</strong>: <code>vector&lt;int&gt;</code>, <code>vector&lt;string&gt;</code> same template se.</li>
+  </ul>
+
+  <!-- 11 -->
+  <h2 id="general">11. General-purpose ka matlab</h2>
+  <p><strong>General-purpose</strong> = kisi ek domain ke liye nahi, <strong>kuch bhi</strong> bana sakte ho: OS, game, browser, compiler, trading system, embedded firmware.</p>
+  <p><strong>Domain-specific language (DSL)</strong> = ek specific kaam ke liye bani:</p>
+  <ul>
+    <li><strong>SQL</strong> → database query</li>
+    <li><strong>HTML/CSS</strong> → web page structure/style</li>
+    <li><strong>MATLAB</strong> → numerical computing, matrices (general programming bhi ho sakti hai, par strength maths/engineering hai)</li>
+  </ul>
+
+  <!-- 12 -->
+  <h2 id="system">12. System-level vs application-level</h2>
+  <div class="tbl"><table>
+    <tr><th></th><th>System software</th><th>Application software</th></tr>
+    <tr><td>Kiske liye</td><td>Hardware manage karna, doosre software ko platform dena</td><td>Seedha end user ke kaam ke liye</td></tr>
+    <tr><td>Examples</td><td>OS kernel, device drivers, compilers, database engines, embedded firmware</td><td>Games, browsers, Photoshop, MATLAB, Office</td></tr>
+    <tr><td>Zaroorat</td><td>Hardware access, speed, predictable memory</td><td>Features, UI, productivity</td></tr>
+  </table></div>
+  <p>C++ dono mein chalta hai: system level ke liye low-level control (pointers, no GC, no runtime), aur application level ke liye OOP + STL + templates.</p>
+
+  <!-- check -->
+  <h2 id="check">Self-check</h2>
+  <p class="muted">Pehle khud jawab socho, phir kholo.</p>
+  <details class="qa"><summary>1. Function declare kiya, kabhi define nahi kiya. Compile error ya linker error? Kyun?</summary><div>
+    <p><strong>Linker error</strong> (<code>undefined reference</code>). Compiler ko declaration se signature mil gaya, toh call compile ho gayi. Linker ko us function ka machine code kisi bhi <code>.o</code> ya library mein nahi mila.</p></div></details>
+  <details class="qa"><summary>2. Linux pe compile kiya <code>a.out</code> Windows pe kyun nahi chalega? Do reasons.</summary><div>
+    <p>(1) Executable format alag hai: Linux = ELF, Windows = PE. (2) OS se baat karne ke system calls alag hain. (Aur CPU alag ho, jaise x86 vs ARM, toh instruction set bhi alag.)</p></div></details>
+  <details class="qa"><summary>3. <code>std::sort</code> C ke <code>qsort</code> se fast kyun ho sakta hai?</summary><div>
+    <p><code>qsort</code> har comparison pe function pointer ke through call karta hai, jo inline nahi ho sakta. <code>std::sort</code> template hai, toh comparator ka type compile time pe pata hai aur compiler use inline kar deta hai.</p></div></details>
+  <details class="qa"><summary>4. Templates ko "static polymorphism" kyun kehte hain?</summary><div>
+    <p>Ek hi naam/code alag types ke saath alag kaam karta hai (polymorphism), aur kaunsa version chalega ye <strong>compile time</strong> pe decide hota hai, kyunki har type ka code compiler pehle hi generate kar deta hai. Runtime pe koi lookup (vtable) nahi.</p></div></details>
+  <details class="qa"><summary>5. C++ "purely OOP" kyun nahi hai? Do reasons.</summary><div>
+    <p><code>main()</code> aur global functions/variables class ke bahar hote hain, aur <code>int</code>, <code>char</code> jaise primitive types objects nahi hain. Tum poora program bina class ke procedural style mein bhi likh sakte ho.</p></div></details>
+  <details class="qa"><summary>6. <code>javac</code> kya banata hai, aur <code>g++</code> se kaise alag hai? JDK/JRE/JVM ka relation?</summary><div>
+    <p><code>javac</code> bytecode (<code>.class</code>) banata hai jo JVM chalata hai; <code>g++</code> machine code banata hai jo CPU directly chalata hai. JDK ⊃ JRE ⊃ JVM: JVM bytecode chalata hai, JRE = JVM + libraries, JDK = JRE + <code>javac</code> + tools.</p></div></details>
+
+  <div class="footer-nav">
+    <a href="strategy.html">← Interview Strategy</a>
+    <a href="gfg.html">GFG Questions →</a>
+  </div>
+</main>
+</body>
+</html>
