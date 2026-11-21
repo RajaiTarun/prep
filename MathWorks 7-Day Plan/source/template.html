@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7 Days to MathWorks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: header + day picker; each day = a timeline of the day, then one card per study block.
+   Quizzes never sit inline: a block's "Start quiz" opens a focused one-question-at-a-time player. */
+:root{
+  --bg:#f2f3f7; --surface:#ffffff; --ink:#171d33; --muted:#5f6780; --line:#e1e4ee;
+  --accent:#3445c8; --accent-soft:#e8eafc;
+  --hr:#b02a62; --hr-soft:#fbe8f0;
+  --good:#17784c; --good-soft:#e0f3e9; --bad:#b42318; --bad-soft:#fde5e2;
+  --code:#f6f7fb; --shadow:0 1px 2px rgba(20,25,50,.06),0 4px 16px rgba(20,25,50,.05);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1220; --surface:#171b2b; --ink:#e8eaf3; --muted:#9aa1ba; --line:#282e45;
+    --accent:#909cff; --accent-soft:#232a50; --hr:#ff86b4; --hr-soft:#3a1a2a;
+    --good:#55d494; --good-soft:#14372a; --bad:#ff8a80; --bad-soft:#3d1c1c;
+    --code:#11152a; --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1220; --surface:#171b2b; --ink:#e8eaf3; --muted:#9aa1ba; --line:#282e45;
+  --accent:#909cff; --accent-soft:#232a50; --hr:#ff86b4; --hr-soft:#3a1a2a;
+  --good:#55d494; --good-soft:#14372a; --bad:#ff8a80; --bad-soft:#3d1c1c;
+  --code:#11152a; --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 72px;display:flex;flex-direction:column;gap:18px}
+
+/* header */
+.head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.head h1{font-size:clamp(26px,4.5vw,34px);font-weight:800}
+.meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;font:600 12px/1 var(--body);background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.pill.hr{background:var(--hr-soft);color:var(--hr)}
+.meter{width:120px;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--good);transition:width .3s}
+details.how{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+details.how summary{cursor:pointer;font-weight:600}
+details.how ul{margin:8px 0 2px;padding-left:18px;color:var(--muted)}
+details.how li{margin:3px 0}
+
+/* day picker */
+.days{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px}
+.day{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 6px;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:3px;align-items:center}
+.day b{font:800 16px/1 var(--display)}
+.day small{font-size:11px;color:var(--muted);line-height:1.2}
+.day .dot{width:6px;height:6px;border-radius:9px;background:var(--accent)}
+.day.hr .dot{background:var(--hr)}
+.day .bar{width:80%;height:3px;border-radius:9px;background:var(--line);overflow:hidden}
+.day .bar i{display:block;height:100%;background:var(--good);width:0}
+.day[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.day.hr[aria-selected="true"]{border-color:var(--hr);box-shadow:inset 0 0 0 2px var(--hr)}
+@media (max-width:640px){.days{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* day header */
+.dayhead{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.dayhead .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dayhead h2{font-size:26px;font-weight:800}
+.dayhead p{margin:0;color:var(--muted);max-width:65ch}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+
+/* timeline */
+.plan{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.slot{display:grid;grid-template-columns:118px 1fr auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.slot:first-child{border-top:0}
+.slot .t{font:600 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.slot .n{font-weight:500}
+.slot.rest .n{color:var(--muted)}
+.slot.study{cursor:pointer}
+.slot.study:hover{background:var(--code)}
+.slot .r{font-size:12px;color:var(--muted);white-space:nowrap}
+.slot .r.ok{color:var(--good);font-weight:600}
+@media (max-width:520px){.slot{grid-template-columns:1fr auto}.slot .t{grid-column:1/-1}}
+
+/* block cards */
+.block{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:12px}
+.bh{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.letter{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:800 16px var(--display);background:var(--accent-soft);color:var(--accent)}
+.hrday .letter{background:var(--hr-soft);color:var(--hr)}
+.bh h3{font-size:17px}
+.bh .tm{font:12px var(--mono);color:var(--muted)}
+.bh .cnt{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
+.tasks{list-style:none;margin:0;padding:6px 10px}
+.tasks li{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:8px}
+.tasks li:hover{background:var(--code)}
+.tasks input{flex:0 0 auto;width:19px;height:19px;margin-top:2px;accent-color:var(--good);cursor:pointer}
+.tasks label{cursor:pointer;flex:1}
+.tasks li.done label{color:var(--muted);text-decoration:line-through}
+.core{display:inline-block;font:600 10px/1 var(--body);letter-spacing:.05em;text-transform:uppercase;color:#9a6700;background:#fff3c4;border-radius:4px;padding:3px 5px;margin-right:6px;vertical-align:1px}
+:root[data-theme="dark"] .core{background:#3a3110;color:#f3cf5c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .core{background:#3a3110;color:#f3cf5c}}
+.qbtn{flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:999px;padding:4px 10px 4px 4px;font:600 12px var(--body);cursor:pointer;white-space:nowrap}
+.qbtn .qn{background:var(--accent-soft);border-radius:999px;padding:3px 7px;font:600 11px var(--mono)}
+.qbtn:hover{background:var(--accent);color:#fff}
+.hrday .qbtn{border-color:var(--hr);color:var(--hr)} .hrday .qbtn .qn{background:var(--hr-soft)} .hrday .qbtn:hover{background:var(--hr);color:#fff}
+.qbtn.done{border-color:var(--good);color:var(--good)} .qbtn.done .qn{background:var(--good-soft)}
+.vtag{font:600 10px/1 var(--body);border:1px solid var(--line);border-radius:4px;padding:3px 5px;margin-left:6px;color:var(--muted)}
+body.exam li.extra{display:none}
+.game{margin:0 18px 12px;padding:10px 12px;border-radius:10px;background:var(--code);font-size:14px}
+.game b{font-family:var(--display)}
+.qbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 18px;background:var(--code);border-top:1px solid var(--line)}
+.qbar .qi{flex:1;min-width:180px}
+.qbar .qi b{display:block;font-size:14px}
+.qbar .qi span{font-size:12px;color:var(--muted)}
+.qbar .best{font:600 12px var(--mono);color:var(--good)}
+.btn{border:0;border-radius:9px;padding:9px 14px;font-weight:600;font-size:14px;cursor:pointer;background:var(--accent);color:#fff}
+.hrday .btn{background:var(--hr)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.talk{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--hr);border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start}
+.talk input{width:19px;height:19px;margin-top:3px;accent-color:var(--good)}
+.talk b{display:block;font-family:var(--display);font-size:16px;margin-bottom:2px}
+
+/* depth guide */
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.legend div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--code);font-weight:600}
+.lv{font:600 12px var(--mono);white-space:nowrap}
+.pr{font:600 11px var(--body);padding:3px 8px;border-radius:99px;white-space:nowrap}
+.pr.must{background:var(--bad-soft);color:var(--bad)} .pr.should{background:var(--accent-soft);color:var(--accent)} .pr.skip{background:var(--line);color:var(--muted)}
+
+/* quiz player */
+.overlay{position:fixed;inset:0;background:rgba(10,12,24,.55);display:none;align-items:flex-start;justify-content:center;padding:4vh 12px;z-index:10;overflow-y:auto}
+.overlay.open{display:flex}
+.player{background:var(--surface);color:var(--ink);width:100%;max-width:720px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}
+.ph{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.ph h3{font-size:16px;flex:1}
+.ph .x{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--muted);padding:4px 8px;border-radius:8px}
+.dots{display:flex;gap:4px;flex-wrap:wrap;padding:10px 18px 0}
+.dots i{width:14px;height:6px;border-radius:9px;background:var(--line)}
+.dots i.cur{background:var(--accent)} .dots i.r{background:var(--good)} .dots i.w{background:var(--bad)} .dots i.s{background:var(--muted)}
+.pb{padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-height:240px}
+.kind{font:600 11px/1 var(--body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.qtext{font-size:17px;font-weight:500;margin:0}
+pre{margin:0;font:13px/1.55 var(--mono);background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:15px}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{background:var(--good-soft);border-color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt[disabled]{cursor:default}
+.fb{border-radius:10px;padding:10px 12px;font-size:14px;background:var(--code);border:1px solid var(--line)}
+.fb b{font-family:var(--mono)}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+.steps li b{display:block}
+.pf{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
+.pf .sc{font:600 13px var(--mono);color:var(--muted)}
+.end{text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;padding:20px 0}
+.end .big{font:800 48px var(--display)}
+.foot{color:var(--muted);font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <h1>7 Days to MathWorks</h1>
+    <div class="meta">
+      <span class="pill" id="countdown">Interview: Sun 29 Nov</span>
+      <span>Overall</span><span class="meter"><i id="allbar"></i></span><b id="allpct">0%</b>
+    </div>
+  </header>
+
+  <details class="how">
+    <summary>How to use this plan</summary>
+    <ul>
+      <li>Pick today's day below. Each day has ONE theme and three study blocks (A, B, C), so there's no hourly subject switching.</li>
+      <li>Tick tasks as you finish them. Tasks marked <span class="core">Core</span> are the must-dos.</li>
+      <li>Exam today? Turn on "Exam day" to see only Core tasks (about 3 hours). Skipped tasks go to the Day 8 buffer.</li>
+      <li>Every topic has its own <b>Quiz</b> button (usually 8-10 interview-level questions). Finish the topic, then press it. One question at a time; your best score is saved on the button.</li>
+      <li>Never skip the 9:30 PM Talk-aloud. 6-9:30 PM stays free for college exams and assignments.</li>
+    </ul>
+  </details>
+
+  <nav class="days" id="days" role="tablist" aria-label="Choose a day"></nav>
+
+  <main id="view" style="display:flex;flex-direction:column;gap:16px"></main>
+
+  <p class="foot">Ticks and quiz scores are saved in this browser only. <button class="btn ghost" id="reset" type="button">Clear all</button></p>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="ptitle">
+  <div class="player">
+    <div class="ph"><h3 id="ptitle">Quiz</h3><button class="x" id="pclose" type="button" aria-label="Close quiz">&times;</button></div>
+    <div class="dots" id="pdots"></div>
+    <div class="pb" id="pbody"></div>
+    <div class="pf"><span class="sc" id="pscore"></span><span style="display:flex;gap:8px"><button class="btn ghost" id="pprev" type="button">Back</button><button class="btn" id="pnext" type="button">Next</button></span></div>
+  </div>
+</div>
+
+<script>
+const DATA = __DATA__;
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let ticks = store.get("mw7-ticks", {}) || {};
+let best = store.get("mw7-best", {}) || {};
+let examMode = !!store.get("mw7-examv", false);
+
+function el(tag, attrs, ...kids){
+  const n = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  for (const c of kids) if (c != null) n.append(c);
+  return n;
+}
+const isHR = d => d.kind === "Non-tech";
+const blockIds = (d, bi) => d.blocks[bi].items.map((_, ii) => d.id + "-" + bi + "-" + ii);
+const dayIds = d => d.blocks.flatMap((_, bi) => blockIds(d, bi)).concat(d.id + "-talk");
+const pct = ids => ids.length ? Math.round(100 * ids.filter(i => ticks[i]).length / ids.length) : 0;
+
+function refreshProgress(){
+  let all = [];
+  DATA.days.forEach(d => { const ids = dayIds(d); all = all.concat(ids);
+    const b = document.querySelector('[data-pbar="' + d.id + '"]'); if (b) b.style.width = pct(ids) + "%"; });
+  const p = pct(all);
+  document.getElementById("allbar").style.width = p + "%";
+  document.getElementById("allpct").textContent = p + "%";
+  document.querySelectorAll("[data-bcount]").forEach(n => {
+    const [did, bi] = n.dataset.bcount.split(":"); const d = DATA.days.find(x => x.id === did);
+    const ids = blockIds(d, +bi); const done = ids.filter(i => ticks[i]).length;
+    n.textContent = done + " / " + ids.length + " done"; n.classList.toggle("ok", done === ids.length);
+  });
+}
+
+function countdown(){
+  const t = new Date(2026, 10, 29), n = new Date(), today = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  const k = Math.round((t - today) / 864e5), c = document.getElementById("countdown");
+  c.textContent = k > 1 ? k + " days to go · Sun 29 Nov" : k === 1 ? "Interview tomorrow. Sleep early." : k === 0 ? "Interview day. You've got this." : "Interview: Sun 29 Nov";
+}
+
+function buildDays(){
+  const nav = document.getElementById("days");
+  DATA.days.forEach(d => {
+    const [wd, dd] = d.date.split(" ");
+    nav.append(el("button", {class: "day" + (isHR(d) ? " hr" : ""), role: "tab", type: "button", id: "tab-" + d.id, "aria-selected": "false",
+      title: "Day " + d.n + ": " + d.title, onclick: () => show(d.id)},
+      el("small", {text: "Day " + d.n}), el("b", {text: dd}), el("small", {text: wd}), el("span", {class: "dot"}),
+      el("span", {class: "bar"}, el("i", {"data-pbar": d.id}))));
+  });
+  nav.append(el("button", {class: "day", role: "tab", type: "button", id: "tab-depth", "aria-selected": "false", onclick: () => show("depth")},
+    el("small", {text: "Guide"}), el("b", {text: "Resume"}), el("small", {text: "depth"})));
+}
+
+function taskRow(id, text, core, tag, quiz){
+  const cb = el("input", {type: "checkbox", id: "cb-" + id});
+  const li = el("li", {class: core ? "" : "extra"}, cb);
+  cb.checked = !!ticks[id]; li.classList.toggle("done", cb.checked);
+  cb.addEventListener("change", () => { ticks[id] = cb.checked; li.classList.toggle("done", cb.checked); store.set("mw7-ticks", ticks); refreshProgress(); });
+  li.append(el("label", {for: "cb-" + id}, core ? el("span", {class: "core", text: "Core"}) : null, text, tag ? el("span", {class: "vtag", text: tag}) : null));
+  if (quiz) {
+    const n = DATA.quiz[quiz].length, bs = best[quiz];
+    li.append(el("button", {class: "qbtn" + (bs != null ? " done" : ""), type: "button", title: "Quiz: " + DATA.titles[quiz],
+      onclick: () => openQuiz(quiz, DATA.titles[quiz])},
+      el("span", {class: "qn", text: bs != null ? bs + "/" + n : n + " Qs"}), el("span", {text: bs != null ? "Retry" : "Quiz"})));
+  }
+  return li;
+}
+
+function renderDay(d){
+  const v = document.getElementById("view"); v.replaceChildren();
+  document.body.classList.toggle("hrday", isHR(d));
+  const ex = el("input", {type: "checkbox", id: "exam"}); ex.checked = examMode;
+  ex.addEventListener("change", () => { examMode = ex.checked; store.set("mw7-examv", examMode); document.body.classList.toggle("exam", examMode); });
+  v.append(el("section", {class: "dayhead"},
+    el("div", {class: "row"}, el("span", {class: "pill" + (isHR(d) ? " hr" : ""), text: "Day " + d.n + " · " + d.date + " · " + (isHR(d) ? "HR + Managerial" : "Technical")}),
+      el("label", {class: "switch", for: "exam"}, ex, "Exam day: Core tasks only")),
+    el("h2", {text: d.title}), el("p", {text: d.why})));
+
+  const plan = el("section", {class: "plan", "aria-label": "Today's schedule"});
+  const rest = ["Break (30 min): walk, water, no phone scrolling", "Lunch and rest (~1.5 h)"];
+  d.blocks.forEach((b, bi) => {
+    const L = "ABC"[bi];
+    const q = b.items.filter(it => it.quiz).length;
+    plan.append(el("div", {class: "slot study", tabindex: "0", onclick: () => document.getElementById("blk-" + bi).scrollIntoView({behavior: "smooth"}),
+      onkeydown: e => { if (e.key === "Enter") document.getElementById("blk-" + bi).scrollIntoView({behavior: "smooth"}); }},
+      el("span", {class: "t", text: b.time}), el("span", {class: "n", text: "Block " + L + ": " + b.name + (q ? "  ·  quiz of " + q : "")}),
+      el("span", {class: "r", "data-bcount": d.id + ":" + bi})));
+    if (bi < d.blocks.length - 1) plan.append(el("div", {class: "slot rest"}, el("span", {class: "t", text: ""}), el("span", {class: "n", text: rest[bi]}), el("span")));
+  });
+  plan.append(el("div", {class: "slot rest"}, el("span", {class: "t", text: "6:00 - 9:30 PM"}), el("span", {class: "n", text: "College: exams and assignments"}), el("span")));
+  plan.append(el("div", {class: "slot rest"}, el("span", {class: "t", text: "9:30 - 9:55 PM"}), el("span", {class: "n", text: "Talk-aloud (below)"}), el("span")));
+  v.append(plan);
+
+  d.blocks.forEach((b, bi) => {
+    const ul = el("ul", {class: "tasks"});
+    b.items.forEach((it, ii) => ul.append(taskRow(d.id + "-" + bi + "-" + ii, it.x, it.c, it.tag, it.quiz)));
+    const card = el("article", {class: "block", id: "blk-" + bi},
+      el("div", {class: "bh"}, el("span", {class: "letter", text: "ABC"[bi]}),
+        el("div", null, el("h3", {text: b.name}), el("span", {class: "tm", text: b.time})),
+        el("span", {class: "cnt"}, el("span", {"data-bcount": d.id + ":" + bi}))),
+      ul);
+    if (b.game) card.append(el("div", {class: "game"}, el("b", {text: "Game: "}), b.game));
+    const qk = b.items.map(it => it.quiz).filter(Boolean);
+    if (qk.length) {
+      const tq = qk.reduce((a, k) => a + DATA.quiz[k].length, 0), done = qk.filter(k => best[k] != null).length;
+      card.append(el("div", {class: "qbar"},
+        el("div", {class: "qi"}, el("b", {text: "Topic quizzes: " + done + " of " + qk.length + " done"}),
+          el("span", {text: tq + " questions in this block. Finish a topic, then press its Quiz button."}))));
+    }
+    v.append(card);
+  });
+
+  const tid = d.id + "-talk", tcb = el("input", {type: "checkbox", id: "cb-" + tid}); tcb.checked = !!ticks[tid];
+  tcb.addEventListener("change", () => { ticks[tid] = tcb.checked; store.set("mw7-ticks", ticks); refreshProgress(); });
+  v.append(el("section", {class: "talk"}, tcb, el("label", {for: "cb-" + tid},
+    el("b", {text: "9:30 PM Talk-aloud (25 min, never skip)"}), d.talk, " Record on your phone, listen once.")));
+  refreshProgress();
+}
+
+function renderDepth(){
+  document.body.classList.remove("hrday");
+  const v = document.getElementById("view"); v.replaceChildren();
+  const rows = DATA.depth.map(r => el("tr", null, el("td", null, el("b", {text: r[0]})), el("td", {class: "lv", text: r[1]}),
+    el("td", null, el("span", {class: "pr " + (r[2] === "Must" ? "must" : r[2] === "Skip" ? "skip" : "should"), text: r[2]})), el("td", {text: r[3]}), el("td", {text: r[4]})));
+  v.append(el("section", {class: "dayhead"}, el("h2", {text: "Resume: what to cover, and how deep"}),
+    el("p", {text: "You can't do everything, so don't. Go deep where seniors were grilled (POSIX shell, MerchFlow's checkout, OOPS) and stay at L1 on the rest. Never claim more than your level."})),
+    el("div", {class: "legend"},
+      el("div", null, el("b", {text: "L1  "}), "What it is and why you used it, in 30 seconds."),
+      el("div", null, el("b", {text: "L2  "}), "How it works and the trade-offs; you can draw it."),
+      el("div", null, el("b", {text: "L3  "}), "You can write the code and survive 3 follow-ups.")),
+    el("div", {class: "tw"}, el("table", null, el("thead", null, el("tr", null, ...["Item", "Depth", "Priority", "When", "What exactly"].map(h => el("th", {text: h})))), el("tbody", null, ...rows))));
+}
+
+/* ---------- quiz player ---------- */
+const P = {key: null, qs: [], i: 0, res: []};
+const KIND = {mcq: "Multiple choice", out: "Predict the output", bug: "Find the bug", chain: "Interviewer follow-up chain"};
+function openQuiz(key, name){
+  P.key = key; P.full = true; P.qs = DATA.quiz[key]; P.i = 0; P.res = P.qs.map(() => ({state: null, pick: null, rev: 0}));
+  document.getElementById("ptitle").textContent = name;
+  document.getElementById("overlay").classList.add("open"); document.body.style.overflow = "hidden";
+  drawQ(); document.getElementById("pnext").focus();
+}
+function closeQuiz(){
+  document.getElementById("overlay").classList.remove("open"); document.body.style.overflow = "";
+  const cur = document.querySelector(".day[aria-selected='true']"); if (cur) show(cur.id.slice(4), true);
+}
+function score(){ return P.res.filter(r => r.state === "r").length; }
+function drawDots(){
+  const box = document.getElementById("pdots"); box.replaceChildren();
+  P.res.forEach((r, i) => box.append(el("i", {class: i === P.i ? "cur" : r.state || ""})));
+  document.getElementById("pscore").textContent = "Question " + Math.min(P.i + 1, P.qs.length) + " of " + P.qs.length + "  ·  score " + score();
+}
+function drawQ(){
+  const body = document.getElementById("pbody"); body.replaceChildren();
+  const next = document.getElementById("pnext"), prev = document.getElementById("pprev");
+  prev.style.visibility = P.i > 0 && P.i < P.qs.length ? "visible" : "hidden";
+  if (P.i >= P.qs.length) { drawEnd(); return; }
+  const q = P.qs[P.i], r = P.res[P.i];
+  next.textContent = P.i === P.qs.length - 1 ? "Finish" : (r.state ? "Next" : "Skip");
+  body.append(el("span", {class: "kind", text: KIND[q.t]}), el("p", {class: "qtext", text: q.q}));
+  if (q.code) body.append(el("pre", {text: q.code}));
+  if (q.t === "mcq") {
+    const box = el("div", {class: "opts"});
+    q.opts.forEach((o, oi) => {
+      const b = el("button", {class: "opt", type: "button", text: String.fromCharCode(65 + oi) + ".  " + o});
+      if (r.state) { b.disabled = true; if (oi === q.ans) b.classList.add("right"); else if (oi === r.pick) b.classList.add("wrong"); }
+      b.addEventListener("click", () => { if (r.state) return; r.pick = oi; r.state = oi === q.ans ? "r" : "w"; drawQ(); });
+      box.append(b);
+    });
+    body.append(box);
+    if (r.state) body.append(el("div", {class: "fb"}, el("b", {text: r.state === "r" ? "Correct. " : "Not quite. "}), q.why));
+  } else if (q.t === "chain") {
+    const ol = el("ol", {class: "steps"});
+    q.steps.forEach((s, si) => {
+      if (si > r.rev) return;
+      const li = el("li", null, el("b", {text: "“" + s.q + "”"}));
+      if (si < r.rev || r.state) li.append(el("div", {class: "fb", text: "Model answer: " + s.a}));
+      ol.append(li);
+    });
+    body.append(el("p", {class: "kind", text: "Answer each one out loud before revealing.", style: "text-transform:none;letter-spacing:0"}), ol);
+    if (!r.state) {
+      const last = r.rev === q.steps.length - 1;
+      body.append(el("button", {class: "btn ghost", type: "button", text: last ? "Show model answer" : "Show model answer + next follow-up",
+        onclick: () => { if (last) r.state = "r"; else r.rev++; drawQ(); }}));
+    }
+  } else {
+    if (!r.rev) {
+      body.append(el("button", {class: "btn ghost", type: "button", text: q.t === "bug" ? "I've spotted it: reveal" : "I've said my answer: reveal", onclick: () => { r.rev = 1; drawQ(); }}));
+    } else {
+      body.append(el("div", {class: "fb"}, el("b", {text: (q.t === "bug" ? "Bug: " : "Output: ") + q.ans}), el("div", {text: q.why, style: "margin-top:6px"})));
+      if (!r.state) body.append(el("div", {style: "display:flex;gap:8px;flex-wrap:wrap"},
+        el("button", {class: "opt", type: "button", text: "I got it right", onclick: () => { r.state = "r"; drawQ(); }}),
+        el("button", {class: "opt", type: "button", text: "I missed it", onclick: () => { r.state = "w"; drawQ(); }})));
+      else body.append(el("div", {class: "kind", text: r.state === "r" ? "Marked: got it" : "Marked: missed, revise this one", style: "text-transform:none;letter-spacing:0"}));
+    }
+  }
+  drawDots();
+}
+function drawEnd(){
+  const s = score(), n = P.qs.length;
+  if (P.full && (best[P.key] == null || s > best[P.key])) { best[P.key] = s; store.set("mw7-best", best); }
+  const missed = P.res.map((r, i) => r.state === "r" ? null : i).filter(i => i != null);
+  const body = document.getElementById("pbody");
+  body.append(el("div", {class: "end"}, el("span", {class: "kind", text: "Topic quiz done"}), el("span", {class: "big", text: s + " / " + n}),
+    el("p", {style: "margin:0;color:var(--muted)", text: s === n ? "Perfect. On to the next topic." : s >= n * 0.7 ? "Good. Revisit the ones you missed tonight." : "Re-read this topic, then try again."}),
+    missed.length ? el("button", {class: "btn", type: "button", text: "Retry the " + missed.length + " I missed", onclick: () => {
+      P.full = false; P.qs = missed.map(i => P.qs[i]); P.res = P.qs.map(() => ({state: null, pick: null, rev: 0})); P.i = 0; drawQ(); }}) : null));
+  document.getElementById("pnext").textContent = "Close";
+  drawDots();
+}
+document.getElementById("pnext").addEventListener("click", () => { if (P.i >= P.qs.length) { closeQuiz(); return; } P.i++; drawQ(); });
+document.getElementById("pprev").addEventListener("click", () => { if (P.i > 0) { P.i--; drawQ(); } });
+document.getElementById("pclose").addEventListener("click", closeQuiz);
+document.getElementById("overlay").addEventListener("click", e => { if (e.target.id === "overlay") closeQuiz(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("overlay").classList.contains("open")) closeQuiz(); });
+
+/* ---------- routing ---------- */
+function show(id, keepScroll){
+  document.querySelectorAll(".day").forEach(t => t.setAttribute("aria-selected", t.id === "tab-" + id ? "true" : "false"));
+  const y = window.scrollY;
+  if (id === "depth") renderDepth(); else renderDay(DATA.days.find(d => d.id === id));
+  store.set("mw7-tab", id);
+  if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+  if (keepScroll) window.scrollTo(0, y);
+}
+function startTab(){
+  const h = location.hash.slice(1);
+  if (h === "depth" || DATA.days.some(d => d.id === h)) return h;
+  const n = new Date(), map = {21:"d1",22:"d2",23:"d3",24:"d4",25:"d5",26:"d6",27:"d7",28:"d8"};
+  if (n.getFullYear() === 2026 && n.getMonth() === 10 && map[n.getDate()]) return map[n.getDate()];
+  return store.get("mw7-tab", "d1");
+}
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (h === "depth" || DATA.days.some(d => d.id === h)) show(h); });
+document.getElementById("reset").addEventListener("click", () => { ticks = {}; best = {}; store.set("mw7-ticks", ticks); store.set("mw7-best", best); show(startTab()); });
+document.body.classList.toggle("exam", examMode);
+buildDays(); countdown(); show(startTab());
+</script>
+</body>
+</html>

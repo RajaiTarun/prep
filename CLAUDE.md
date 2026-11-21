@@ -16,6 +16,10 @@ Remote: https://github.com/RajaiTarun/prep (branch `main`).
 - `MathWorks C++ Gaps and Study Plan.pdf`: the C++ gap analysis (what seniors were asked that is not yet studied). Same content is in section 10 of `context.md`.
 - `MathWorks Interview Prep.xlsx`: offline copy of the final workbook. Tabs: Overview, Prep Plan (round-wise, with Status dropdowns), Interview Reports (12), Question Bank (107), Senior Reviews (39), plus a helper "Dropdown options" tab. Read it with openpyxl or pandas when you need exact cell content.
 - `CppNuts Playlist MathWorks Watch Order.pdf`: offline copy of the video watch-order doc (High / Medium / Low batches). The same content is in section 8 of `context.md`.
+- `MathWorks 7-Day Plan/`: the final 7-day timetable (Sat 21 to Sat 28 Nov 2026, interview Sun 29 Nov). See section 11 of `context.md`.
+  - `index.html`: open in a browser. Day picker, a daily schedule, 3 study blocks per day with tickable tasks (Core / Extra, plus an "Exam day: Core only" switch), a 9:30 PM Talk-aloud, a Resume-depth guide, and **67 per-topic quizzes (525 questions)** in a one-question-at-a-time player. Ticks and best scores are saved in that browser's localStorage only.
+  - `MathWorks 7-Day Timetable.xlsx`: offline copy with tabs Week Overview (Done % formulas), Timetable Checklist (Done checkboxes), Quizzes (all 525, with Day / Block / Topic columns), Resume Depth.
+  - `source/`: how to regenerate both. Edit `build.py` (days, tasks, depth table), `topics.py` (per-topic quizzes; `R(k, i)` reuses a question from `build.py` / `extra.py`), `extra.py` (older shared question bank) or `template.html` (page design). Then run `python3 source/build.py` (writes `index.html`) and `python3 source/make_xlsx.py` (needs openpyxl; writes the .xlsx). Every C/C++, fork() and Node.js output answer was compiled and run to verify it: re-verify any new or changed output question the same way.
 - If the xlsx and context.md ever disagree, ask the user which one is newer.
 
 ## Who this is for

@@ -306,7 +306,8 @@ Fit with the plan: Day 1 = H1, H2, H3, H5; Day 2 = H4, H6; Medium in the daily w
 - Open question left in the video doc: should dynamic_cast move from Medium to High?
 - Personal details the candidate must fill in themselves: a real missed deadline, critical feedback, 2 weaknesses, a teammate conflict, the location choice and reasons, 10th/12th marks.
 - The links in this file are private to the original owner unless shared.
-- Candidate still has to practise the notepad-coding items in section 10C and the OS items.
+- Candidate still has to practise the notepad-coding items in section 10C and the OS items. (All of these are now scheduled in the 7-day plan, section 11.)
+- End-semester exam dates are not known yet. The plan uses an "Exam day: Core only" switch; if the dates are shared, move the heavy tech days away from them.
 
 ---
 
@@ -357,3 +358,37 @@ Java (GC, string pool, reflection; the plan says not to claim Java); exceptions,
 - Struct: padding and struct vs class done; left: C struct vs C++ struct, `->` vs `.` in output questions.
 
 **Suggested order:** finish own list, then A1 to A6 (about 3 h), then A7 (pointer output drills), then B (notepad coding), then C (OS).
+
+
+---
+
+## 11. Final 7-day timetable (built 2026-11-21; interview Sun 29 Nov 2026)
+
+**Why it exists:** with about a week left plus end-sem exams and assignments, the old hourly timetable switched subjects too often and caused confusion. The candidate asked for: one subject at a time, extra weight on HR + Managerial, the right depth for the resume's "Familiar" tech, a checklist to tick, and interview-level quizzes/puzzles after every topic so it isn't boring.
+
+**Files:** `MathWorks 7-Day Plan/index.html` (interactive page), `MathWorks 7-Day Timetable.xlsx` (same content as a workbook), `source/` (generators). Live copies (owner-only unless shared): page https://claude.ai/artifact/Jj5o2ETcWo1aKYB13nqyvc and sheet https://claude.ai/artifact/Hg4xGdjGdXrGZoY5Q1rwsS.
+
+**Rules of the plan**
+- One theme per day, 3 deep blocks: 9:00-11:30, 12:00-1:30, 3:00-5:30. 6:00-9:30 PM is left free for college (exams, assignments).
+- 9:30-9:55 PM Talk-aloud every night (one answer + one story + one concept explained simply, recorded on the phone). Never skipped, even on exam days.
+- "Exam day" switch shows only Core tasks (~3 h). Skipped tasks move to the Day 8 buffer.
+- Each study topic has its own quiz button (mostly 8-10 questions): MCQ, predict-the-output, find-the-bug, interviewer follow-up chains, puzzles.
+
+| Day | Date | Type | Theme |
+|---|---|---|---|
+| 1 | Sat 21 (from 1 PM) | Non-tech | MathWorks + EDG + location; journey, "Tell me about yourself", motivation answers, questions to ask |
+| 2 | Sun 22 | Tech | OOPS: polymorphism / abstract / vtable / virtual dtor / casts; special members + String class; static, friend, const, lambdas, struct, namespace |
+| 3 | Mon 23 | Tech | Pointers + memory: precedence drills, malloc/new, 2D array to heap, Vector in C, function pointers + padding; smart pointers, RAII, printf internals, int/float storage |
+| 4 | Tue 24 | Non-tech | 11 STAR stories, traits (2 + 2), manager situations, no-internship / PPO, mock HR #1 |
+| 5 | Wed 25 | Tech | OS + POSIX shell: fork/exec/wait, pipe code in C, dup/dup2, shell walk-through, signals, history deque; sync/deadlock, virtual memory, threads vs processes |
+| 6 | Thu 26 | Tech | Projects: MerchFlow (HLD, checkout lock / idempotency / Saga, DBs, cache / rate limiter / JWT), Node.js, RabbitMQ, Express/REST/Mongo, design patterns; Kafka-style log (replication, Raft, epochs, CAP, gRPC), LLD + SQL |
+| 7 | Fri 27 | Tech | DSA (only problems seniors were asked): linked lists, stacks, arrays, Linked List class, trees/heaps, backtracking, favourite DS + puzzles |
+| 8 | Sat 28 | Light | Mocks of all 3 rounds, buffer, cheat sheet, confidence quiz, sleep by 11 |
+
+**Resume depth guide** (L1 = 30-sec what/why; L2 = how it works + trade-offs + draw it; L3 = write code and survive 3 follow-ups):
+POSIX shell L3 (Must) - MerchFlow L2, checkout L3 (Must) - Kafka log L2, own part L3 (Must) - C++ L3 (Must) - Redis L2 (Must) - Design patterns L2, Strategy + Observer L3 (Must) - SQL L2 - Node.js L2 - PostgreSQL L2 - RabbitMQ L1-L2 - LLD/HLD L2 - Express/REST L1 - MongoDB L1 - Coursework L1 (if time) - Java / Python / Docker / Kubernetes: skip, say so honestly.
+
+**Quizzes:** 67 topics, 525 questions. Every code-output answer (C/C++ with g++ -std=c++17, fork() programs, Node.js event-loop order) was compiled and run. Notable verified traps: virtual call in a base constructor prints the base version; default args on virtual functions come from the static type (prints D1); `printf("A"); fork(); printf("B\n");` prints AB twice (stdio buffer copied); a fork loop printing "-" gives 8 dashes but "-\n" on a terminal gives 6; `fork() && fork()` patterns; Node order `s n p t` (sync, nextTick, promise, timer).
+
+### Progress log
+- 2026-11-21: 7-day plan, per-topic quizzes and the workbook built and published; repo copy added under `MathWorks 7-Day Plan/`. Nothing ticked yet.
