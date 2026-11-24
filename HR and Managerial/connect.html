@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Connect to MathWorks · MathWorks HR + Managerial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+<link rel="stylesheet" href="hr.css">
+</head>
+<body>
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">MathWorks <b>HR + Managerial</b></a>
+  <nav aria-label="Pages">
+    <a href="index.html">Start here</a>
+    <a href="knowledge.html">MathWorks knowledge</a>
+    <a href="connect.html" aria-current="page">Connect to MathWorks</a>
+    <a href="hr.html">HR round</a>
+    <a href="managerial.html">Managerial round</a>
+    <a href="sources.html">Sources</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">Use the company in your answers</p>
+  <h1>Connect to MathWorks</h1>
+  <p class="lede">How to bring MathWorks facts into your HR and managerial answers, and how to link your skills, projects and resume to the JD and values, with a template for the location question and the questions to ask.</p>
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#formula">Claim → Proof → Hook</a></li>
+      <li><a href="#jd">Resume vs JD</a></li>
+      <li><a href="#values">Evidence per value</a></li>
+      <li><a href="#projects">Your 3 projects</a></li>
+      <li><a href="#location">Hyderabad or Bengaluru</a></li>
+      <li><a href="#hooks">Hook-line bank</a></li>
+      <li><a href="#ask">Questions to ask</a></li>
+      <li><a href="#dont">Do and Don't</a></li>
+      <li><a href="#gaps">Gaps to fix</a></li>
+    </ol>
+  </nav>
+
+  <div class="callout tip"><span class="tag">The one idea of this page</span>
+    <p>A good answer has <strong>three parts</strong>: a <strong>claim</strong> (what you are), <strong>proof</strong> (a real fact from your resume or life, with a number), and a <strong>hook</strong> (one short line that links it to MathWorks). Most candidates give only the claim. The hook is what makes an interviewer remember &ldquo;this person knows us&rdquo;.</p>
+  </div>
+  <h2 id="formula">1. The formula: Claim → Proof → Hook</h2>
+  <div class="tbl"><table class="dense">
+    <tr><th>Part</th><th>What to do</th><th>Example (conflict / quality)</th></tr>
+    <tr><td><strong>Claim</strong></td><td>One sentence: the point of your answer.</td><td>&ldquo;I like to be sure something works before I call it done.&rdquo;</td></tr>
+    <tr><td><strong>Proof</strong></td><td>A real event from <em>your</em> work: what <strong>you</strong> did (say &ldquo;I&rdquo;), with a number.</td><td>&ldquo;In MerchFlow's rate limiter I found a race condition, fixed it, and re-ran 50 concurrent requests to confirm.&rdquo;</td></tr>
+    <tr><td><strong>Hook</strong></td><td>One line to MathWorks: a value, a product fact or an EDG fact. Said <em>after</em> the proof.</td><td>&ldquo;That habit of verifying before shipping is why the &lsquo;pursuit of excellence&rsquo; value stood out to me, since engineers rely on MATLAB for real systems.&rdquo;</td></tr>
+  </table></div>
+  <div class="callout trap"><span class="tag">Limits on the hook</span>
+    <ul class="tight"><li>One hook per answer, maximum. Two hooks sounds rehearsed.</li><li>Use only facts from the <a href="knowledge.html">knowledge page</a>. Don't invent facts about MathWorks to sound clever.</li><li>The proof must be true. They cross-question every answer (&ldquo;why?&rdquo;, &ldquo;what exactly did you do?&rdquo;).</li></ul>
+  </div>
+  <h2 id="jd">2. Your resume vs their JD</h2>
+<p class="mini">The JD (from the placement mail and the job posting) asks for the items on the left. This is what you can honestly point to.</p>
+  <div class="tbl"><table class="dense">
+    <tr><th>What the JD / EDG page asks</th><th>Your evidence (from your resume)</th><th>Gap or caution</th></tr>
+    <tr><td>Strong programming in C, C++, Java or JavaScript</td><td>C++ (proficient): POSIX shell from scratch, Kafka-style log in C++17 + gRPC. JavaScript/Node.js (familiar): 5 MerchFlow services.</td><td>Don't claim Java/Python. Say &ldquo;C++ is my strongest, JavaScript second&rdquo;.</td></tr>
+    <tr><td>Strong domain knowledge in Computer Science</td><td>Coursework: DSA, OS, DBMS, Distributed Systems, Agentic AI. GATE CS 97.24 percentile, PGEE AIR 114, Dean's List 2025&ndash;26 (top 20%).</td><td>Strong. These numbers show you know fundamentals, so expect hard fundamentals.</td></tr>
+    <tr><td>Sound understanding of object-oriented methodologies</td><td>Shell split into ProcessExecutor, JobController, BuiltinEngine, HistoryManager. Patterns: Factory, Builder, Command, Strategy + Observer in MerchFlow.</td><td>Be ready to code one pattern on notepad.</td></tr>
+    <tr><td>Experience with MATLAB is a plus</td><td>Not on the resume.</td><td><span class='fill'>Do MATLAB Onramp (~2 h)</span> and be honest: &ldquo;I haven't used it on a project yet; I completed Onramp and &hellip;&rdquo;.</td></tr>
+    <tr><td>EDG: explore teams and transition into them</td><td>MerchFlow began with users' problems, not a tech choice; you moved across Node, Redis, RabbitMQ, Postgres, Mongo; and then systems in C++.</td><td>Have a real answer for &ldquo;which area would you explore?&rdquo;</td></tr>
+    <tr><td>EDG: build a customer perspective on complex problems</td><td>You interviewed club admins and students first (wrong sizes, missed delivery slots), and fixed stale stock counts users saw.</td><td>This is your <strong>strongest</strong> match. Use it often.</td></tr>
+    <tr><td>EDG: use agentic-AI-based tools</td><td>Coursework: Autonomous Software Engineering (Agentic AI).</td><td>Mention the course; don't claim you build agents unless you did.</td></tr>
+    <tr><td>EDG: initiative, process improvement, coach and mentor others</td><td>58-item QA checklist you wrote; approaching club admins yourself.</td><td><span class='fill'>Add a real mentoring/teaching example</span> if you have one.</td></tr>
+  </table></div>
+  <h2 id="values">3. Your evidence for each core value</h2>
+<p class="mini">Use the story, then name the value in one line. Orange blanks are details only you know. Everything else is from your resume.</p>
+  <div class="tbl"><table class="dense">
+    <tr><th>Value</th><th>Your proof</th><th>Hook line</th></tr>
+    <tr><td><strong>Continuous Improvement and the Pursuit of Excellence</strong></td><td>58-item QA checklist; the rate-limiter race condition fixed and verified with 50 concurrent requests; cache invalidated on every stock write after you found users saw stale counts; documented HLD, LLD and decisions.</td><td>&ldquo;I don't call a fix done until I can prove it, like re-running 50 concurrent requests. That matches the &lsquo;never be satisfied, things can always be improved&rsquo; idea.&rdquo;</td></tr>
+    <tr><td><strong>Respect and Invest</strong></td><td>Kafka log is a team of 2: <span class="fill">[how you split the work and helped each other]</span>. Talking to club admins and students and building around their problems.</td><td>&ldquo;I want to grow with mentors the way EDG is designed, and I enjoy helping a teammate get unstuck.&rdquo; (only if you have the example)</td></tr>
+    <tr><td><strong>Rational Workplace</strong></td><td>Architecture choices with reasons: PostgreSQL for orders (ACID), MongoDB for the catalog (varying attributes), RabbitMQ so a slow notification service can't delay checkout; fault-injection tests (6) on the log.</td><td>&ldquo;We disagreed on ideas, not people, and settled it with a test.&rdquo; Pairs with &lsquo;encourage conflict of ideas, discourage conflict between people&rsquo;.</td></tr>
+    <tr><td><strong>Learning and Self-Improvement</strong></td><td>Learnt POSIX system calls (fork, execvp, pipe, dup2, waitpid, sigaction) to build the shell; Raft + gRPC for the log; GATE CS qualified in 2024, then 97.24 percentile in 2025 (<span class="fill">[what you changed between attempts]</span>); started leading by approaching clubs yourself.</td><td>&ldquo;It's everyone's business to be a leader: I started MerchFlow by going to the clubs myself.&rdquo;</td></tr>
+    <tr><td><strong>Credibility and Integrity</strong></td><td>Honest skill levels (Proficient vs Familiar); idempotency keys so retries don't create duplicate orders; '0 acknowledged records lost' backed by 28 + 6 tests, not a guess.</td><td>&ldquo;I say what I know and what I'm still learning, and I follow through on what I commit to.&rdquo;</td></tr>
+  </table></div>
+  <div class="callout say"><span class="tag">Pick one favourite</span>
+    <p>Interviewers often ask <em>&ldquo;Which value do you relate to most?&rdquo;</em> Pick <strong>one</strong> (suggested: Continuous Improvement or Rational Workplace, because your resume has numbers for both), give one story, and say why it matters to you. One value with proof beats naming all five.</p>
+  </div>
+  <h2 id="projects">4. Your three projects, in MathWorks' language</h2>
+  <div class="tbl"><table class="dense">
+    <tr><th>Project</th><th>What MathWorks would like to hear</th><th>Hook lines you can use</th></tr>
+    <tr><td><strong>MerchFlow</strong></td><td>You started from <strong>users' problems</strong> (customer focus), built it as five services with reasons, tested against a checklist, and found and fixed real bugs (quality).</td><td>&ldquo;MathWorks' users are engineers; mine were students and club admins, but the habit is the same: find the real pain first.&rdquo;<br>&ldquo;The site says usability testing is part of how MathWorks builds; I did a small version of that with user interviews.&rdquo;</td></tr>
+    <tr><td><strong>POSIX shell (C++)</strong></td><td>Systems depth, careful handling of edge cases (signal-safe Ctrl+C handler), clean OO modules, and learning hard material from first principles.</td><td>&ldquo;I like understanding what is underneath a tool, which helps when a user reports a problem you have never seen.&rdquo;</td></tr>
+    <tr><td><strong>Kafka-style log (C++17, team of 2)</strong></td><td>Reliability under failure, tests that try to break the system, teamwork. <strong>Say clearly what YOU built</strong> vs your teammate.</td><td>&ldquo;I tested crashes on purpose; 6 fault-injection tests showed 0 acknowledged records lost. When engineers depend on software, that is the standard that matters.&rdquo;</td></tr>
+  </table></div>
+  <h2 id="location">5. Hyderabad or Bengaluru: build your answer</h2>
+  <div class="callout trap"><span class="tag">Rules from seniors</span>
+    <p>(1) Decide <strong>before</strong> the interview. (2) Give <strong>professional reasons only</strong>: never &ldquo;my college is here&rdquo;, hometown or friends. (3) <strong>You can't change it later</strong> (Nikhil). (4) They may show departments in both offices (Anubhav). The JAF adds that the final location depends on your preference <em>and</em> business needs, so sound flexible about the second choice.</p>
+  </div>
+<p>Fill this table in (using the <a href="knowledge.html#teams">area lists</a> from the job posting). Do not copy my guesses, check which areas really interest <em>you</em>:</p>
+  <div class="tbl"><table class="dense">
+    <tr><th>Your project / skill</th><th>Closest areas listed in Hyderabad</th><th>Closest areas listed in Bangalore</th></tr>
+    <tr><td>POSIX shell, system calls, C++</td><td>Embedded software; SIMD optimisation</td><td>System software; embedded targets; compiler technologies; code infrastructure</td></tr>
+    <tr><td>Kafka log (C++17, gRPC, Raft)</td><td>Cloud computing; software engineering</td><td>Code infrastructure and architecture; software engineering; MATLAB interfaces for other languages</td></tr>
+    <tr><td>MerchFlow (Node, microservices, Redis, RabbitMQ)</td><td>Full-stack development; cloud computing; web and app development</td><td>Full-stack development; web development</td></tr>
+  </table></div>
+  <div class="script"><p><strong>Template:</strong> &ldquo;I'd prefer <span class="fill">[Hyderabad / Bengaluru]</span> because the teams there work on <span class="fill">[two areas from the list]</span>, and my <span class="fill">[project]</span> is closest to that. I'm also open to exploring other areas, which is what EDG is for.&rdquo;</p></div>
+<p class="mini">If asked &ldquo;Why not the other?&rdquo;, say you would be glad to work there too, then repeat your two reasons. Don&rsquo;t criticise the other office.</p>
+  <h2 id="hooks">6. Hook-line bank (pick 6, practise aloud)</h2>
+<ul class="tight"><li><strong>Customer:</strong> &ldquo;Engineers and scientists depend on these tools, so I want to build things that people can trust.&rdquo;</li><li><strong>Quality:</strong> &ldquo;I like measuring before I claim an improvement, like the 40% faster cache feed.&rdquo; (If asked how you measured it, be ready.)</li><li><strong>EDG:</strong> &ldquo;I don't yet know which team suits me best, and EDG is designed for exactly that: try, learn, then settle.&rdquo;</li><li><strong>Learning:</strong> &ldquo;MathWorks says at least 40 hours of training a year; I enjoy learning a new area quickly, like Raft for my event log.&rdquo;</li><li><strong>Rational:</strong> &ldquo;I'd rather settle a technical disagreement with data than with opinions.&rdquo;</li><li><strong>Integrity:</strong> &ldquo;I'll tell you straight what I know well (C++) and what I'm still learning (MATLAB).&rdquo;</li><li><strong>Leadership:</strong> &ldquo;I started MerchFlow by going to the clubs myself, which is how I understand &lsquo;everyone's business to be a leader&rsquo;.&rdquo;</li><li><strong>Long term:</strong> &ldquo;I want to be somewhere that thinks long term, since the company says its principle is to do what is best for customers and staff for the long term.&rdquo;</li><li><strong>Design:</strong> &ldquo;The site says design reviews are part of how teams work; I'd like to learn how experienced engineers review designs.&rdquo;</li><li><strong>Agentic AI:</strong> &ldquo;The EDG posting mentions agentic AI tools; my Agentic AI coursework made me curious about using them responsibly in development.&rdquo;</li></ul>
+  <h2 id="ask">7. Questions to ask them</h2>
+<p>Seniors said managers like a technical discussion (Aashrey) and that you should carry 2&ndash;3 technical questions and 1 company question. Pick based on who is in front of you:</p>
+  <div class="tbl"><table class="dense">
+    <tr><th>To whom</th><th>Question</th><th>Why it works</th></tr>
+    <tr><td>Manager / technical</td><td>How does MathWorks test MATLAB and Simulink across releases and platforms?</td><td>Quality and Excellence. Shows you read their values.</td></tr>
+    <tr><td>Manager / technical</td><td>How is C++ used in the product code, and how do teams manage changes safely over many releases?</td><td>Your strongest language; real engineering concern.</td></tr>
+    <tr><td>Manager</td><td>In EDG, how do engineers usually choose their first team, and what does a first project look like?</td><td>From the EDG page: explore and select projects.</td></tr>
+    <tr><td>Manager</td><td>How do design reviews work on your team?</td><td>The values page mentions design reviews.</td></tr>
+    <tr><td>Manager / HR</td><td>How do EDG engineers hear directly from customers? What does the Customer Experience Curriculum involve?</td><td>Part of the EDG description.</td></tr>
+    <tr><td>Manager / technical</td><td>How are agentic AI tools used in day-to-day development?</td><td>It is in the job responsibilities.</td></tr>
+    <tr><td>HR</td><td>What helps new EDG engineers succeed in their first year?</td><td>Growth mindset; safe, universal question.</td></tr>
+  </table></div>
+<p class="mini"><strong>Avoid:</strong> salary, perks first, work-from-home, &ldquo;what does MathWorks do?&rdquo;, and anything you could have read on the website in two minutes.</p>
+  <h2 id="dont">8. Do and Don't, in one list</h2>
+  <div class="tbl"><table class="dense">
+    <tr><th>Do</th><th>Don't</th></tr>
+    <tr><td><ul class="tight"><li>Answer, then add <strong>one</strong> relevant extra point (Nikhil's tip).</li><li>Say &ldquo;I&rdquo; for what you did and &ldquo;we&rdquo; only for the team (official FAQ tip).</li><li>Ask for a minute to think if a question is unusual.</li><li>Admit what you don't know, then say how you'd find out.</li><li>Keep a steady pace; think aloud online (Piyush).</li></ul></td><td><ul class="tight"><li>Recite the core values as a list.</li><li>Claim MATLAB or Java/Python experience you don't have.</li><li>Give personal reasons for location.</li><li>Mention salary, or compare offers.</li><li>Read from a screen, or use GPT during rounds (disqualification).</li><li>Give generic answers: every answer needs a real example.</li></ul></td></tr>
+  </table></div>
+  <h2 id="gaps">9. Gaps to fix this week (small, high value)</h2>
+<ul class="tight"><li><strong>MATLAB Onramp (~2 h):</strong> so &ldquo;Have you used MATLAB?&rdquo; (asked in a GfG report) gets an honest, positive answer.</li><li><strong>No internship on the resume:</strong> say it plainly, then pivot: &ldquo;I haven't done an internship yet, so I invested in projects where I had to talk to users, design the system and test it.&rdquo; Don't apologise.</li><li><strong>Know exactly what you built in the Kafka log</strong> vs your teammate. Interviewers like a clear &ldquo;my part was &hellip;&rdquo;.</li><li><strong>Pick your location and favourite value today</strong>, write both on your cheat sheet.</li></ul>
+
+  <div class="footer-nav">
+    <a href="knowledge.html">← MathWorks knowledge</a>
+    <a href="hr.html">HR round →</a>
+  </div>
+</main>
+</body>
+</html>

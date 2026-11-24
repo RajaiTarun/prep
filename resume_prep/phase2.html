@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 2: Architecture + execution flow</title>
+<link rel="stylesheet" href="posix_notes.css">
+</head>
+<body>
+<main>
+<nav class="nav"><a href="posix_notes.html">Hub</a><a href="phase1.html">Phase 1</a><span class="cur">Phase 2</span><a href="phase3.html">Phase 3</a><a href="phase4.html">Phase 4</a><span class="off">Phase 5</span><span class="off">Phase 6</span></nav>
+  <h1>Phase 2: Architecture + execution flow</h1>
+  <p class="sub">Hinglish notes. Pehle bada architecture, phir shell start se lekar failure tak ka flow, ek-ek step.</p>
+
+  <div class="goal"><b>Is phase ke baad tum ye kar paoge:</b> shell start hone se lekar har command ke khatam hone tak ka poora flow bata sako, aur ye bhi ki jab kuch fail ho jaaye to kya hota hai. <br><b>Time budget:</b> 45 min (flexible, jitna chahiye utna). <br><b>Kyun zaroori:</b> interviewer "architecture batao" ya "ek command ka poora safar batao" zaroor poochta hai. Phase 3-4 ki saari details isi ke upar baithti hain.</div>
+
+  <section id="plan2">
+    <h2>Phase 2 ka plan (ek-ek chhota step)</h2>
+    <table>
+      <tr><th>Step</th><th>Kya</th><th>Status</th></tr>
+      <tr><td>2.1</td><td>Bada architecture: kaun sa module kya karta hai aur kisko bulata hai</td><td class="done">KHATAM</td></tr>
+      <tr><td>2.2</td><td>Shell start hone par kya hota hai (boot)</td><td class="now">abhi</td></tr>
+      <tr><td>2.3</td><td>Loop ka ek round: prompt, input padhna, aur input fail hone ke raaste</td><td>baaki</td></tr>
+      <tr><td>2.4</td><td>Teen execution paths: builtin, external (fg/bg), pipeline: flow level pe</td><td>baaki</td></tr>
+      <tr><td>2.5</td><td>Control wapas kaise aata hai, aur kuch fail ho to kya hota hai</td><td>baaki</td></tr>
+    </table>
+    <p class="sub">Phase 1 mein jo diagram banaya tha wo "ek command ka decision flow" tha. Yahan hum <b>zoom out</b> karte hain (poora architecture), phir har hissa zoom in karte hain.</p>
+  </section>
+
+  <section id="s21">
+    <h2>2.1 Bada architecture: manager aur uski team</h2>
+    <p>Mere shell ka code ek <b>manager</b> aur <b>4 helpers</b> ki team jaisa hai. Manager (<code>main.cpp</code>) khud kuch execute nahi karta, wo sirf loop chalata hai, input padhta hai, parse karta hai, aur sahi helper ko kaam deta hai.</p>
+    <figure>
+      <svg viewBox="0 0 760 480" role="img" aria-label="Architecture: main.cpp on top calls four modules; BuiltinEngine uses HistoryManager and Commands; ProcessExecutor uses JobController; each module sits on system calls">
+        <defs><marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+
+        <rect class="box b-main" x="150" y="10" width="460" height="72" rx="8"/>
+        <text x="380" y="32" text-anchor="middle" class="title">main.cpp  (manager)</text>
+        <text x="380" y="52" text-anchor="middle" class="mono">REPL loop + parsing</text>
+        <text x="380" y="70" text-anchor="middle" class="small">splitCommands, tokenize, parsePipeline, signal setup</text>
+
+        <!-- 4 modules -->
+        <rect class="box b-good" x="10" y="140" width="155" height="112" rx="8"/>
+        <text x="87" y="160" text-anchor="middle" class="title">BuiltinEngine</text>
+        <text x="87" y="178" text-anchor="middle" class="small">cd pwd echo history</text>
+        <text x="87" y="196" text-anchor="middle" class="small">+ ls, search, pinfo</text>
+        <text x="87" y="218" text-anchor="middle" class="small">main calls:</text>
+        <text x="87" y="232" text-anchor="middle" class="mono">execute(tokens)</text>
+
+        <rect class="box b-warn" x="203" y="140" width="155" height="112" rx="8"/>
+        <text x="280" y="160" text-anchor="middle" class="title">HistoryManager</text>
+        <text x="280" y="178" text-anchor="middle" class="small">20-command deque</text>
+        <text x="280" y="196" text-anchor="middle" class="small">file mein save/load</text>
+        <text x="280" y="218" text-anchor="middle" class="small">main calls:</text>
+        <text x="280" y="232" text-anchor="middle" class="mono">addCommand</text>
+        <text x="280" y="246" text-anchor="middle" class="mono">saveToFile</text>
+
+        <rect class="box b-main" x="396" y="140" width="155" height="112" rx="8"/>
+        <text x="473" y="160" text-anchor="middle" class="title">ProcessExecutor</text>
+        <text x="473" y="178" text-anchor="middle" class="small">fork / exec / wait</text>
+        <text x="473" y="196" text-anchor="middle" class="small">main calls:</text>
+        <text x="473" y="210" text-anchor="middle" class="mono">execute_foreground</text>
+        <text x="473" y="224" text-anchor="middle" class="mono">execute_background</text>
+        <text x="473" y="238" text-anchor="middle" class="mono">execute_pipeline</text>
+
+        <rect class="box b-warn" x="589" y="140" width="155" height="112" rx="8"/>
+        <text x="666" y="160" text-anchor="middle" class="title">JobController</text>
+        <text x="666" y="178" text-anchor="middle" class="small">background jobs ki list</text>
+        <text x="666" y="196" text-anchor="middle" class="small">zombies reap karta hai</text>
+        <text x="666" y="218" text-anchor="middle" class="small">main calls:</text>
+        <text x="666" y="232" text-anchor="middle" class="mono">sweepCompletedJobs</text>
+
+        <!-- Commands box -->
+        <rect class="box b-good" x="10" y="286" width="155" height="50" rx="8"/>
+        <text x="87" y="308" text-anchor="middle" class="title">Commands/</text>
+        <text x="87" y="326" text-anchor="middle" class="small">LS, Search, Pinfo</text>
+
+        <!-- syscalls row -->
+        <text x="376" y="330" text-anchor="middle" class="small">OS system calls &#8595;</text>
+        <rect class="box" x="10" y="384" width="155" height="88" rx="8"/>
+        <text x="87" y="404" text-anchor="middle" class="mono">getcwd, chdir</text>
+        <text x="87" y="422" text-anchor="middle" class="mono">opendir, readdir</text>
+        <text x="87" y="440" text-anchor="middle" class="mono">stat, readlink</text>
+        <text x="87" y="458" text-anchor="middle" class="small">/proc (pinfo)</text>
+
+        <rect class="box" x="203" y="384" width="155" height="88" rx="8"/>
+        <text x="280" y="414" text-anchor="middle" class="mono">file read/write</text>
+        <text x="280" y="432" text-anchor="middle" class="small">(ifstream / ofstream)</text>
+        <text x="280" y="450" text-anchor="middle" class="small">~/.historyState.txt</text>
+
+        <rect class="box" x="396" y="384" width="155" height="88" rx="8"/>
+        <text x="473" y="404" text-anchor="middle" class="mono">fork, execvp</text>
+        <text x="473" y="422" text-anchor="middle" class="mono">waitpid</text>
+        <text x="473" y="440" text-anchor="middle" class="mono">pipe, dup2</text>
+        <text x="473" y="458" text-anchor="middle" class="mono">open, close</text>
+
+        <rect class="box" x="589" y="384" width="155" height="88" rx="8"/>
+        <text x="666" y="420" text-anchor="middle" class="mono">waitpid(-1,</text>
+        <text x="666" y="438" text-anchor="middle" class="mono">WNOHANG)</text>
+
+        <!-- main -> modules bus -->
+        <path class="ln" d="M380,82 L380,112"/>
+        <path class="ln" d="M87,112 L666,112"/>
+        <path class="ln" d="M87,112 L87,140" marker-end="url(#ahr)"/>
+        <path class="ln" d="M280,112 L280,140" marker-end="url(#ahr)"/>
+        <path class="ln" d="M473,112 L473,140" marker-end="url(#ahr)"/>
+        <path class="ln" d="M666,112 L666,140" marker-end="url(#ahr)"/>
+
+        <!-- inter-module -->
+        <path class="ln-warn" d="M165,196 L203,196" marker-end="url(#ahr)"/>
+        <text x="184" y="188" text-anchor="middle" class="small" style="font-size:9.5px">history</text>
+        <path class="ln-warn" d="M551,196 L589,196" marker-end="url(#ahr)"/>
+        <text x="570" y="188" text-anchor="middle" class="small" style="font-size:9.5px">addJob</text>
+        <path class="ln" d="M87,252 L87,286" marker-end="url(#ahr)"/>
+
+        <!-- to syscalls -->
+        <path class="ln" d="M87,336 L87,384" marker-end="url(#ahr)"/>
+        <path class="ln" d="M280,252 L280,384" marker-end="url(#ahr)"/>
+        <path class="ln" d="M473,252 L473,384" marker-end="url(#ahr)"/>
+        <path class="ln" d="M666,252 L666,384" marker-end="url(#ahr)"/>
+      </svg>
+      <figcaption>Narangi arrows = module ke andar ki dependency. <b>BuiltinEngine &rarr; HistoryManager</b> (<code>history</code> command ke liye) aur <b>ProcessExecutor &rarr; JobController</b> (background job register karne ke liye). Baaki sab <code>main.cpp</code> se seedha bulaye jaate hain.</figcaption>
+    </figure>
+
+    <h3>Har module ka sirf ek kaam</h3>
+    <table>
+      <tr><th>Module</th><th>Ek kaam</th><th>main isse kaise bulata hai</th></tr>
+      <tr><td><code>main.cpp</code></td><td>Loop, prompt, input, <code>;</code> split, tokenize, pipeline parse</td><td>(ye khud manager hai)</td></tr>
+      <tr><td><code>BuiltinEngine</code></td><td>Builtin commands shell ke andar chalana</td><td><code>builtin.execute(tokens)</code>. <code>true</code> mila to builtin tha, <code>false</code> to nahi</td></tr>
+      <tr><td><code>ProcessExecutor</code></td><td>Child banake external command chalana</td><td><code>execute_foreground</code>, <code>execute_background</code>, <code>execute_pipeline</code></td></tr>
+      <tr><td><code>JobController</code></td><td>Background jobs ka hisaab aur zombie reaping</td><td><code>sweepCompletedJobs()</code> har loop ke top par</td></tr>
+      <tr><td><code>HistoryManager</code></td><td>Pichhle 20 commands yaad rakhna aur file mein save karna</td><td><code>addCommand</code>, <code>saveToFile</code></td></tr>
+      <tr><td><code>Commands/</code></td><td><code>ls</code>, <code>search</code>, <code>pinfo</code> ki apni implementation</td><td>BuiltinEngine ke andar se (main seedha nahi)</td></tr>
+    </table>
+
+    <h3>Dependencies (kaun kisko use karta hai), code se verified</h3>
+    <ol>
+      <li><b>Sab 4 objects <code>main()</code> mein bante hain</b> (lines 241-244): <code>JobController</code>, <code>ProcessExecutor</code>, <code>HistoryManager</code>, <code>BuiltinEngine</code>.</li>
+      <li><b>BuiltinEngine &rarr; HistoryManager:</b> BuiltinEngine ko HistoryManager ka <b>reference</b> milta hai (<code>BuiltinEngine builtin(homeDir, historyManager)</code>), kyunki <code>history</code> command ko pichhle commands dikhane hain.</li>
+      <li><b>ProcessExecutor &rarr; JobController:</b> <code>execute_background</code> ko JobController <b>parameter</b> mein milta hai, taaki wo naye job ko register (<code>addJob</code>) kar sake. Foreground aur pipeline ko JobController ki zarurat nahi.</li>
+      <li><b>BuiltinEngine &rarr; Commands/:</b> <code>ls</code>, <code>search</code>, <code>pinfo</code> ke liye BuiltinEngine har baar ek naya <code>LSCommand</code> / <code>SearchCommand</code> / <code>PinfoCommand</code> object banata hai aur uska <code>execute</code> chalata hai.</li>
+    </ol>
+
+    <h3>Do cheezein jo seedha bolni chahiye (honest)</h3>
+    <ul>
+      <li><b>Parser alag class nahi hai.</b> <code>splitCommands</code>, <code>tokenize</code>, <code>parsePipeline</code> <code>main.cpp</code> ke free functions hain. Struct <code>CommandStage</code> <code>ProcessExecutor.h</code> mein define hai aur parser use bhi karta hai.</li>
+      <li><b>README ka diagram</b> mostly sahi hai, par usme <code>exit</code> ko BuiltinEngine ke andar dikhaya hai. Asli code mein <code>exit</code> <code>main.cpp</code> (line 302) mein pehchana jaata hai, BuiltinEngine tak pahunchta hi nahi.</li>
+    </ul>
+
+    <h3>Ek line mein</h3>
+    <blockquote>Manager (<code>main.cpp</code>) loop chalata hai aur parse karta hai; kaam 4 helpers ko deta hai: builtins, process execution, job tracking aur history. Do dependencies hain: BuiltinEngine &rarr; HistoryManager aur ProcessExecutor &rarr; JobController.</blockquote>
+
+    <h3>Check karo</h3>
+    <ol>
+      <li><code>BuiltinEngine</code> ko <code>HistoryManager</code> kyun chahiye?</li>
+      <li><code>execute_background</code> ko <code>JobController</code> kyun milta hai, par <code>execute_foreground</code> ko nahi?</li>
+    </ol>
+    <h3>Check ke jawab (tumhare jawab + sudhaar)</h3>
+    <p><b>1. BuiltinEngine ko HistoryManager kyun?</b> Tumhara idea sahi: <code>history</code> command ko pichhle commands dikhane hain. Ek detail galat thi: <code>history</code> command <b>file nahi padhta</b>. Wo HistoryManager ke <b>memory wale deque</b> (<code>historyLedger</code>) se padhta hai. File sirf <b>do jagah</b> use hoti hai: shell <b>start</b> pe load (constructor), aur <b>band</b> hone pe save (<code>saveToFile</code>).</p>
+    <p>Interview-level baat: BuiltinEngine ke paas HistoryManager ka <b>reference</b> hai, copy nahi. Isse jab <code>main</code> naya command <code>addCommand</code> karta hai, BuiltinEngine ko wahi updated history dikhti hai. Copy hoti to purani history hi dikhti.</p>
+    <p><b>2. <code>execute_background</code> ko JobController kyun?</b> Tumhara jawab bilkul sahi. Thoda aur: background job ko register karna padta hai (pid, command text, job id) taaki JobController baad mein use reap kare aur <code>[ 1 ] done ...</code> print kare. Foreground mein parent turant <code>waitpid</code> karta hai, to track karne ko kuch bachta hi nahi.</p>
+  </section>
+
+
+  <section id="s22">
+    <h2>2.2 Shell start hone par kya hota hai (boot)</h2>
+    <p>Jab tum <code>./a.out</code> chalate ho, <code>main()</code> loop se <b>pehle</b> ye kaam hote hain (<code>main.cpp</code> lines 230-245). Ye sirf <b>ek baar</b> hota hai.</p>
+    <figure>
+      <svg viewBox="0 0 760 440" role="img" aria-label="Boot sequence of main(): signals, names, objects, history load, banner, then the while loop">
+        <defs><marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+        <text x="220" y="14" text-anchor="middle" class="title">main() ke start mein, sirf ek baar</text>
+        <text x="580" y="14" text-anchor="middle" class="title">kyun</text>
+
+        <rect class="box b-warn" x="40" y="26" width="360" height="44" rx="8"/>
+        <text x="220" y="46" text-anchor="middle" class="title">1. SIGINT handler lagao</text>
+        <text x="220" y="62" text-anchor="middle" class="mono">sigaction(SIGINT, flag handler)</text>
+        <text x="430" y="53" class="small">Ctrl+C se shell na mare (sirf flag set hota hai)</text>
+
+        <rect class="box b-warn" x="40" y="84" width="360" height="44" rx="8"/>
+        <text x="220" y="104" text-anchor="middle" class="title">2. SIGTSTP ignore karo</text>
+        <text x="220" y="120" text-anchor="middle" class="mono">signal(SIGTSTP, SIG_IGN)</text>
+        <text x="430" y="111" class="small">Ctrl+Z se shell freeze na ho</text>
+
+        <rect class="box" x="40" y="142" width="360" height="44" rx="8"/>
+        <text x="220" y="162" text-anchor="middle" class="title">3. Prompt ki details</text>
+        <text x="220" y="178" text-anchor="middle" class="mono">hostName, userName, homeDir</text>
+        <text x="430" y="163" class="small">gethostname, getlogin / getpwuid,</text>
+        <text x="430" y="177" class="small">getenv("HOME")</text>
+
+        <rect class="box b-main" x="40" y="200" width="360" height="44" rx="8"/>
+        <text x="220" y="220" text-anchor="middle" class="title">4. JobController + ProcessExecutor</text>
+        <text x="220" y="236" text-anchor="middle" class="mono">objects bante hain</text>
+        <text x="430" y="227" class="small">job id 1 se shuru hota hai</text>
+
+        <rect class="box b-warn" x="40" y="258" width="360" height="44" rx="8"/>
+        <text x="220" y="278" text-anchor="middle" class="title">5. HistoryManager(home)</text>
+        <text x="220" y="294" text-anchor="middle" class="mono">~/.historyState.txt load</text>
+        <text x="430" y="279" class="small">pichhle commands, sirf last 20 rakhta hai;</text>
+        <text x="430" y="293" class="small">file nahi hai to khali deque</text>
+
+        <rect class="box b-good" x="40" y="316" width="360" height="44" rx="8"/>
+        <text x="220" y="336" text-anchor="middle" class="title">6. BuiltinEngine(home, history)</text>
+        <text x="220" y="352" text-anchor="middle" class="mono">history ka reference</text>
+        <text x="430" y="337" class="small">homeDir (cd, cd ~), prevDir = "" (cd -),</text>
+        <text x="430" y="351" class="small">history ke liye reference</text>
+
+        <rect class="box b-main" x="40" y="374" width="360" height="44" rx="8"/>
+        <text x="220" y="394" text-anchor="middle" class="title">7. welcome() banner</text>
+        <text x="220" y="410" text-anchor="middle" class="mono">phir while (1) loop shuru</text>
+
+        <path class="ln" d="M220,70 L220,84" marker-end="url(#ahb)"/>
+        <path class="ln" d="M220,128 L220,142" marker-end="url(#ahb)"/>
+        <path class="ln" d="M220,186 L220,200" marker-end="url(#ahb)"/>
+        <path class="ln" d="M220,244 L220,258" marker-end="url(#ahb)"/>
+        <path class="ln" d="M220,302 L220,316" marker-end="url(#ahb)"/>
+        <path class="ln" d="M220,360 L220,374" marker-end="url(#ahb)"/>
+      </svg>
+      <figcaption>Ye sab <code>main.cpp</code> lines 230-245 hain. Loop (<code>while (1)</code>) line 247 se shuru hota hai.</figcaption>
+    </figure>
+    <h3>Har step kyun</h3>
+    <table>
+      <tr><th>Step</th><th>Kya hota hai</th><th>Kyun</th></tr>
+      <tr><td>1-2</td><td><code>sigaction(SIGINT, ...)</code> aur <code>signal(SIGTSTP, SIG_IGN)</code></td><td>Terminal pe Ctrl+C / Ctrl+Z dabane par OS signal bhejta hai. Default mein shell mar jaata ya freeze ho jaata. Shell ko zinda rehna hai. <b>Detail Phase 3-4 mein</b>, abhi bas itna: shell ko apne aap ko protect karna hai</td></tr>
+      <tr><td>3</td><td><code>gethostname</code>, <code>getlogin</code> (ya <code>getpwuid</code>), <code>getenv("HOME")</code></td><td>Prompt <code>&lt;user@host:~/dir&gt; :</code> ke liye</td></tr>
+      <tr><td>4</td><td><code>JobController</code> (job id 1 se shuru), <code>ProcessExecutor</code></td><td>Background jobs aur process chalane ke liye taiyar</td></tr>
+      <tr><td>5</td><td><code>HistoryManager(home)</code></td><td>Path banta hai <code>$HOME/.historyState.txt</code>. Constructor <code>loadFromFile()</code> chalata hai: file nahi hai to khali deque; hai to sirf <b>last 20</b> lines rakhta hai</td></tr>
+      <tr><td>6</td><td><code>BuiltinEngine(home, historyManager)</code></td><td><code>homeDir</code> yaad rakhta hai (<code>cd</code> aur <code>cd ~</code> ke liye), <code>prevDir = ""</code> (<code>cd -</code> ke liye), aur history ka reference</td></tr>
+      <tr><td>7</td><td><code>welcome()</code>, phir <code>while (1)</code></td><td>Banner dikhao, loop shuru</td></tr>
+    </table>
+
+    <h3>Ek important baat</h3>
+    <p>History file se <b>do baar</b> judti hai: <b>start</b> pe load, <b>exit</b> pe save (Ctrl+D ya <code>exit</code> command). Beech mein sab kuch memory ke deque mein hota hai. Isiliye agar shell crash ho jaaye ya <code>kill</code> ho jaaye, us session ki history save nahi hogi.</p>
+
+    <h3>Ek line mein</h3>
+    <blockquote>Shell start hone par signals set hote hain, prompt ki details nikalti hain, 4 objects bante hain (history purani file se load hoti hai), banner dikhta hai, aur phir loop shuru hota hai.</blockquote>
+
+    <h3>Check karo</h3>
+    <ol>
+      <li>Startup mein signals kyun set kiye gaye? (apne words mein, ek-do line)</li>
+      <li>History file <b>kab</b> padhi jaati hai aur <b>kab</b> likhi jaati hai? Aur <code>history</code> command chalne par file padhi jaati hai?</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POSIX Shell: Interview Notes</title>
+<link rel="stylesheet" href="posix_notes.css">
+</head>
+<body>
+<main>
+<nav class="nav"><span class="cur">Hub</span><a href="phase1.html">Phase 1</a><a href="phase2.html">Phase 2</a><a href="phase3.html">Phase 3</a><a href="phase4.html">Phase 4</a><span class="off">Phase 5</span><span class="off">Phase 6</span></nav>
+  <h1>POSIX Shell: Interview Notes</h1>
+  <p class="sub">Mera apna C++ shell (resume_prep/posix/). Hinglish notes, har phase ka alag page.</p>
+
+  <section id="progress">
+    <h2>Progress tracker</h2>
+    <table>
+      <tr><th>Phase</th><th>Kya</th><th>Status</th></tr>
+      <tr><td><a href="phase1.html">1. Project ko scratch se samajhna</a></td><td>Shell kya hai, features, components, Enter flow, fork + exec, pitch</td><td class="done">KHATAM</td></tr>
+      <tr><td><a href="phase2.html">2. Architecture + execution flow</a></td><td>Poora flow, diagrams, failure paths</td><td class="now">chal raha hai (2.1)</td></tr>
+      <tr><td><a href="phase3.html">3. Components</a></td><td>Ek-ek component (zombie pehle se padha)</td><td>baaki (partial)</td></tr>
+      <tr><td><a href="phase4.html">4. Code walkthrough + dry runs</a></td><td>Asli code, system calls (wait/waitpid pehle se padha)</td><td>baaki (partial)</td></tr>
+      <tr><td>5. MathWorks Q&amp;A</td><td>Interactive interview practice</td><td>baaki</td></tr>
+      <tr><td>6. Final revision + mock</td><td>Final pitch, one-page revision, mock</td><td>baaki</td></tr>
+    </table>
+    <p class="sub">Time ki tension nahi, 7+ ghante theek hain. Ek baar mein ek chhoti cheez, aur "samajh gaya" ke baad hi aage.</p>
+  </section>
+
+  <section id="plan">
+    <h2>Plan: har phase mein kya aata hai</h2>
+    <table>
+      <tr><th>Phase</th><th>Tum kya kar paoge</th></tr>
+      <tr><td>1</td><td>Project ko 1-2 min mein samjha sako</td></tr>
+      <tr><td>2</td><td>Shell start se failure tak ka flow samjha sako</td></tr>
+      <tr><td>3</td><td>Har component ka kaam, input/output, aur "kyun hai" bata sako</td></tr>
+      <tr><td>4</td><td>Important functions aur system calls ko code se explain aur dry-run kar sako</td></tr>
+      <tr><td>5</td><td>MathWorks ke asli questions ke jawab de sako (follow-ups ke saath)</td></tr>
+      <tr><td>6</td><td>Final pitch, one-page revision, mock interview</td></tr>
+    </table>
+  </section>
+
+  <section id="parked">
+    <h2>Parked items (sahi phase mein wapas aayenge)</h2>
+    <ul>
+      <li><b>Zombie + JobController</b> &rarr; Phase 3 (<a href="phase3.html">section pehle se rakha hai</a>)</li>
+      <li><b><code>wait</code> vs <code>waitpid</code></b>, <code>WNOHANG</code>, <code>WUNTRACED</code> &rarr; Phase 4 (<a href="phase4.html">sections pehle se rakhe hain</a>)</li>
+      <li><b>Pipes, <code>dup2</code>, redirection</b> &rarr; Phase 3-4</li>
+      <li><b>Signals (Ctrl+C, Ctrl+Z)</b> &rarr; Phase 3-4</li>
+    </ul>
+  </section>
+
+  <section id="honest">
+    <h2>Interview mein dhyan rakhne wali honest baatein</h2>
+    <ul>
+      <li>POSIX = standard. Project = "POSIX-style shell". README ka "fully POSIX compliant" mat bolna.</li>
+      <li><code>pinfo</code> <code>/proc</code> padhta hai, sirf Linux pe chalta hai (macOS pe nahi).</li>
+      <li>Quotes parse nahi hote. Builtins pipeline ke andar nahi chalte.</li>
+      <li>Ye shell tumne OS course assignment ke baad June 2026 mein scratch se dobara banaya.</li>
+    </ul>
+  </section>
+
+  <section id="files">
+    <h2>Files</h2>
+    <p><code>posix_notes.html</code> (ye hub), <code>phase1.html</code>, <code>phase2.html</code>, <code>phase3.html</code>, <code>phase4.html</code>, <code>posix_notes.css</code> (shared style). Naye phase pages us phase ke shuru hone par banenge.</p>
+  </section>
+
+</main>
+</body>
+</html>

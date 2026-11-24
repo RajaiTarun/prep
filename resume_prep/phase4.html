@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 4: Code walkthrough</title>
+<link rel="stylesheet" href="posix_notes.css">
+</head>
+<body>
+<main>
+<nav class="nav"><a href="posix_notes.html">Hub</a><a href="phase1.html">Phase 1</a><a href="phase2.html">Phase 2</a><a href="phase3.html">Phase 3</a><span class="cur">Phase 4</span><span class="off">Phase 5</span><span class="off">Phase 6</span></nav>
+  <h1>Phase 4: Code walkthrough</h1>
+  <p class="sub">Asli code, system calls, dry runs. Abhi sirf wait/waitpid pehle se padha hua hai.</p>
+
+  <div class="warn"><b>Status: Phase 4 abhi shuru nahi hua.</b> Neeche <code>wait</code>/<code>waitpid</code> ke sections pehle padh liye the, par wo tab samajh nahi aaye the kyunki <code>fork</code> abhi clear nahi tha. Phase 4 mein ye <code>execute_foreground</code> ke code ke andar dobara aayenge. Tab tak Phase 1 page (fork + exec) pehle padho.</div>
+  <section id="wait-waitpid">
+    <h2><code>wait()</code> aur <code>waitpid()</code> <span class="tag">pehle se padha hua</span></h2>
+
+    <h3>Sabse pehle: ye kaam kya karte hain?</h3>
+    <p>Dono ka kaam ek hi hai: <b>parent ruk ke child ke khatam hone ka wait kare</b>, aur khatam hone par uska <b>zombie reap</b> (entry hata) kare, aur <b>exit status</b> le.</p>
+    <p>Analogy: manager ne intern ko kaam diya. <code>wait</code> matlab "jab tak koi bhi intern kaam khatam karke report na de, main yahin baitha hoon." <code>waitpid</code> matlab "main sirf <b>Rahul</b> ka wait karunga," ya "<b>dekh ke aaunga</b>, koi khatam hua ho to batao, nahi to main apna kaam karta hoon."</p>
+
+    <h3><code>wait()</code></h3>
+<pre>pid_t wait(int *status);</pre>
+    <ul>
+      <li><b>Koi bhi</b> child khatam ho, tab tak <b>block</b> karta hai.</li>
+      <li>Return: jo child khatam hua uska pid.</li>
+      <li>Ye bas <code>waitpid(-1, &amp;status, 0)</code> ka short form hai.</li>
+      <li>Koi control nahi: na ye chuna ja sakta hai ki kiska wait ho, na ye ki block na ho.</li>
+    </ul>
+
+    <h3><code>waitpid()</code></h3>
+<pre>pid_t waitpid(pid_t pid, int *status, int options);</pre>
+    <table>
+      <tr><th>Argument</th><th>Matlab</th></tr>
+      <tr><td><code>pid &gt; 0</code></td><td><b>Sirf is pid</b> ka wait</td></tr>
+      <tr><td><code>pid == -1</code></td><td>Koi bhi child (jaise <code>wait</code>)</td></tr>
+      <tr><td><code>options = 0</code></td><td>Block karo jab tak child khatam na ho</td></tr>
+      <tr><td><code>options = WNOHANG</code></td><td><b>Ruko mat</b>, turant return</td></tr>
+      <tr><td><code>options = WUNTRACED</code></td><td>Child <b>stop</b> ho jaye (Ctrl+Z) tab bhi return karo, sirf exit pe nahi</td></tr>
+    </table>
+    <p><b>Return value (teen cases):</b></p>
+    <ul>
+      <li><code>&gt; 0</code>: us child ka pid, reap ho gaya.</li>
+      <li><code>0</code>: (sirf <code>WNOHANG</code> ke saath) children hain par abhi koi khatam nahi hua.</li>
+      <li><code>-1</code>: error. Jaise <code>ECHILD</code> (koi child hai hi nahi), ya <code>EINTR</code> (signal ne beech mein interrupt kiya).</li>
+    </ul>
+    <p><b><code>status</code> ko kaise padhte hain</b> (ye ek packed number hai, seedha mat padho):</p>
+    <table>
+      <tr><th>Macro</th><th>Matlab</th></tr>
+      <tr><td><code>WIFEXITED(status)</code> / <code>WEXITSTATUS(status)</code></td><td>Normal exit hua / exit code kya tha</td></tr>
+      <tr><td><code>WIFSIGNALED(status)</code> / <code>WTERMSIG(status)</code></td><td>Signal se mara / kaun sa signal</td></tr>
+      <tr><td><code>WIFSTOPPED(status)</code></td><td>Stop hua (Ctrl+Z), <code>WUNTRACED</code> ke saath</td></tr>
+    </table>
+    <div class="rule"><code>wait</code> = simple, "koi bhi, ruk ke". <code>waitpid</code> = control (kaun, ruk ke ya nahi, stop bhi dekhna hai ya nahi).</div>
+
+    <h3>Mere project mein teen jagah use hota hai</h3>
+    <table>
+      <tr><th>Jagah</th><th>Call</th><th>Kyun yahi</th></tr>
+      <tr><td><code>execute_foreground</code></td><td><code>waitpid(pid, &amp;status, WUNTRACED)</code></td><td><b>Specific</b> pid (neeche dekho). <code>WUNTRACED</code> taaki Ctrl+Z pe bhi return ho</td></tr>
+      <tr><td><code>execute_pipeline</code></td><td><code>waitpid(child_pids[i], &amp;status, 0)</code> har child ke liye loop mein</td><td>Saare stages khatam hone tak ruko</td></tr>
+      <tr><td><code>sweepCompletedJobs</code></td><td><code>waitpid(-1, &amp;status, WNOHANG)</code></td><td><b>Koi bhi</b> child, <b>bina ruke</b> (zombie sweep)</td></tr>
+    </table>
+    <p>Teeno alag options use karte hain, isliye <code>wait()</code> kisi mein fit nahi hota.</p>
+
+    <h3>Foreground mein <code>wait()</code> ki jagah <code>waitpid(pid)</code> kyun? (important)</h3>
+    <p>Maan lo pehle <code>sleep 2 &amp;</code> (background, child A) chalaya, phir <code>sleep 5</code> (foreground, child B).</p>
+    <figure>
+      <svg viewBox="0 0 760 250" role="img" aria-label="Timeline: wait() would return at 2s when background child A exits, wrongly; waitpid(B) returns at 5s">
+        <defs><marker id="ahw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+        <text x="20" y="74" class="mono">Parent</text>
+        <text x="20" y="124" class="mono">Child A (bg)</text>
+        <text x="20" y="174" class="mono">Child B (fg)</text>
+        <rect class="bar-block" x="150" y="62" width="500" height="20" rx="4"/>
+        <rect class="bar-run" x="150" y="112" width="200" height="20" rx="4"/>
+        <rect class="bar-run" x="150" y="162" width="500" height="20" rx="4"/>
+        <text x="358" y="127" class="small">A khatam (2s)</text>
+        <text x="658" y="177" class="small">B khatam (5s)</text>
+        <path class="ln-warn" d="M350,56 L350,40" marker-end="url(#ahw)"/>
+        <text x="350" y="30" text-anchor="middle" class="mono" style="fill:var(--warn)">wait() yahin return ✗ (A ka pid)</text>
+        <path class="ln" d="M650,56 L650,40" marker-end="url(#ahw)"/>
+        <text x="650" y="30" text-anchor="end" class="mono" style="fill:var(--good)">waitpid(B) yahin return ✓</text>
+        <path d="M350,62 L350,132" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="3 3" fill="none"/>
+        <path d="M150,205 L650,205" class="ln"/>
+        <text x="150" y="224" text-anchor="middle" class="small">0s</text>
+        <text x="350" y="224" text-anchor="middle" class="small">2s</text>
+        <text x="650" y="224" text-anchor="middle" class="small">5s</text>
+      </svg>
+      <figcaption>Dhaari wala bar = parent <code>wait</code> mein blocked. Pehle <code>sleep 2 &amp;</code>, phir foreground <code>sleep 5</code>.</figcaption>
+    </figure>
+    <ul>
+      <li>Agar <code>wait()</code> hota: <b>2s par A khatam hota</b> aur <code>wait()</code> A ka pid leke return ho jaata. Shell sochta "foreground khatam", prompt wapas, <b>jabki B abhi chal raha hai</b>. ❌</li>
+      <li><code>waitpid(B_pid, ...)</code> sirf B ka wait karta hai, A ka nahi. ✅</li>
+    </ul>
+    <p>Isiliye specific pid zaroori hai.</p>
+
+    <h3><code>WUNTRACED</code> aur Ctrl+Z (foreground code)</h3>
+<pre>waitpid(pid, &amp;status, WUNTRACED);
+if (WIFSTOPPED(status)) cout &lt;&lt; "\n[Suspended] PID: " &lt;&lt; pid &lt;&lt; endl;</pre>
+    <p>Bina <code>WUNTRACED</code> ke, Ctrl+Z se child <b>stop</b> hota par <code>waitpid</code> return nahi karta (kyunki child exit nahi hua), aur shell hang ho jaata. <code>WUNTRACED</code> se wo stop pe bhi return karta hai, aur <code>WIFSTOPPED</code> se pata chalta hai ki ye stop tha, exit nahi.</p>
+
+    <h3>Pipeline mein order ka sawaal</h3>
+<pre>for (size_t i = 0; i &lt; child_pids.size(); i++) waitpid(child_pids[i], &amp;status, 0);</pre>
+    <p>Saare children <b>pehle hi fork</b> ho chuke hain, to order se wait karna safe hai (deadlock nahi). Agar 3rd child pehle khatam ho jaaye, to wo bas zombie rehta hai jab tak uski baari na aaye, phir turant reap.</p>
+
+    <div class="warn"><b>Honest limitation:</b> <code>status</code> har jagah le to rahe ho, par <b>exit code kahin use nahi hota</b>: sirf foreground mein <code>WIFSTOPPED</code> check hota hai. Isliye mere shell mein <code>$?</code> (last command ka exit status) <b>nahi hai</b>. Interviewer pooche to: "status mil raha hai, <code>WEXITSTATUS</code> se <code>$?</code> support add karna easy extension hai."</div>
+
+    <h3>30-sec interview jawab</h3>
+    <blockquote>"<code>wait()</code> koi bhi child khatam hone tak block karta hai. <code>waitpid()</code> zyada control deta hai: specific pid, <code>WNOHANG</code> se non-blocking, aur <code>WUNTRACED</code> se stopped child bhi. Mere foreground mein specific pid pe <code>waitpid</code> hai, kyunki <code>wait()</code> kisi purane background child pe galat return kar sakta tha. Background sweep mein <code>waitpid(-1, WNOHANG)</code> hai taaki shell block na ho. Pipeline mein har stage ke pid pe <code>waitpid</code> hai."</blockquote>
+
+    <h3>Check karo</h3>
+    <p>Pipeline mein 3 children hain aur parent <code>waitpid</code> unka <b>order mein</b> (1, 2, 3) karta hai. Agar child 3 sabse pehle khatam ho jaaye, to kya koi problem hogi? Kyun / kyun nahi?</p>
+  </section>
+  <section id="wait-example">
+    <h2><code>wait()</code> / <code>waitpid()</code>: example se samjho <span class="tag">pehle se padha hua</span></h2>
+    <p>Ye ek <b>real program</b> hai jo maine chalaya, output asli hai. Pichhle section ka simple version.</p>
+
+    <h3>Setup: ek exam ka example</h3>
+    <p>Parent ek <b>teacher</b> hai. Usne 2 students (children) ko exam diya:</p>
+    <ul>
+      <li><b>Child A</b>: 1 second mein khatam, exit code <b>11</b></li>
+      <li><b>Child B</b>: 3 second mein khatam, exit code <b>22</b></li>
+    </ul>
+    <p>Teacher (parent) ko inke papers (exit status) collect karne hain. Teacher ke paas 3 tareeke hain.</p>
+
+    <h3>Example 1: <code>wait()</code> ("jo pehle khatam ho, wahi do")</h3>
+<pre>for (int i = 0; i &lt; 2; i++) {
+    pid_t r = wait(&amp;st);          // koi bhi child khatam ho tab tak ruko
+    printf("returned pid=%d, exit code=%d\n", r, WEXITSTATUS(st));
+}</pre>
+    <p><b>Asli output:</b></p>
+<pre>[t=0s] child A bana, pid=15893 (sleep 1s, exit code 11)
+[t=0s] child B bana, pid=15894 (sleep 3s, exit code 22)
+[t=0s] wait() call kiya, ab block...
+[t=1s] wait() return -&gt; pid=15893 (A), exit code=11      &larr; A pehle khatam hua
+[t=1s] wait() call kiya, ab block...
+[t=3s] wait() return -&gt; pid=15894 (B), exit code=22      &larr; phir B</pre>
+    <p><b>Step by step:</b></p>
+    <ol>
+      <li>t=0: parent ne A aur B banaye, phir <code>wait()</code> call kiya. Parent <b>so gaya</b> (block).</li>
+      <li>t=1: A khatam hua. OS parent ko jagaata hai. <code>wait()</code> return karta hai <b>A ka pid</b> aur <code>st</code> mein A ka exit code (11).</li>
+      <li>Parent ne dobara <code>wait()</code> kiya, phir so gaya.</li>
+      <li>t=3: B khatam hua, <code>wait()</code> ne B ka pid aur code 22 diya.</li>
+    </ol>
+    <div class="rule"><code>wait()</code> mein tum chun nahi sakte kiska wait karna hai. Jo pehle khatam hoga, wahi milega.</div>
+
+    <h3>Example 2: <code>waitpid(B)</code> ("mujhe sirf B chahiye")</h3>
+<pre>pid_t r = waitpid(B, &amp;st, 0);     // sirf B ka wait
+// ... uske baad
+r = waitpid(A, &amp;st, 0);</pre>
+    <p><b>Asli output:</b></p>
+<pre>[t=0s] waitpid(B) call kiya (sirf B ka wait)
+[t=3s] waitpid(B) return -&gt; pid=15912, exit code=22
+[t=3s] ab A ko dekhta hoon, A to kab ka khatam (zombie), waitpid(A)
+[t=3s] waitpid(A) return -&gt; pid=15911, exit code=11 (turant mila)</pre>
+    <p><b>Step by step:</b></p>
+    <ol>
+      <li>t=0: parent ne <code>waitpid(B)</code> kiya, so gaya.</li>
+      <li><b>t=1: A khatam ho gaya, par parent nahi jaaga!</b> Kyunki parent ne sirf B ka wait kiya tha. A ab <b>zombie</b> ban gaya (khatam, par kisi ne paper collect nahi kiya).</li>
+      <li>t=3: B khatam hua, tab parent jaaga, B ka code 22 mila.</li>
+      <li>Parent ne <code>waitpid(A)</code> kiya. A to <b>pehle se zombie</b> tha, uska exit status OS ke paas rakha tha, to <b>turant</b> mil gaya, bina ruke.</li>
+    </ol>
+    <p><b>Do badi seekh:</b></p>
+    <ul>
+      <li><code>waitpid(pid)</code> sirf <b>usi child</b> ke liye jagaata hai.</li>
+      <li>Zombie ka exit status <b>baad mein bhi mil jaata hai</b>. OS yaad rakhta hai.</li>
+    </ul>
+    <p><b>Mere project mein:</b> <code>execute_foreground</code> bilkul yahi karta hai: apne foreground child ka pid leke <code>waitpid(pid)</code>.</p>
+
+    <h3>Example 3: <code>waitpid(-1, WNOHANG)</code> ("dekh ke aata hoon, ruk nahi sakta")</h3>
+<pre>for (int i = 0; i &lt; 5; i++) {
+    pid_t r = waitpid(-1, &amp;st, WNOHANG);   // koi bhi child, par ruko mat
+    // r &gt; 0, r == 0, ya r == -1
+    sleep(1);                              // (parent ka "apna kaam")
+}</pre>
+    <p><b>Asli output:</b></p>
+<pre>[t=0s] WNOHANG -&gt; 0     (children hain, koi khatam nahi hua)
+[t=1s] WNOHANG -&gt; reaped pid=15924 (A), code=11
+[t=2s] WNOHANG -&gt; 0     (children hain, koi khatam nahi hua)
+[t=3s] WNOHANG -&gt; reaped pid=15925 (B), code=22
+[t=4s] WNOHANG -&gt; -1    (koi child bacha hi nahi)</pre>
+    <table>
+      <tr><th>Return</th><th>Matlab</th><th>Example mein</th></tr>
+      <tr><td><code>&gt; 0</code></td><td>Ek child reap hua (uska pid)</td><td>t=1 (A), t=3 (B)</td></tr>
+      <tr><td><code>0</code></td><td>Children hain, par <b>abhi koi khatam nahi hua</b></td><td>t=0, t=2</td></tr>
+      <tr><td><code>-1</code></td><td>Koi child bacha hi nahi</td><td>t=4</td></tr>
+    </table>
+    <p><b>Seekh:</b> <code>WNOHANG</code> mein parent <b>kabhi so nahi jaata</b>. Bas "check karo, kuch ho to batao" aur turant wapas.</p>
+    <p><b>Mere project mein:</b> <code>sweepCompletedJobs()</code> yahi hai. Har loop ke top par ek baar check, koi bg job khatam hua ya nahi.</p>
+
+    <h3>Teeno ek nazar mein</h3>
+    <table>
+      <tr><th></th><th><code>wait()</code></th><th><code>waitpid(pid, 0)</code></th><th><code>waitpid(-1, WNOHANG)</code></th></tr>
+      <tr><td>Kiska wait</td><td>Koi bhi</td><td>Sirf <code>pid</code></td><td>Koi bhi</td></tr>
+      <tr><td>Parent ruka?</td><td>Haan</td><td>Haan</td><td><b>Nahi</b></td></tr>
+      <tr><td>Mere project mein</td><td>(use nahi hua)</td><td>Foreground, pipeline</td><td>Background sweep</td></tr>
+    </table>
+
+    <h3>Check karo</h3>
+    <p>Example 2 mein <b>t=1s se t=3s ke beech</b> A ki state kya thi, aur kyun? (Hint: parent ne tab tak kya call kiya tha?)</p>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,1370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gap Notes (Section A) · C++ Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+<style>
+  .ck td:first-child { width: 46%; }
+  .ck td:nth-child(2) { white-space: nowrap; }
+  .topic-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .topic-head .pill { font-size: 11px; }
+</style>
+</head>
+<body>
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">C++ <b>Prep</b> Notebook</a>
+  <nav aria-label="Pages">
+    <a href="index.html">Home</a>
+    <a href="strategy.html">Interview Strategy</a>
+    <a href="foundations.html">Foundations</a>
+    <a href="gfg.html">GFG Questions</a>
+    <a href="raii.html">RAII</a>
+    <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="topics.html">Topics</a>
+    <a href="gaps.html" aria-current="page">Gaps (A)</a>
+    <a href="playlist.html">Playlist</a>
+    <a href="revision.html">Revision</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">C++ Gaps and Study Plan, Section A</p>
+  <h1>Gap Notes (Section A)</h1>
+  <p class="lede">Wo 10 topics jo seniors se poochhe gaye par playlist/notes mein abhi cover nahi the. Har topic ke notes yahin jodte jaayenge: Hinglish explanation, code (GCC pe run karke verify), English interview answer, important points.</p>
+
+  <nav class="toc" aria-label="On this page">
+    <p>Section A</p>
+    <ol>
+      <li><a href="#t1">Abstract class vs interface, pure virtual</a> <span class="pill done">Done</span></li>
+      <li>vtable / vptr / dynamic dispatch</li>
+      <li>Virtual constructor</li>
+      <li>Constructor and destructor rules</li>
+      <li><a href="#t5">Compiler-generated functions, rule of 3/5, move</a> <span class="pill done">Done</span></li>
+      <li><a href="#t6">const / immutability</a> <span class="pill done">Done</span></li>
+      <li><a href="topics.html#p-prec">Pointer precedence drills</a> <span class="pill done">Topics page</span></li>
+      <li>Access specifiers + inheritance modes</li>
+      <li>How printf works</li>
+      <li>How int and float are stored</li>
+    </ol>
+  </nav>
+
+  <h2 id="progress">Progress</h2>
+  <div class="tbl"><table class="ck">
+    <tr><th>#</th><th>Topic</th><th>Priority</th><th>Time</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>1</td><td>Abstract class vs interface, pure virtual</td><td><span class="pill hi">High</span></td><td>45 min</td><td><span class="pill done">Done</span></td><td><a href="#t1">Yahan</a></td></tr>
+    <tr><td>2</td><td>vtable / vptr / dynamic dispatch</td><td><span class="pill hi">High</span></td><td>30 min</td><td><span class="pill next">Next</span></td><td></td></tr>
+    <tr><td>3</td><td>Virtual constructor (why it's impossible)</td><td><span class="pill hi">High</span></td><td>10 min</td><td><span class="pill">Baaki</span></td><td></td></tr>
+    <tr><td>4</td><td>Constructor and destructor rules</td><td><span class="pill hi">High</span></td><td>15 min</td><td><span class="pill">Baaki</span></td><td></td></tr>
+    <tr><td>5</td><td>Compiler-generated functions + rule of 3/5 + move semantics</td><td><span class="pill hi">High</span></td><td>45 min</td><td><span class="pill done">Done</span></td><td><a href="#t5">Yahan</a></td></tr>
+    <tr><td>6</td><td>const / immutability</td><td><span class="pill hi">High</span></td><td>30 min</td><td><span class="pill done">Done</span></td><td><a href="#t6">Yahan</a></td></tr>
+    <tr><td>7</td><td>Output drills: pointer precedence and associativity</td><td><span class="pill hi">High</span></td><td>1&ndash;1.5 h</td><td><span class="pill done">Topics page</span></td><td><a href="topics.html#p-prec">Pointer 2.1</a>, <a href="topics.html#p-drills">2.12 drills</a></td></tr>
+    <tr><td>8</td><td>Access specifiers + inheritance modes</td><td><span class="pill mid">Medium</span></td><td>15 min</td><td><span class="pill">Baaki</span></td><td></td></tr>
+    <tr><td>9</td><td>How printf works (variadic functions)</td><td><span class="pill mid">Medium</span></td><td>20 min</td><td><span class="pill">Baaki</span></td><td></td></tr>
+    <tr><td>10</td><td>How int and float are stored</td><td><span class="pill mid">Medium</span></td><td>20 min</td><td><span class="pill">Baaki</span></td><td></td></tr>
+  </table></div>
+  <p class="mini">Order jo PDF mein suggest kiya tha: 1&ndash;6 (about 3 h), phir 7 (pointer drills), phir notepad coding, phir OS. Time estimates PDF ke hain.</p>
+
+  <!-- TOPICS BELOW -->
+
+  <!-- ================= TOPIC 1 ================= -->
+  <h2 id="t1" class="topic-head">1. Abstract class vs interface, pure virtual <span class="pill done">Done</span></h2>
+  <p><strong>Asked to:</strong> Piyush, Aashima, Sneha. Piyush ka review: <em>"be very thorough on OOPS, specially around abstract and interface"</em>. Bro, ye bahut important C++ OOP topic hai. Format wahi: <strong>1) Hinglish explanation, 2) C++ code (output GCC pe run karke verify kiya), 3) Interview answer (English), 4) Important points.</strong></p>
+  <p>Ye 4 tricky sawaal pakke aate hain:</p>
+  <ul>
+    <li>Kya abstract class ka <strong>constructor</strong> ho sakta hai?</li>
+    <li>Pure virtual <strong>destructor</strong> ko definition kyun chahiye?</li>
+    <li>Kya pure virtual function ki <strong>body</strong> ho sakti hai?</li>
+    <li>Kya C++ mein <strong>interface keyword</strong> hota hai?</li>
+  </ul>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>Abstract class kya hai, object kyun nahi bana sakte</td><td><span class="pill done">✅</span></td><td><a href="#a-what">1.1</a></td></tr>
+    <tr><td>Pure virtual function (<code>= 0</code>), sab override na kiye toh class abstract hi rehti hai</td><td><span class="pill done">✅</span></td><td><a href="#a-pv">1.2</a></td></tr>
+    <tr><td>Pure virtual function ki definition ho sakti hai?</td><td><span class="pill done">✅</span></td><td><a href="#a-pv">1.2</a></td></tr>
+    <tr><td>Abstract class ka constructor ho sakta hai?</td><td><span class="pill done">✅</span></td><td><a href="#a-ctor">1.3</a></td></tr>
+    <tr><td>Pure virtual destructor ko body kyun chahiye (linker error trap)</td><td><span class="pill done">✅</span></td><td><a href="#a-dtor">1.4</a></td></tr>
+    <tr><td>C++ mein interface keyword? Abstract class vs interface</td><td><span class="pill done">✅</span></td><td><a href="#a-iface">1.5</a></td></tr>
+    <tr><td>Quick revision table + ek code jo sab cover karta hai</td><td><span class="pill done">✅</span></td><td><a href="#a-rev">1.6</a></td></tr>
+    <tr><td>Bonus: constructor mein pure virtual call</td><td><span class="pill done">✅ Bonus</span></td><td><a href="#a-bonus">1.7</a></td></tr>
+  </table></div>
+
+  <h3 id="p1">Part 1: Abstract Class</h3>
+  <h3 id="a-what">1.1 Abstract Class kya hai?</h3>
+  <p>Simple Hinglish mein: imagine tum ek class <code>Animal</code> bana rahe ho. Har animal awaaz karta hai, par actual awaaz animal pe depend karti hai: Dog &rarr; Bark, Cat &rarr; Meow, Cow &rarr; Moo. Ab agar hum <code>Animal</code> ka object banana hi nahi chahte (kyunki wo sirf ek general concept hai), toh hum use <strong>abstract class</strong> bana sakte hain.</p>
+  <p><strong>Class tab abstract hoti hai jab usme kam se kam ek pure virtual function ho.</strong></p>
+<pre><code><span class="k">class</span> Animal {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> sound() = 0;
+};</code></pre>
+  <p>Dhyan do: <code>virtual void sound() = 0;</code> ko <strong>Pure Virtual Function</strong> kehte hain. <code>= 0</code> use pure virtual banata hai. Ab inherit karte hain:</p>
+<pre><code><span class="k">class</span> Animal {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> sound() = 0;
+};
+
+<span class="k">class</span> Dog : <span class="k">public</span> Animal {
+<span class="k">public</span>:
+    <span class="k">void</span> sound() <span class="k">override</span> {
+        cout &lt;&lt; "Bark";
+    }
+};
+
+<span class="c">// Animal a;  // ERROR</span>
+
+Dog d;
+d.sound();</code></pre>
+<pre class="out">Bark</pre>
+  <p><code>Animal</code> ka object kyun nahi bana sakte? Kyunki wo abstract hai aur uske pure virtual function ki implementation nahi hai jo class ko concrete banaye. Compiler ka error:</p>
+<pre><code><span class="k">class</span> Animal {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> sound() = 0;
+};
+
+Animal a;     <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: cannot declare variable 'a' to be of abstract type 'Animal'</pre>  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"An abstract class is a class that contains at least one pure virtual function. It cannot be instantiated directly and is generally used as a base class to define a common interface for derived classes."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li>Abstract class ka <strong>object</strong> nahi, par uska <strong>pointer / reference</strong> ban sakta hai. Yahi poori idea hai: <code>Animal* p = new Dog;</code> (polymorphism).</li><li>Abstract class <strong>by value</strong> function parameter ya return type nahi ho sakti (object banana padega). Reference/pointer lo.</li><li>Abstract class mein data members aur normal (non-virtual) functions bhi ho sakte hain.</li></ul>
+  </div><pre><code><span class="k">class</span> Animal {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> sound() = 0;
+};
+<span class="k">void</span> f(Animal a) { }          <span class="c">// by value: Animal ka object banana padega</span></code></pre>
+<pre class="out err">error: cannot declare parameter 'a' to be of abstract type 'Animal'</pre><pre><code><span class="k">class</span> Animal {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> sound() = 0;
+    <span class="k">virtual</span> ~Animal() = <span class="k">default</span>;
+};
+<span class="k">class</span> Dog : <span class="k">public</span> Animal { <span class="k">public</span>: <span class="k">void</span> sound() <span class="k">override</span> { cout &lt;&lt; "Bark "; } };
+<span class="k">class</span> Cat : <span class="k">public</span> Animal { <span class="k">public</span>: <span class="k">void</span> sound() <span class="k">override</span> { cout &lt;&lt; "Meow "; } };
+<span class="k">void</span> speak(Animal&amp; a) { a.sound(); }                  <span class="c">// reference chalta hai</span>
+
+Dog d; Cat c;
+speak(d); speak(c);                                  <span class="c">// ek hi code, alag behaviour</span>
+
+Animal* arr[] = { <span class="k">new</span> Dog, <span class="k">new</span> Cat };               <span class="c">// abstract type ke POINTERS ka array theek</span>
+<span class="k">for</span> (Animal* p : arr) { p-&gt;sound(); <span class="k">delete</span> p; }</code></pre>
+<pre class="out">Bark Meow Bark Meow </pre>
+
+  <h3 id="p2">Part 2: Pure Virtual Function</h3>
+  <h3 id="a-pv">1.2 Pure Virtual Function kya hai?</h3>
+  <p>Normal virtual function derived class ko override karne <em>deta</em> hai. Pure virtual ek step aage jaata hai: wo derived class ko batata hai <strong>"agar concrete class banna hai toh apni implementation dena zaroori hai."</strong></p>
+<pre><code><span class="k">virtual</span> <span class="k">void</span> functionName() = 0;</code></pre>
+  <p>Example: <code>Shape</code> mein <code>area()</code> aur <code>perimeter()</code> pure virtual. <code>Circle</code> ne sirf <code>area()</code> override kiya toh:</p>
+<pre><code><span class="k">class</span> Shape {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> area() = 0;
+    <span class="k">virtual</span> <span class="k">void</span> perimeter() = 0;
+};
+
+<span class="k">class</span> Circle : <span class="k">public</span> Shape {
+<span class="k">public</span>:
+    <span class="k">void</span> area() <span class="k">override</span> { cout &lt;&lt; "Area of circle"; }
+    <span class="c">// perimeter() override nahi kiya</span>
+};
+
+Circle c;     <span class="c">// ERROR: Circle abhi bhi abstract hai</span></code></pre>
+<pre class="out err">error: cannot declare variable 'c' to be of abstract type 'Circle'</pre>
+  <p><strong>Agar derived class saare inherited pure virtual functions override nahi karti, toh wo bhi abstract hi rehti hai.</strong></p>
+
+  <h4>Important interview question: pure virtual function ki definition ho sakti hai?</h4>
+  <p><strong>Haan!</strong> Ye thoda tricky C++ concept hai. Function <code>= 0</code> ke saath declare hota hai, par class ke <strong>bahar</strong> alag se definition de sakte ho. Ye perfectly valid hai:</p>
+<pre><code><span class="k">class</span> Base {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> show() = 0;
+};
+
+<span class="k">void</span> Base::show() {
+    cout &lt;&lt; "Base show\n";
+}
+
+<span class="k">class</span> Derived : <span class="k">public</span> Base {
+<span class="k">public</span>:
+    <span class="k">void</span> show() <span class="k">override</span> {
+        Base::show();
+        cout &lt;&lt; "Derived show\n";
+    }
+};
+
+Derived d;
+d.show();</code></pre>
+<pre class="out">Base show
+Derived show</pre>
+  <p>Par yaad rakho: definition dene se function <strong>non-pure nahi</strong> banta. Class abstract hi rehti hai. Derived class chahe toh <code>Base::show()</code> likh ke base ki implementation explicitly bula sakti hai (upar <code>Derived::show()</code> ne yahi kiya).</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A pure virtual function is a virtual function declared with = 0. It makes the class abstract and requires concrete derived classes to provide an implementation. A pure virtual function can still have a separate definition in C++."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li>Pure virtual = <code>virtual ... = 0;</code>. Class abstract ban jaati hai.</li><li>Definition <strong>class ke bahar</strong> alag se hoti hai (<code>void Base::show() { ... }</code>), declaration ke saath <code>= 0</code> ke saath nahi.</li><li>Definition hone ke baad bhi class abstract hai: us class ka object nahi ban sakta.</li><li>Derived ko ye definition automatically nahi milti: use <code>Base::show()</code> likh ke explicitly bulana padta hai.</li></ul>
+  </div>
+
+  <h3 id="p3">Part 3: Abstract Class ka Constructor</h3>
+  <h3 id="a-ctor">1.3 Kya abstract class ka constructor ho sakta hai?</h3>
+  <p><strong>Haan! Bilkul.</strong> Ye bahut common interview question hai. Tumhe lag sakta hai ki jab object hi nahi ban sakta toh constructor ki kya zarurat? Par yaad rakho: abstract class ka constructor tab chalta hai jab uski <strong>derived class ka object</strong> banta hai.</p>
+<pre><code><span class="k">class</span> Animal {
+<span class="k">public</span>:
+    Animal() {
+        cout &lt;&lt; "Animal constructor\n";
+    }
+
+    <span class="k">virtual</span> <span class="k">void</span> sound() = 0;
+};
+
+<span class="k">class</span> Dog : <span class="k">public</span> Animal {
+<span class="k">public</span>:
+    Dog() {
+        cout &lt;&lt; "Dog constructor\n";
+    }
+
+    <span class="k">void</span> sound() <span class="k">override</span> {
+        cout &lt;&lt; "Bark\n";
+    }
+};
+
+Dog d;</code></pre>
+<pre class="out">Animal constructor
+Dog constructor</pre>
+  <p>Samjho: 1) <code>Dog</code> ka object banaya. 2) Pehle <code>Animal</code> ka constructor chala. 3) Phir <code>Dog</code> ka. Kyun? Kyunki <strong>base class ki construction derived se pehle</strong> hoti hai.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Yes, an abstract class can have a constructor. Although we cannot instantiate an abstract class directly, its constructor is called when an object of a derived class is created. It is useful for initializing common base-class data members."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li>Constructor kaam: base class ke common data members initialize karna.</li><li>Order: <strong>base constructor &rarr; derived constructor</strong>. Destructor mein ulta: derived &rarr; base.</li><li>Constructor ko <code>virtual</code> nahi bana sakte (alag topic: <em>Virtual constructor</em>, Section A #3).</li></ul>
+  </div>
+
+  <h3 id="p4">Part 4: Pure Virtual Destructor</h3>
+  <h3 id="a-dtor">1.4 Pure virtual destructor ko body kyun chahiye?</h3>
+  <p>Ye shayad is topic ka sabse tricky sawaal hai. Pehle samjho: normally base class mein <strong>virtual destructor</strong> isliye banate hain taaki base-class pointer se derived object delete karne pe <strong>sahi cleanup</strong> ho:</p>
+<pre><code><span class="k">class</span> Base {
+<span class="k">public</span>:
+    <span class="k">virtual</span> ~Base() {
+        cout &lt;&lt; "Base destructor\n";
+    }
+};
+
+<span class="k">class</span> Derived : <span class="k">public</span> Base {
+<span class="k">public</span>:
+    ~Derived() {
+        cout &lt;&lt; "Derived destructor\n";
+    }
+};
+
+Base* ptr = <span class="k">new</span> Derived();
+
+<span class="k">delete</span> ptr;</code></pre>
+<pre class="out">Derived destructor
+Base destructor</pre>
+  <p>Ab destructor ko <strong>pure virtual</strong> bana ke dekho: <code>virtual ~Base() = 0;</code> aur uski definition alag se likho (<code>Base::~Base() { ... }</code>). Declaration <code>= 0</code> ke saath, par definition bhi di. Full chalta hua example <a href="#a-rev">1.6</a> mein hai. Ye zaroori kyun hai?</p>
+<pre><code><span class="k">class</span> Base {
+<span class="k">public</span>:
+    <span class="k">virtual</span> ~Base() = 0;
+};
+
+Base::~Base() {                 <span class="c">// definition alag se, class ke bahar</span>
+    cout &lt;&lt; "Base destructor\n";
+}</code></pre>
+  <p>Jab derived class ka object destroy hota hai toh destruction chain mein <strong>base class destructor bhi chalta hai</strong>. Destructor pure virtual ho tab bhi use implementation chahiye, kyunki base destructor chalna hi hai. <strong>Pure virtual destructor class ko abstract banata hai, par uski definition phir bhi zaroori hai.</strong></p>
+  <p><strong>Common interview trap:</strong> sirf declare kiya, define nahi kiya toh <strong>linker error</strong> aata hai jab derived object banta aur marta hai:</p>
+<pre class="out err">Undefined symbols for architecture arm64:
+  "Base::~Base()", referenced from:
+      Derived::~Derived() in your .o file</pre>
+  <p class="mini">Ye message macOS linker ka hai. Linux/GCC pe aisa dikhta hai: <code>undefined reference to `Base::~Base()'</code>. Dono ka matlab same: <code>~Base()</code> ki definition nahi mili.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A pure virtual destructor is declared using virtual ~Base() = 0, making the class abstract. However, it must still have a definition because the base-class destructor is invoked whenever a derived-class object is destroyed."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li><strong>Kyun use karte hain?</strong> Jab class ko abstract banana ho par koi aur pure virtual function na ho, tab destructor ko pure virtual bana dete hain.</li><li>Virtual destructor zaroori kyun: base pointer se <code>delete</code> karo toh derived destructor bhi chale, warna leak/UB (video #51).</li><li>Body class ke bahar alag se: <code>Base::~Base() { }</code>. Bina body ke &rarr; linker error.</li></ul>
+  </div>
+
+  <h3 id="p5">Part 5: Abstract Class vs Interface</h3>
+  <h3 id="a-iface">1.5 Kya C++ mein Interface keyword hota hai?</h3>
+  <p><strong>Nahi!</strong> Java ki tarah C++ mein alag <code>interface</code> keyword nahi hota. C++ mein interface aam taur pe ek <strong>abstract class</strong> se banate hain jisme: (1) pure virtual functions, aur (2) ek virtual destructor ho.</p>
+<pre><code><span class="k">class</span> Vehicle {
+<span class="k">public</span>:
+    <span class="k">virtual</span> <span class="k">void</span> start() = 0;
+    <span class="k">virtual</span> <span class="k">void</span> stop() = 0;
+
+    <span class="k">virtual</span> ~Vehicle() = <span class="k">default</span>;
+};
+
+<span class="k">class</span> Car : <span class="k">public</span> Vehicle {
+<span class="k">public</span>:
+    <span class="k">void</span> start() <span class="k">override</span> {
+        cout &lt;&lt; "Car started\n";
+    }
+
+    <span class="k">void</span> stop() <span class="k">override</span> {
+        cout &lt;&lt; "Car stopped\n";
+    }
+};
+
+Vehicle* v = <span class="k">new</span> Car();
+
+v-&gt;start();
+v-&gt;stop();
+
+<span class="k">delete</span> v;</code></pre>
+<pre class="out">Car started
+Car stopped</pre>
+  <div class="tbl"><table>
+    <tr><th>Abstract Class</th><th>Interface (C++ convention)</th></tr>
+    <tr><td>Pure aur non-pure virtual functions dono ho sakte</td><td>Aam taur pe sirf pure virtual functions</td></tr>
+    <tr><td>Data members ho sakte</td><td>Aam taur pe instance data members nahi</td></tr>
+    <tr><td>Constructors ho sakte</td><td>Technically ho sakte, par aksar zaroorat nahi</td></tr>
+    <tr><td>Common implementations de sakti hai</td><td>Primarily ek contract define karti hai</td></tr>
+    <tr><td>Inheritance support</td><td>Inheritance support</td></tr>
+  </table></div>
+  <p><strong>Important distinction:</strong> C++ mein interface koi alag language feature nahi, ek <strong>design convention</strong> hai jo abstract class se implement hoti hai. Interface jaisi class mein technically aur members bhi ho sakte hain, par usse pure virtual functions + virtual destructor tak rakhna usual convention hai.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"C++ does not have a dedicated interface keyword. An interface is typically represented using an abstract class containing only pure virtual functions and a virtual destructor. An abstract class can also contain data members, constructors, and implemented member functions, whereas an interface primarily defines a contract that derived classes must follow."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li>Interface class mein <code>virtual ~Vehicle() = default;</code> (ya <code>{}</code> body) zaroor do: base pointer se delete safe rahe.</li><li>Ek class kai interfaces implement kar sakti hai (multiple inheritance). Interfaces mein data nahi hota, isliye multiple inheritance ka asli dard (duplicate data) nahi aata.</li><li>Abstract class: <em>kuch common code + kuch must-implement</em>. Interface: <em>sirf contract</em>.</li></ul>
+  </div>
+
+  <h3 id="p6">Part 6: Quick Interview Revision</h3>
+  <h3 id="a-rev">1.6 Ye 6 cheezein yaad rakho</h3>
+  <div class="tbl"><table>
+    <tr><th>Interview question</th><th>Answer</th></tr>
+    <tr><td>Abstract class instantiate kar sakte hain?</td><td><strong>No</strong></td></tr>
+    <tr><td>Abstract class ka constructor ho sakta hai?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>Pure virtual function ki body ho sakti hai?</td><td><strong>Yes</strong> (alag se, class ke bahar)</td></tr>
+    <tr><td>Pure virtual destructor ki body ho sakti hai?</td><td><strong>Yes, honi hi chahiye</strong></td></tr>
+    <tr><td>C++ mein interface keyword hai?</td><td><strong>No</strong></td></tr>
+    <tr><td>Derived ne saare pure virtual override nahi kiye toh?</td><td>Wo <strong>abstract hi rehti hai</strong></td></tr>
+  </table></div>
+  <p><strong>Ek important code example yaad rakho:</strong></p>
+<pre><code><span class="k">class</span> Base {
+<span class="k">public</span>:
+    Base() {
+        cout &lt;&lt; "Constructor\n";
+    }
+
+    <span class="k">virtual</span> <span class="k">void</span> show() = 0;
+
+    <span class="k">virtual</span> ~Base() = 0;
+};
+
+Base::~Base() {
+    cout &lt;&lt; "Destructor\n";
+}
+
+<span class="k">class</span> Derived : <span class="k">public</span> Base {
+<span class="k">public</span>:
+    <span class="k">void</span> show() <span class="k">override</span> {
+        cout &lt;&lt; "Show\n";
+    }
+};
+
+Base* ptr = <span class="k">new</span> Derived();
+
+ptr-&gt;show();
+
+<span class="k">delete</span> ptr;</code></pre>
+<pre class="out">Constructor
+Show
+Destructor</pre>
+  <p>Ye ek hi example cover karta hai: abstract class, constructor ka chalna, pure virtual function, pure virtual destructor, runtime polymorphism, aur virtual destructor ka chalna.</p>
+
+  <h3 id="a-bonus">1.7 Bonus: constructor ke andar pure virtual call</h3>
+  <p>Interviewer ek step aur gehra ja sakta hai: <em>"constructor mein virtual function call kiya toh?"</em> Constructor ke dauran object abhi sirf <strong>base type</strong> ka hota hai, derived hissa abhi bana nahi, isliye virtual call derived tak nahi pahunchta. Agar wo function <strong>pure virtual</strong> hai aur base mein uski koi implementation nahi, toh runtime pe program <strong>abort</strong> ho jaata hai:</p>
+<pre><code><span class="k">class</span> Base {
+<span class="k">public</span>:
+    Base() { init(); }            <span class="c">// constructor ke andar virtual call</span>
+    <span class="k">void</span> init() { f(); }          <span class="c">// f() pure virtual hai</span>
+    <span class="k">virtual</span> <span class="k">void</span> f() = 0;
+    <span class="k">virtual</span> ~Base() = <span class="k">default</span>;
+};
+<span class="k">class</span> Derived : <span class="k">public</span> Base { <span class="k">public</span>: <span class="k">void</span> f() <span class="k">override</span> { cout &lt;&lt; "Derived f\n"; } };
+
+Derived d;</code></pre>
+<pre class="out">pure virtual method called
+terminate called without an active exception
+[exit code -6]</pre>
+  <p>(<code>Derived::f()</code> kabhi nahi chala: "pure virtual method called".) Agar constructor mein seedha <code>f()</code> likho toh compiler warning deta hai ("pure virtual called from constructor") aur program link hi nahi hota (undefined symbol, maine check kiya). Upar jaisa indirect call link ho jaata hai par run-time pe crash karta hai. Ye topic gehra <strong>Section A #2 (vtable/vptr)</strong> aur <strong>#3 (virtual constructor)</strong> mein aayega.</p>
+
+  <h3 id="a-check">Self-check</h3>
+  <details class="qa"><summary>1. Abstract class kab banti hai, aur uska object kyun nahi ban sakta?</summary><div>
+    Jab kam se kam ek pure virtual function (<code>= 0</code>) ho. Uski implementation nahi hoti, isliye object adhoora hoga. Pointer/reference ban sakte hain.</div></details>
+  <details class="qa"><summary>2. Pure virtual function ki body ho sakti hai?</summary><div>
+    Haan, class ke bahar alag se. Par class abstract hi rehti hai, aur derived ko <code>Base::f()</code> se explicitly bulana padta hai.</div></details>
+  <details class="qa"><summary>3. Abstract class ka constructor kyun, jab object hi nahi bana sakte?</summary><div>
+    Derived object banne pe base constructor chalta hai (base pehle). Common members initialize karne ke kaam aata hai.</div></details>
+  <details class="qa"><summary>4. Pure virtual destructor ki body kyun zaroori?</summary><div>
+    Derived object marne pe base destructor chalta hi hai. Body nahi hui toh linker error.</div></details>
+  <details class="qa"><summary>5. C++ mein interface kaise banate hain?</summary><div>
+    Interface keyword nahi. Abstract class jisme sirf pure virtual functions aur virtual destructor ho.</div></details>
+  <details class="qa"><summary>6. Derived class ne ek pure virtual function override nahi kiya toh?</summary><div>
+    Derived bhi abstract rahegi; uska object banane pe compile error.</div></details>
+  <!-- TOPIC 2: abhi baaki, notes yahan aayenge -->
+  <!-- TOPIC 3: abhi baaki, notes yahan aayenge -->
+  <!-- TOPIC 4: abhi baaki, notes yahan aayenge -->
+
+  <!-- ================= TOPIC 5 ================= -->
+  <h2 id="t5" class="topic-head">5. Compiler-generated functions, Rule of 3/5, Move semantics <span class="pill done">Done</span></h2>
+  <p><strong>PDF ka point:</strong> <em>"Which functions are generated by default, the copy constructor, overloading operator=. Know all 6: default constructor, destructor, copy constructor, copy assignment, move constructor, move assignment. Also = default and = delete."</em> Notes tumhare hain (English), maine har code GCC pe run karke output verify kiya aur kuch interview traps jode (5.11 mein "Extra").</p>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>6 special member functions (table)</td><td><span class="pill done">✅</span></td><td><a href="#r-six">5.1</a></td></tr>
+    <tr><td>Default constructor, parameterized ctor aane pe default ctor gayab</td><td><span class="pill done">✅</span></td><td><a href="#r-def">5.2</a></td></tr>
+    <tr><td>Copy constructor, copy ctor vs copy assignment (<code>Test b = a;</code> vs <code>b = a;</code>)</td><td><span class="pill done">✅</span></td><td><a href="#r-copy">5.3</a></td></tr>
+    <tr><td>Copy assignment operator, <code>return *this</code> kyun</td><td><span class="pill done">✅</span></td><td><a href="#r-assign">5.4</a></td></tr>
+    <tr><td>Move constructor / move assignment, <code>std::move</code> kya karta hai</td><td><span class="pill done">✅</span></td><td><a href="#r-move">5.5</a></td></tr>
+    <tr><td>Compiler kab generate karta hai (table + nuances)</td><td><span class="pill done">✅</span></td><td><a href="#r-gen">5.6</a></td></tr>
+    <tr><td>Rule of 3 (shallow copy, double delete)</td><td><span class="pill done">✅</span></td><td><a href="#r-r3">5.7</a></td></tr>
+    <tr><td>Rule of 5</td><td><span class="pill done">✅</span></td><td><a href="#r-r5">5.8</a></td></tr>
+    <tr><td><code>= default</code> aur <code>= delete</code></td><td><span class="pill done">✅</span></td><td><a href="#r-dd">5.9</a></td></tr>
+    <tr><td>Final revision sheet</td><td><span class="pill done">✅</span></td><td><a href="#r-rev">5.10</a></td></tr>
+    <tr><td>Extra: noexcept + vector, copy elision, Rule of 0, copy ctor by value</td><td><span class="pill done">✅ Extra</span></td><td><a href="#r-extra">5.11</a></td></tr>
+  </table></div>
+
+  <h3 id="s5p1">Part 1: Six special member functions</h3>
+  <h3 id="r-six">5.1 Chhe special member functions</h3>
+  <p>C++ mein 6 special member functions hote hain. Interview mein inka naam aur kaam seedha poochha jaata hai:</p>
+  <div class="tbl"><table>
+    <tr><th>Function</th><th>Purpose</th><th>Syntax</th></tr>
+    <tr><td>1. Default constructor</td><td>Bina arguments ke object banata hai</td><td><code>Test();</code></td></tr>
+    <tr><td>2. Destructor</td><td>Object ko clean up karta hai</td><td><code>~Test();</code></td></tr>
+    <tr><td>3. Copy constructor</td><td>Maujooda object se <strong>naya</strong> object banata hai</td><td><code>Test(const Test&amp;);</code></td></tr>
+    <tr><td>4. Copy assignment</td><td><strong>Pehle se bane</strong> object mein copy karta hai</td><td><code>Test&amp; operator=(const Test&amp;);</code></td></tr>
+    <tr><td>5. Move constructor</td><td>Resources transfer karke naya object banata hai</td><td><code>Test(Test&amp;&amp;);</code></td></tr>
+    <tr><td>6. Move assignment</td><td>Resources ko maujooda object mein transfer karta hai</td><td><code>Test&amp; operator=(Test&amp;&amp;);</code></td></tr>
+  </table></div>
+  <p>Ek ek karke samajhte hain.</p>
+
+  <h3 id="s5p2">Part 2: Default constructor</h3>
+  <h3 id="r-def">5.2 Default constructor</h3>
+  <p>Bina argument pass kiye object banata hai.</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    Test() {
+        cout &lt;&lt; "Default Constructor";
+    }
+};
+
+Test t;</code></pre>
+<pre class="out">Default Constructor</pre>
+  <p>Agar tumne <strong>koi bhi constructor khud declare nahi kiya</strong>, toh compiler implicitly default constructor declare kar deta hai. Par:</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    Test(<span class="k">int</span> x) {}
+};
+
+Test t;    <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: no matching function for call to 'Test::Test()'</pre>
+  <p>Humne parameterized constructor declare kiya, isliye compiler ne implicit default constructor <strong>nahi</strong> banaya. Wapas chahiye toh <code>Test() = default;</code> likho (<a href="#r-dd">5.9</a>).</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"The compiler implicitly declares a default constructor only if we haven't declared any constructor ourselves. As soon as we declare a parameterized constructor, the implicit default constructor is no longer generated."</p>
+  </div>
+
+  <h3 id="s5p3">Part 3: Copy constructor</h3>
+  <h3 id="r-copy">5.3 Copy constructor</h3>
+  <p>Maujooda object se <strong>naya</strong> object banata hai. Syntax: <code>ClassName(const ClassName&amp; obj);</code></p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x;
+
+    Test(<span class="k">int</span> a) {
+        x = a;
+    }
+
+    Test(<span class="k">const</span> Test&amp; obj) {
+        x = obj.x;
+        cout &lt;&lt; "Copy Constructor ";
+    }
+};
+
+Test t1(10);
+Test t2 = t1;</code></pre>
+<pre class="out">Copy Constructor </pre>
+  <p>Dhyan do: <code>Test t2 = t1;</code> copy constructor call karta hai, kyunki <code>t2</code> <strong>ban raha hai</strong> (ye assignment nahi, initialization hai).</p>
+  <div class="callout trap"><span class="tag">Important distinction: Copy constructor vs Copy assignment</span>
+    <ul>
+      <li><code>Test b = a;</code> &rarr; naya object banta hai &rarr; <strong>Copy constructor</strong>.</li>
+      <li><code>b = a;</code> (b pehle se hai) &rarr; maujooda object update hota hai &rarr; <strong>Copy assignment</strong>.</li>
+    </ul>
+  </div>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x;
+    Test(<span class="k">int</span> a) : x(a) {}
+    Test(<span class="k">const</span> Test&amp; o) : x(o.x) { cout &lt;&lt; "Copy Constructor\n"; }
+    Test&amp; <span class="k">operator</span>=(<span class="k">const</span> Test&amp; o) { cout &lt;&lt; "Copy Assignment\n"; x = o.x; <span class="k">return</span> *<span class="k">this</span>; }
+};
+
+Test t1(10);
+Test t2 = t1;      <span class="c">// naya object ban raha hai: Copy constructor</span>
+Test t3(t1);       <span class="c">// ye bhi naya object: Copy constructor</span>
+
+Test t4(20);
+t4 = t1;           <span class="c">// t4 pehle se maujood: Copy assignment</span></code></pre>
+<pre class="out">Copy Constructor
+Copy Constructor
+Copy Assignment</pre>
+  <p>Pehle do <code>Copy Constructor</code> (<code>t2 = t1</code> wali line aur <code>t3(t1)</code>), teesra <code>Copy Assignment</code> (<code>t4 = t1</code>). Compiler dono copy operations implicitly generate kar sakta hai (rules <a href="#r-gen">5.6</a> mein).</p>
+  <div class="callout tip"><span class="tag">Interview trap: copy constructor ka parameter by value kyun nahi?</span>
+    <p>Copy constructor <code>const Test&amp;</code> leta hai, <code>Test</code> by value nahi. By value lete toh argument ko copy karne ke liye copy constructor chahiye, uske liye phir copy constructor... <strong>infinite recursion</strong>. Isliye compiler seedha mana kar deta hai:</p>
+<pre class="out err">error: invalid constructor; you probably meant 'Test (const Test&amp;)'</pre>
+  </div>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A copy constructor creates a new object from an existing object. It takes a const reference to the same class. Taking it by value would need a copy to make the copy, causing infinite recursion. For `Test b = a;` the copy constructor runs, while `b = a;` on an existing object runs the copy assignment operator."</p>
+  </div>
+
+  <h3 id="s5p4">Part 4: Copy assignment operator</h3>
+  <h3 id="r-assign">5.4 Copy assignment operator</h3>
+  <p>Ek existing object ka data doosre existing object mein copy karta hai. Syntax: <code>ClassName&amp; operator=(const ClassName&amp; obj);</code></p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x;
+
+    Test(<span class="k">int</span> a) : x(a) {}
+
+    Test&amp; <span class="k">operator</span>=(<span class="k">const</span> Test&amp; obj) {
+        cout &lt;&lt; "Copy Assignment ";
+        x = obj.x;
+        <span class="k">return</span> *<span class="k">this</span>;
+    }
+};
+
+Test t1(10);
+Test t2(20);
+
+t2 = t1;</code></pre>
+<pre class="out">Copy Assignment </pre>
+  <p><strong>Return type <code>Test&amp;</code> kyun?</strong></p>
+  <ul>
+    <li>Chained assignment chalta hai: <code>a = b = c</code>.</li>
+    <li><code>*this</code> return karke current object hi wapas milta hai.</li>
+  </ul>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x;
+    Test(<span class="k">int</span> a) : x(a) {}
+    Test&amp; <span class="k">operator</span>=(<span class="k">const</span> Test&amp; obj) {
+        x = obj.x;
+        <span class="k">return</span> *<span class="k">this</span>;
+    }
+};
+
+Test a(1), b(2), c(3);
+a = b = c;                           <span class="c">// b = c pehle, phir a = (b = c)</span>
+cout &lt;&lt; a.x &lt;&lt; b.x &lt;&lt; c.x &lt;&lt; "\n";</code></pre>
+<pre class="out">333</pre>
+  <p>Agar <code>operator=</code> <code>void</code> return kare toh <code>a = b = c</code> compile hi nahi hota (<code>b = c</code> ka result <code>void</code> hai, aage assign kaise ho):</p>
+<pre class="out err">error: no match for 'operator=' (operand types are 'Test' and 'void')</pre>
+  <div class="callout tip"><span class="tag">Yaad rakho</span>
+    <ul>
+      <li>Resource wale class mein assignment mein pehle <strong>purana resource delete</strong>, phir naya lo (5.7 mein poora code) aur <code>if (this != &amp;o)</code> self-assignment check lagao, warna <code>a = a</code> pe apna hi data delete ho jaayega.</li>
+    </ul>
+  </div>
+
+  <h3 id="s5p5">Part 5: Move constructor and move assignment</h3>
+  <h3 id="r-move">5.5 Move semantics</h3>
+  <p>Socho ek object ke paas dynamically allocated array hai. <strong>Copy</strong> mein hum alag resource banate hain (duplicate). <strong>Move</strong> mein hum maujooda resource ki <strong>ownership transfer</strong> kar dete hain, naya banate hi nahi.</p>
+  <div class="callout say"><span class="tag">Ek line mein</span>
+    <p><strong>Copy = duplicate the resource. Move = transfer ownership of the resource.</strong></p>
+  </div>
+  <p><strong>Move constructor:</strong> doosre object se resources leke naya object banata hai. Syntax: <code>ClassName(ClassName&amp;&amp; obj);</code> Ye <code>&amp;&amp;</code> <strong>rvalue reference</strong> hai.</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span>* ptr;
+
+    Test(<span class="k">int</span> x) {
+        ptr = <span class="k">new</span> <span class="k">int</span>(x);
+    }
+
+    Test(Test&amp;&amp; obj) {
+        ptr = obj.ptr;
+        obj.ptr = <span class="k">nullptr</span>;
+
+        cout &lt;&lt; "Move Constructor\n";
+    }
+
+    ~Test() {
+        <span class="k">delete</span> ptr;
+    }
+};
+
+Test t1(10);
+Test t2(std::move(t1));
+
+cout &lt;&lt; (t1.ptr == <span class="k">nullptr</span>) &lt;&lt; " " &lt;&lt; *t2.ptr &lt;&lt; "\n";   <span class="c">// t1 khali, t2 ke paas 10</span></code></pre>
+<pre class="out">Move Constructor
+1 10</pre>
+  <p>Kya hua?</p>
+<pre>Move se pehle:    t1 &rarr; [ memory jisme 10 hai ]
+
+std::move(t1) + move constructor ke baad:
+                  t1 &rarr; nullptr
+                  t2 &rarr; [ wahi memory jisme 10 hai ]</pre>
+  <p>Humne <strong>pointer transfer</strong> kiya, naya memory allocate karke value copy nahi ki. <code>obj.ptr = nullptr</code> zaroori hai: warna <code>t1</code> aur <code>t2</code> dono ka destructor same memory delete karte (double delete).</p>
+  <div class="callout trap"><span class="tag">Important: <code>std::move()</code> khud kuch move nahi karta</span>
+    <p>Wo sirf expression ko <strong>rvalue reference mein cast</strong> karta hai, taaki move operations select ho sakein. Asli move move-constructor/assignment ke andar hota hai:</p>
+  </div>
+<pre><code>string s = "hello";
+string&amp;&amp; r = std::move(s);       <span class="c">// sirf cast hua, koi move nahi</span>
+cout &lt;&lt; "[" &lt;&lt; s &lt;&lt; "]\n";       <span class="c">// s abhi bhi "hello"</span>
+
+string t = std::move(s);         <span class="c">// asli move yahan hua (string ka move constructor)</span>
+cout &lt;&lt; "[" &lt;&lt; s &lt;&lt; "] [" &lt;&lt; t &lt;&lt; "]\n";</code></pre>
+<pre class="out">[hello]
+[] [hello]</pre>
+  <p>Pehli line mein <code>std::move(s)</code> ke baad bhi <code>s</code> abhi <code>"hello"</code> hai. Asli move <code>string t = std::move(s);</code> mein hua. (Moved-from object "valid but unspecified" state mein hota hai; GCC ka string khaali ho jaata hai, par is par bharosa mat karo.)</p>
+
+  <p><strong>Move assignment operator:</strong> jab destination object pehle se maujood ho.</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span>* ptr;
+    Test(<span class="k">int</span> x) : ptr(<span class="k">new</span> <span class="k">int</span>(x)) {}
+    Test(Test&amp;&amp; obj) : ptr(obj.ptr) { obj.ptr = <span class="k">nullptr</span>; }
+
+    Test&amp; <span class="k">operator</span>=(Test&amp;&amp; obj) {
+        cout &lt;&lt; "Move Assignment\n";
+        <span class="k">if</span> (<span class="k">this</span> != &amp;obj) {
+            <span class="k">delete</span> ptr;
+
+            ptr = obj.ptr;
+            obj.ptr = <span class="k">nullptr</span>;
+        }
+        <span class="k">return</span> *<span class="k">this</span>;
+    }
+
+    ~Test() { <span class="k">delete</span> ptr; }
+};
+
+Test a(10), b(20);
+b = std::move(a);
+cout &lt;&lt; (a.ptr == <span class="k">nullptr</span>) &lt;&lt; " " &lt;&lt; *b.ptr &lt;&lt; "\n";</code></pre>
+<pre class="out">Move Assignment
+1 10</pre>
+  <p>Teen steps: (1) destination ka purana resource release karo, (2) source ka resource transfer karo, (3) source ko valid state mein chhodo (<code>nullptr</code>). <code>this != &amp;obj</code> check self-move se bachata hai.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Move semantics let us transfer ownership of a resource from one object to another instead of duplicating it. The move constructor takes an rvalue reference, steals the source's pointer and leaves the source in a valid but empty state, for example by setting it to nullptr. std::move itself doesn't move anything; it only casts its argument to an rvalue reference so that the move operations get selected."</p>
+  </div>
+
+  <h3 id="s5p6">Part 6: Compiler kab generate karta hai?</h3>
+  <h3 id="r-gen">5.6 Implicit generation rules (high-yield)</h3>
+  <p>Rules thode nuanced hain, par ye table yaad rakho:</p>
+  <div class="tbl"><table>
+    <tr><th>Function</th><th>Kab implicitly declare hota hai?</th></tr>
+    <tr><td>Default constructor</td><td>Koi <strong>user-declared constructor nahi</strong></td></tr>
+    <tr><td>Destructor</td><td>Koi user-declared destructor nahi</td></tr>
+    <tr><td>Copy constructor</td><td>Generally implicit agar user-declared nahi; <strong>delete</strong> bhi ho sakta hai</td></tr>
+    <tr><td>Copy assignment</td><td>Generally implicit agar user-declared nahi; <strong>delete</strong> bhi ho sakta hai</td></tr>
+    <tr><td>Move constructor</td><td>Koi user-declared <strong>copy ctor, copy assignment, move assignment ya destructor nahi</strong></td></tr>
+    <tr><td>Move assignment</td><td>Koi user-declared <strong>copy ctor, copy assignment, move ctor ya destructor nahi</strong></td></tr>
+  </table></div>
+  <p><strong>Important nuances:</strong></p>
+  <ul>
+    <li>User-declared <strong>move ctor ya move assignment</strong> hone pe implicitly declared <strong>copy operations deleted</strong> ho jaate hain.</li>
+    <li>Tumne copy ctor, copy assignment ya destructor declare kiya toh compiler <strong>move operations implicitly declare nahi karta</strong>.</li>
+    <li>Agar koi member ya base class copy nahi ho sakti, toh implicit copy operations bhi <strong>deleted</strong> ho jaate hain.</li>
+    <li>User-declared destructor wali class mein implicit copy operations <strong>deprecated</strong> hain, resource management ke liye un par depend mat karo.</li>
+  </ul>
+  <p><strong>Interview takeaway:</strong> <em>copy / destructor operations khud declare karna automatic move generation ko affect karta hai.</em> Neeche teeno nuances ka proof (GCC output):</p>
+  <p><strong>(a) Destructor declare kiya &rarr; move generate nahi, copy chalta hai.</strong> <code>A</code> mein kuch declare nahi, <code>B</code> mein sirf <code>~B() {}</code>:</p>
+<pre><code><span class="k">struct</span> Noisy {
+    Noisy() {}
+    Noisy(<span class="k">const</span> Noisy&amp;)          { cout &lt;&lt; "  Noisy copy\n"; }
+    Noisy(Noisy&amp;&amp;) noexcept      { cout &lt;&lt; "  Noisy move\n"; }
+};
+
+<span class="k">struct</span> A { Noisy n; };                    <span class="c">// koi special function declare nahi kiya</span>
+<span class="k">struct</span> B { Noisy n; ~B() {} };            <span class="c">// sirf destructor declare kiya</span>
+
+cout &lt;&lt; "A:\n"; A a1; A a2 = std::move(a1);
+cout &lt;&lt; "B:\n"; B b1; B b2 = std::move(b1);</code></pre>
+<pre class="out">A:
+  Noisy move
+B:
+  Noisy copy</pre>
+  <p><code>A</code> ka implicit move constructor member ko <strong>move</strong> karta hai. <code>B</code> mein destructor likha, isliye move constructor aaya hi nahi aur <code>std::move(b1)</code> ne chupchaap <strong>copy</strong> kar diya. Koi error nahi, bas performance gayi. Yahi sabse common silent bug hai.</p>
+  <p><strong>(b) Sirf copy ctor declare kiya &rarr; <code>std::move</code> bhi copy ho jaata hai:</strong></p>
+<pre><code><span class="k">struct</span> W {
+    W() {}
+    W(<span class="k">const</span> W&amp;) { cout &lt;&lt; "W copy constructor\n"; }     <span class="c">// sirf copy declare kiya</span>
+};
+
+W w1;
+W w2 = std::move(w1);       <span class="c">// move maanga, copy mila: const W&amp; rvalue ko bhi bind ho jaata hai</span></code></pre>
+<pre class="out">W copy constructor</pre>
+  <p>Move constructor nahi hai, toh rvalue <code>const W&amp;</code> se bind hokar copy constructor chalata hai.</p>
+  <p><strong>(c) Move constructor declare kiya &rarr; copy deleted:</strong></p>
+<pre><code><span class="k">struct</span> M {
+    M() = <span class="k">default</span>;
+    M(M&amp;&amp;) = <span class="k">default</span>;            <span class="c">// move constructor declare kiya</span>
+};
+
+M a;
+M b = a;                         <span class="c">// copy: ERROR</span></code></pre>
+<pre class="out err">error: use of deleted function 'constexpr M::M(const M&amp;)'</pre>
+  <p><strong>(d) Member copy nahi ho sakta &rarr; class ka implicit copy bhi delete:</strong> (<code>unique_ptr</code> member)</p>
+<pre><code><span class="k">struct</span> H {
+    unique_ptr&lt;<span class="k">int</span>&gt; p;           <span class="c">// unique_ptr copy nahi hota</span>
+};
+
+H a;
+H b = a;                         <span class="c">// H ka implicit copy ctor delete ho gaya</span></code></pre>
+<pre class="out err">error: use of deleted function 'H::H(const H&amp;)'</pre>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"The compiler generates the default constructor only if we declare no constructors. Move operations are implicitly declared only if we haven't declared a copy constructor, copy assignment, move assignment or destructor. If we declare a move operation, the copy operations are defined as deleted. And if we declare a destructor or a copy operation ourselves, std::move silently falls back to copying."</p>
+  </div>
+
+  <h3 id="s5p7">Part 7: Rule of 3</h3>
+  <h3 id="r-r3">5.7 Rule of 3</h3>
+  <p>Agar tumhari class koi resource <strong>manually</strong> manage karti hai (jaise dynamic memory), toh in teeno ko <strong>saath mein</strong> implement karne ka socho:</p>
+  <ol>
+    <li>Destructor</li>
+    <li>Copy constructor</li>
+    <li>Copy assignment operator</li>
+  </ol>
+  <p><strong>Kyun?</strong> Maan lo class mein sirf constructor (<code>new</code>) aur destructor (<code>delete</code>) hai. Compiler ka copy constructor <strong>shallow copy</strong> karta hai, yaani sirf pointer copy:</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span>* ptr;
+    Test(<span class="k">int</span> x) { ptr = <span class="k">new</span> <span class="k">int</span>(x); }
+    <span class="c">// destructor / copy constructor nahi likha: compiler ka copy constructor chalega</span>
+};
+
+Test t1(10);
+Test t2 = t1;
+
+cout &lt;&lt; (t1.ptr == t2.ptr) &lt;&lt; "\n";     <span class="c">// 1 = dono ka address same</span>
+*t2.ptr = 99;
+cout &lt;&lt; *t1.ptr &lt;&lt; "\n";                <span class="c">// t2 badla, t1 bhi badal gaya</span></code></pre>
+<pre class="out">1
+99</pre>
+  <p><code>t1.ptr == t2.ptr</code> (dono ek hi memory block ko point karte hain), isliye <code>t2</code> badalne se <code>t1</code> bhi badal gaya. (Is demo mein destructor nahi hai, warna agla step.)</p>
+  <p>Ab destructor wapas lagao. Dono objects marte waqt same memory <strong>do baar delete</strong> karte hain: <strong>double deletion = undefined behavior</strong>:</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span>* ptr;
+    Test(<span class="k">int</span> x) { ptr = <span class="k">new</span> <span class="k">int</span>(x); }
+    ~Test() { <span class="k">delete</span> ptr; }
+};
+
+Test t1(10);
+Test t2 = t1;       <span class="c">// shallow copy</span></code></pre><pre class="out err">[abort, exit code 134: macOS prints no message here]</pre>
+
+  <p>Ye abort hua (macOS pe is run mein koi message nahi chhapa). Linux (glibc) pe aam taur pe <code>free(): double free detected in tcache 2</code> jaisa message aata hai, par wo maine yahan run nahi kiya. AddressSanitizer (<code>-fsanitize=address</code>) se maine verify kiya, wo seedha batata hai:</p>
+<pre class="out err">ERROR: AddressSanitizer: attempting double-free on 0x602000000150 in thread T0</pre>
+  <p><strong>Fix = Rule of 3, deep copy:</strong></p>
+<pre><code><span class="k">class</span> Test {
+    <span class="k">int</span>* ptr;
+<span class="k">public</span>:
+    Test(<span class="k">int</span> x) { ptr = <span class="k">new</span> <span class="k">int</span>(x); cout &lt;&lt; "ctor\n"; }
+
+    Test(<span class="k">const</span> Test&amp; o) {                       <span class="c">// deep copy</span>
+        ptr = <span class="k">new</span> <span class="k">int</span>(*o.ptr);
+        cout &lt;&lt; "copy ctor\n";
+    }
+
+    Test&amp; <span class="k">operator</span>=(<span class="k">const</span> Test&amp; o) {
+        <span class="k">if</span> (<span class="k">this</span> != &amp;o) {
+            <span class="k">delete</span> ptr;                         <span class="c">// purana resource chhodo</span>
+            ptr = <span class="k">new</span> <span class="k">int</span>(*o.ptr);              <span class="c">// naya alag resource lo</span>
+        }
+        cout &lt;&lt; "copy assign\n";
+        <span class="k">return</span> *<span class="k">this</span>;
+    }
+
+    ~Test() { cout &lt;&lt; "dtor\n"; <span class="k">delete</span> ptr; }
+
+    <span class="k">int</span> get() <span class="k">const</span> { <span class="k">return</span> *ptr; }
+    <span class="k">void</span> set(<span class="k">int</span> v) { *ptr = v; }
+    <span class="k">const</span> <span class="k">int</span>* addr() <span class="k">const</span> { <span class="k">return</span> ptr; }
+};
+
+Test t1(10);
+Test t2 = t1;
+t2.set(99);
+cout &lt;&lt; t1.get() &lt;&lt; " " &lt;&lt; t2.get() &lt;&lt; " same address? " &lt;&lt; (t1.addr() == t2.addr()) &lt;&lt; "\n";
+
+Test t3(5);
+t3 = t1;</code></pre>
+<pre class="out">ctor
+copy ctor
+10 99 same address? 0
+ctor
+copy assign
+dtor
+dtor
+dtor</pre>
+  <p>Dekho: <code>t1</code> 10 hi raha, <code>t2</code> 99 hua, addresses alag (<code>0</code> = same nahi). Teen destructors, har object ka apna resource.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"The Rule of Three says that if a class needs a user-defined destructor, copy constructor or copy assignment operator, it almost certainly needs all three. The reason is that the compiler-generated copy does a shallow copy, so two objects end up owning the same pointer, and when both destructors run the memory is deleted twice, which is undefined behavior."</p>
+  </div>
+
+  <h3 id="s5p8">Part 8: Rule of 5</h3>
+  <h3 id="r-r5">5.8 Rule of 5</h3>
+  <p>C++11 ne move semantics diya. Ab resource manually manage karte ho toh paanchon ka socho:</p>
+  <ol>
+    <li>Destructor</li>
+    <li>Copy constructor</li>
+    <li>Copy assignment</li>
+    <li>Move constructor</li>
+    <li>Move assignment</li>
+  </ol>
+  <p><strong>Kyun?</strong> Copy operations duplication sambhalte hain, move operations resource transfer, destructor cleanup. Isse copy aur move dono par control milta hai. Poora example, har operation print karta hai:</p>
+<pre><code><span class="k">class</span> Buf {
+    <span class="k">int</span>* p;
+<span class="k">public</span>:
+    Buf(<span class="k">int</span> x) : p(<span class="k">new</span> <span class="k">int</span>(x)) { cout &lt;&lt; "ctor " &lt;&lt; x &lt;&lt; "\n"; }
+    Buf(<span class="k">const</span> Buf&amp; o) : p(<span class="k">new</span> <span class="k">int</span>(*o.p)) { cout &lt;&lt; "copy ctor\n"; }
+    Buf(Buf&amp;&amp; o) noexcept : p(o.p) { o.p = <span class="k">nullptr</span>; cout &lt;&lt; "move ctor\n"; }
+
+    Buf&amp; <span class="k">operator</span>=(<span class="k">const</span> Buf&amp; o) {
+        <span class="k">if</span> (<span class="k">this</span> != &amp;o) { <span class="k">delete</span> p; p = <span class="k">new</span> <span class="k">int</span>(*o.p); }
+        cout &lt;&lt; "copy assign\n";
+        <span class="k">return</span> *<span class="k">this</span>;
+    }
+    Buf&amp; <span class="k">operator</span>=(Buf&amp;&amp; o) noexcept {
+        <span class="k">if</span> (<span class="k">this</span> != &amp;o) { <span class="k">delete</span> p; p = o.p; o.p = <span class="k">nullptr</span>; }
+        cout &lt;&lt; "move assign\n";
+        <span class="k">return</span> *<span class="k">this</span>;
+    }
+    ~Buf() { <span class="k">delete</span> p; cout &lt;&lt; "dtor\n"; }
+};
+
+Buf a(1);
+Buf b = a;                  <span class="c">// copy ctor      (a lvalue hai)</span>
+Buf c = std::move(a);       <span class="c">// move ctor      (a ko rvalue bana diya)</span>
+Buf d(4);
+d = b;                      <span class="c">// copy assign</span>
+d = std::move(c);           <span class="c">// move assign</span></code></pre>
+<pre class="out">ctor 1
+copy ctor
+move ctor
+ctor 4
+copy assign
+move assign
+dtor
+dtor
+dtor
+dtor</pre>
+  <p>Padho: <code>b = a</code> (a lvalue) &rarr; <code>copy ctor</code>; <code>std::move(a)</code> &rarr; <code>move ctor</code>; <code>d = b</code> &rarr; <code>copy assign</code>; <code>d = std::move(c)</code> &rarr; <code>move assign</code>. Aakhir mein 4 destructors (a, b, c, d).</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"The Rule of Five extends the Rule of Three for C++11. If a class manages a resource manually, we should consider defining the destructor, copy constructor, copy assignment, move constructor and move assignment together. Copy duplicates the resource, move transfers it, and the destructor cleans up."</p>
+  </div>
+
+  <h3 id="s5p9">Part 9: = default and = delete</h3>
+  <h3 id="r-dd">5.9 <code>= default</code> aur <code>= delete</code></h3>
+  <p>Interview mein bahut poochhe jaate hain.</p>
+  <p><strong><code>= default</code></strong> compiler ko bolta hai: "iska default implementation tum generate karo." Tab kaam aata hai jab tumne doosra constructor declare kiya par default constructor bhi chahiye:</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> v = 7;
+    Test() = <span class="k">default</span>;                 <span class="c">// compiler wala default constructor wapas maanga</span>
+    Test(<span class="k">int</span> x) : v(x) {}
+};
+
+Test a;          <span class="c">// Test() = default ki wajah se chalta hai</span>
+Test b(5);
+cout &lt;&lt; a.v &lt;&lt; " " &lt;&lt; b.v &lt;&lt; "\n";</code></pre>
+<pre class="out">7 5</pre>
+  <p><strong><code>= delete</code></strong> function ko explicitly disable karta hai:</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    Test() = <span class="k">default</span>;
+    Test(<span class="k">const</span> Test&amp;) = <span class="k">delete</span>;
+};
+
+Test t1;
+Test t2 = t1;       <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: use of deleted function 'Test::Test(const Test&amp;)'</pre>
+  <p>Copying mana hai. Common use cases:</p>
+  <ul>
+    <li><strong>Copying rokna</strong> (copy constructor delete). <code>unique_ptr</code>, <code>std::thread</code>, mutex isi tarah non-copyable hain.</li>
+    <li><strong>Assignment rokna</strong> (copy assignment delete):</li>
+  </ul>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    Test() = <span class="k">default</span>;
+    Test(<span class="k">const</span> Test&amp;) = <span class="k">delete</span>;
+    Test&amp; <span class="k">operator</span>=(<span class="k">const</span> Test&amp;) = <span class="k">delete</span>;
+};
+
+Test t1, t2;
+t2 = t1;            <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: use of deleted function 'Test&amp; Test::operator=(const Test&amp;)'</pre>
+  <ul>
+    <li><strong>Unwanted implicit conversion / function call rokna</strong>: koi bhi function delete kar sakte ho:</li>
+  </ul>
+<pre><code><span class="k">void</span> show(<span class="k">int</span> x) { cout &lt;&lt; x &lt;&lt; "\n"; }
+<span class="k">void</span> show(<span class="k">double</span>) = <span class="k">delete</span>;           <span class="c">// double se call mana hai</span>
+
+show(5);                              <span class="c">// theek</span>
+show(3.5);                            <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: use of deleted function 'void show(double)'</pre>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"= default asks the compiler to generate the default implementation of a special member function, for example to get the default constructor back after declaring another constructor. = delete explicitly disables a function; it is used to make a class non-copyable or to prevent unwanted calls and implicit conversions, and the error is reported at compile time."</p>
+  </div>
+
+  <h3 id="s5p10">Part 10: Final revision</h3>
+  <h3 id="r-rev">5.10 Final interview revision sheet</h3>
+  <div class="tbl"><table>
+    <tr><th>Concept</th><th>One-line explanation</th></tr>
+    <tr><td>Copy constructor</td><td>Creates a new object from an existing object</td></tr>
+    <tr><td>Copy assignment</td><td>Copies into an existing object</td></tr>
+    <tr><td>Move constructor</td><td>Creates a new object by transferring resources</td></tr>
+    <tr><td>Move assignment</td><td>Transfers resources into an existing object</td></tr>
+    <tr><td><code>std::move()</code></td><td>Casts an expression to an rvalue reference</td></tr>
+    <tr><td>Rule of 3</td><td>Destructor + copy constructor + copy assignment</td></tr>
+    <tr><td>Rule of 5</td><td>Rule of 3 + move constructor + move assignment</td></tr>
+    <tr><td><code>= default</code></td><td>Request compiler-generated implementation</td></tr>
+    <tr><td><code>= delete</code></td><td>Prohibit a function</td></tr>
+  </table></div>
+
+  <h3 id="r-extra">5.11 Extra: jo interviewer ek step aage pooch sakta hai</h3>
+  <p><strong>1. Move constructor <code>noexcept</code> kyun likhte hain?</strong> <code>std::vector</code> badhte waqt purane elements naye buffer mein tabhi <strong>move</strong> karta hai jab move constructor <code>noexcept</code> ho (warna exception pe data kho sakta tha, isliye wo <strong>copy</strong> karta hai). Proof:</p>
+<pre><code><span class="k">struct</span> X {
+    X() {}
+    X(<span class="k">const</span> X&amp;)     { cout &lt;&lt; "copy "; }
+    X(X&amp;&amp;) noexcept { cout &lt;&lt; "move "; }
+};
+<span class="k">struct</span> Y {
+    Y() {}
+    Y(<span class="k">const</span> Y&amp;) { cout &lt;&lt; "copy "; }
+    Y(Y&amp;&amp;)      { cout &lt;&lt; "move "; }       <span class="c">// noexcept nahi likha</span>
+};
+
+vector&lt;X&gt; vx;
+vx.emplace_back(); cout &lt;&lt; "| ";
+vx.emplace_back(); cout &lt;&lt; "&lt;- X: move noexcept\n";    <span class="c">// 2nd insert pe vector badhta hai</span>
+
+vector&lt;Y&gt; vy;
+vy.emplace_back(); cout &lt;&lt; "| ";
+vy.emplace_back(); cout &lt;&lt; "&lt;- Y: move noexcept nahi\n";</code></pre>
+<pre class="out">| move &lt;- X: move noexcept
+| copy &lt;- Y: move noexcept nahi</pre>
+  <p><strong>2. Copy elision (C++17):</strong> <code>T a = T(5);</code> mein na copy chalta hai na move, object seedha <code>a</code> mein ban jaata hai. Isliye "kitni baar copy ctor chalega?" wale output questions mein dhyan se dekho:</p>
+<pre><code><span class="k">struct</span> T {
+    T(<span class="k">int</span>)       { cout &lt;&lt; "ctor\n"; }
+    T(<span class="k">const</span> T&amp;)  { cout &lt;&lt; "copy\n"; }
+    T(T&amp;&amp;)       { cout &lt;&lt; "move\n"; }
+};
+
+T a = T(5);              <span class="c">// C++17: sirf ctor, copy/move hota hi nahi</span>
+T b = a;                 <span class="c">// copy</span>
+T c = std::move(a);      <span class="c">// move</span></code></pre>
+<pre class="out">ctor
+copy
+move</pre>
+  <p><strong>3. Rule of 0:</strong> sabse achhi class wo hai jisme tum <strong>kuch bhi special function nahi likhte</strong> aur resource <code>std::string</code>, <code>std::vector</code>, <code>std::unique_ptr</code> jaise RAII members ke paas chhod dete ho. Compiler ke generated copy/move sahi chalte hain:</p>
+<pre><code><span class="k">struct</span> Person {                  <span class="c">// koi special function nahi likha</span>
+    string name;
+    vector&lt;<span class="k">int</span>&gt; scores;
+};
+
+Person p{"Raj", {1, 2, 3}};
+Person q = p;                    <span class="c">// compiler ka copy: deep copy (string/vector khud sambhalte hain)</span>
+Person r = std::move(p);         <span class="c">// compiler ka move</span>
+
+cout &lt;&lt; q.name &lt;&lt; " " &lt;&lt; q.scores.size() &lt;&lt; " | " &lt;&lt; r.name &lt;&lt; " " &lt;&lt; r.scores.size()
+     &lt;&lt; " | [" &lt;&lt; p.name &lt;&lt; "] " &lt;&lt; p.scores.size() &lt;&lt; "\n";</code></pre>
+<pre class="out">Raj 3 | Raj 3 | [] 0</pre>
+  <p>(<code>p</code> ka bacha hua state "valid but unspecified" hai, GCC pe khaali dikha.) Rule of 3/5 tab, jab tum <strong>khud</strong> raw resource (<code>new</code>/file handle) sambhalte ho; Rule of 0 tab, jab sab kuch RAII members sambhalte hain. (<a href="raii.html">RAII</a> aur <a href="smart-pointers.html">Smart pointers</a> notes dekho.)</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Ideally we follow the Rule of Zero: let members like std::string, std::vector or std::unique_ptr manage resources so that the compiler-generated special functions are correct. Only when a class directly owns a raw resource do we implement the Rule of Three or Five."</p>
+  </div>
+
+  <h3 id="r-check">Self-check</h3>
+  <details class="qa"><summary>1. Copy constructor aur copy assignment mein fark?</summary><div>
+    Copy constructor <strong>naya</strong> object banata hai (<code>Test b = a;</code>), copy assignment <strong>maujooda</strong> object update karta hai (<code>b = a;</code>).</div></details>
+  <details class="qa"><summary>2. Copy constructor ka parameter const reference kyun?</summary><div>
+    By value hota toh argument copy karne ke liye copy constructor chahiye, infinite recursion. Compile error: <em>invalid constructor</em>. <code>const</code> isliye ki source badle nahi aur rvalue/temporary bhi bind ho.</div></details>
+  <details class="qa"><summary>3. <code>operator=</code> <code>Test&amp;</code> kyun return karta hai?</summary><div>
+    Chained assignment (<code>a = b = c</code>) ke liye; <code>*this</code> return hota hai.</div></details>
+  <details class="qa"><summary>4. Rule of 3 aur Rule of 5?</summary><div>
+    Rule of 3: destructor + copy ctor + copy assignment. Rule of 5: inme move ctor + move assignment. Raw resource manage karte ho toh saath mein define karo.</div></details>
+  <details class="qa"><summary>5. <code>std::move</code> kya karta hai?</summary><div>
+    Sirf rvalue reference mein cast. Move khud move constructor/assignment karta hai. <code>std::move(x);</code> akele likhne se kuch nahi hota.</div></details>
+  <details class="qa"><summary>6. Class mein destructor likha, ab <code>std::move(obj)</code> se kya hoga?</summary><div>
+    Move constructor generate hi nahi hua, isliye <strong>copy</strong> constructor chalta hai (agar copy available hai). Koi error nahi, bas move ka fayda gaya.</div></details>
+  <details class="qa"><summary>7. Default constructor kab nahi milta?</summary><div>
+    Jab tumne koi bhi constructor khud declare kiya. <code>Test() = default;</code> se wapas maang sakte ho.</div></details>
+  <details class="qa"><summary>8. <code>= delete</code> kab use karte ho?</summary><div>
+    Copy/assignment rokne ke liye (non-copyable class), ya kisi function ka koi overload/conversion rokne ke liye (<code>void f(double) = delete;</code>).</div></details>
+  <details class="qa"><summary>9. Shallow copy mein kya problem hai?</summary><div>
+    Do objects ek hi pointer rakhte hain: ek badle toh doosra badle, aur dono destructors same memory delete karte hain (double free, undefined behavior). Fix: deep copy (Rule of 3) ya move/smart pointer.</div></details>
+
+
+  <!-- ================= TOPIC 6 ================= -->
+  <h2 id="t6" class="topic-head">6. const / immutability <span class="pill done">Done</span></h2>
+  <p><strong>PDF ka point:</strong> const member functions, <code>mutable</code>, const pointers (3 variants), const reference. Notes tumhare hain; code GCC pe run kiya aur compiler ke <strong>asli error messages</strong> dikhaye (interviewer "kya error aayega?" poochta hai). Const pointers ka ek aur recap <a href="topics.html#p-const">Pointer 2.5</a> mein bhi hai.</p>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td><code>const</code> kya hai, <code>int const x</code> same</td><td><span class="pill done">✅</span></td><td><a href="#k-what">6.1</a></td></tr>
+    <tr><td>const member function, const object, <code>const void f()</code> trap</td><td><span class="pill done">✅</span></td><td><a href="#k-mem">6.2</a></td></tr>
+    <tr><td><code>mutable</code> (use cases)</td><td><span class="pill done">✅</span></td><td><a href="#k-mut">6.3</a></td></tr>
+    <tr><td>Const pointers: <code>const int*</code>, <code>int* const</code>, <code>const int* const</code></td><td><span class="pill done">✅</span></td><td><a href="#k-ptr">6.4</a></td></tr>
+    <tr><td>Comparison table + padhne ka trick</td><td><span class="pill done">✅</span></td><td><a href="#k-cmp">6.5</a></td></tr>
+    <tr><td>Const reference</td><td><span class="pill done">✅</span></td><td><a href="#k-ref">6.6</a></td></tr>
+    <tr><td>Interview revision sheet</td><td><span class="pill done">✅</span></td><td><a href="#k-rev">6.7</a></td></tr>
+    <tr><td>Extra: const overloading, const data member init, <code>const_cast</code></td><td><span class="pill done">✅ Extra</span></td><td><a href="#k-extra">6.8</a></td></tr>
+  </table></div>
+
+  <h3 id="s6p1">Part 1: const kya hai?</h3>
+  <h3 id="k-what">6.1 What does const mean?</h3>
+  <p><code>const</code> ka matlab: <strong>is declaration ke through</strong> cheez modify nahi ho sakti.</p>
+<pre><code><span class="k">const</span> <span class="k">int</span> x = 10;
+
+x = 20;        <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: assignment of read-only variable 'x'</pre>
+  <p>Initialize hone ke baad <code>x</code> badal nahi sakte. Ye bhi same hai:</p>
+<pre><code><span class="k">int</span> <span class="k">const</span> x = 10;</code></pre>
+  <p><code>const int x</code> aur <code>int const x</code> <strong>equivalent</strong> hain (const type ke pehle ya baad, same).</p>
+  <div class="callout tip"><span class="tag">Dhyan do: "through that declaration"</span>
+    <p>Const ka matlab ye nahi ki memory kabhi badal hi nahi sakti. <code>const int* p = &amp;a;</code> mein <code>*p</code> se <code>a</code> nahi badal sakte, par <code>a</code> khud (agar const nahi hai) seedha badal sakta hai. Ye 6.4 mein dikhega.</p>
+  </div>
+
+  <h3 id="s6p2">Part 2: Const member functions</h3>
+  <h3 id="k-mem">6.2 Const member functions</h3>
+  <p>Const member function ye <strong>promise</strong> karta hai ki wo object ke ordinary (non-mutable) data members <strong>modify nahi karega</strong>. Syntax: <code>const</code> <strong>function ke parentheses ke baad</strong>:</p>
+<pre><code><span class="k">class</span> Student {
+<span class="k">public</span>:
+    <span class="k">int</span> marks;
+
+    <span class="k">void</span> display() <span class="k">const</span> {
+        cout &lt;&lt; marks;
+    }
+};</code></pre>
+  <div class="callout trap"><span class="tag">Ye same nahi hai: <code>void display() const;</code> vs <code>const void display();</code></span>
+    <p>Pehle mein <code>const</code> <strong>function</strong> ka hai (<code>this</code> ko const banata hai). Doosre mein <code>const</code> sirf <strong>return type</strong> ka hai, function const nahi bana. Proof: const object pe call karo:</p>
+<pre><code><span class="k">class</span> A {
+<span class="k">public</span>:
+    <span class="k">const</span> <span class="k">void</span> show() { cout &lt;&lt; "hi"; }     <span class="c">// const IS BAAR return type ka hai, function ka nahi</span>
+};
+
+<span class="k">const</span> A a;
+a.show();                                   <span class="c">// ERROR: function const nahi bana</span></code></pre>
+<pre class="out err">error: passing 'const A' as 'this' argument discards qualifiers [-fpermissive]</pre>
+  </div>
+  <p><strong>Const function ke andar member badalne ki koshish:</strong></p>
+<pre><code><span class="k">class</span> Student {
+<span class="k">public</span>:
+    <span class="k">int</span> marks = 90;
+
+    <span class="k">void</span> update() <span class="k">const</span> {
+        marks = 100;       <span class="c">// ERROR</span>
+    }
+};
+
+Student s;</code></pre>
+<pre class="out err">error: assignment of member 'Student::marks' in read-only object</pre>
+  <p>Const member function ordinary data members modify nahi kar sakta.</p>
+
+  <p><strong>Important: Const objects</strong></p>
+<pre><code><span class="k">class</span> Student {
+<span class="k">public</span>:
+    <span class="k">void</span> display() <span class="k">const</span> {
+        cout &lt;&lt; "Display";
+    }
+
+    <span class="k">void</span> update() {
+        cout &lt;&lt; "Update";
+    }
+};
+
+<span class="k">const</span> Student s;
+
+s.display();    <span class="c">// Valid</span>
+s.update();     <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: passing 'const Student' as 'this' argument discards qualifiers [-fpermissive]</pre>
+  <p><strong>Rule:</strong></p>
+  <ul>
+    <li><strong>Const object &rarr; const member functions bula sakta hai.</strong></li>
+    <li><strong>Const object &rarr; non-const member functions nahi bula sakta.</strong></li>
+  </ul>
+  <p><strong>Kyun?</strong> Kyunki non-const member function object ko modify <em>kar sakta hai</em>, aur const object ko modify nahi hona chahiye. (Error message mein "discards qualifiers": <code>this</code> ka const hat raha tha.) Non-const object dono bula sakta hai:</p>
+<pre><code><span class="k">class</span> Student {
+<span class="k">public</span>:
+    <span class="k">void</span> display() <span class="k">const</span> { cout &lt;&lt; "Display\n"; }
+    <span class="k">void</span> update()        { cout &lt;&lt; "Update\n"; }
+};
+
+<span class="k">const</span> Student s1;
+s1.display();           <span class="c">// const object + const function: theek</span>
+
+Student s2;             <span class="c">// non-const object dono bula sakta hai</span>
+s2.display();
+s2.update();</code></pre>
+<pre class="out">Display
+Display
+Update</pre>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A const member function promises not to modify the object's ordinary data members. Internally it makes the `this` pointer a pointer to const. A const object can only call const member functions, because a non-const member function would be allowed to modify the object."</p>
+  </div>
+
+  <h3 id="s6p3">Part 3: mutable</h3>
+  <h3 id="k-mut">6.3 What is <code>mutable</code>?</h3>
+  <p><code>mutable</code> ek data member ko <strong>const member function ke andar bhi</strong> modify karne deta hai.</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x = 10;
+    <span class="k">mutable</span> <span class="k">int</span> count = 0;
+
+    <span class="k">void</span> display() <span class="k">const</span> {
+        count++;
+        cout &lt;&lt; x &lt;&lt; " " &lt;&lt; count;
+    }
+};
+
+<span class="k">const</span> Test t;
+t.display();</code></pre>
+<pre class="out">10 1</pre>
+  <ul>
+    <li><code>x</code> ko <code>display()</code> ke andar badal nahi sakte.</li>
+    <li><code>count</code> badal sakte hain kyunki wo <code>mutable</code> hai.</li>
+  </ul>
+  <p><strong>Mutable ki zaroorat kyun?</strong> Common use cases:</p>
+  <ul>
+    <li><strong>Calculated values cache</strong> karna.</li>
+    <li><strong>Logging ya access counters</strong> rakhna.</li>
+    <li>Internal bookkeeping jo object ki <strong>logical state</strong> nahi badalti.</li>
+  </ul>
+  <p>Caching ka example, ek baar calculate, doosri baar seedha cache:</p>
+<pre><code><span class="k">class</span> Circle {
+    <span class="k">double</span> r;
+    <span class="k">mutable</span> <span class="k">bool</span> cached = <span class="k">false</span>;        <span class="c">// cache: logically const operation ke andar badalta hai</span>
+    <span class="k">mutable</span> <span class="k">double</span> area_cache = 0;
+<span class="k">public</span>:
+    Circle(<span class="k">double</span> r) : r(r) {}
+    <span class="k">double</span> area() <span class="k">const</span> {
+        <span class="k">if</span> (!cached) {
+            cout &lt;&lt; "(calculating) ";
+            area_cache = 3.14 * r * r;
+            cached = <span class="k">true</span>;
+        }
+        <span class="k">return</span> area_cache;
+    }
+};
+
+<span class="k">const</span> Circle c(2);
+cout &lt;&lt; c.area() &lt;&lt; "\n";
+cout &lt;&lt; c.area() &lt;&lt; "\n";               <span class="c">// is baar calculation nahi</span></code></pre>
+<pre class="out">(calculating) 12.56
+12.56</pre>
+  <p><code>area()</code> const hai (logically kuch nahi badla), par andar cache fields <code>mutable</code> hain isliye update ho sake. (Lambda wala <code>mutable</code> alag cheez hai, wo <a href="topics.html#l-cap">Lambda 3.2</a> mein hai.)</p>
+  <div class="callout tip"><span class="tag">Interview definition</span>
+    <p><code>mutable</code> allows a <strong>non-static data member</strong> to be modified even inside a const member function or through a const object.</p>
+  </div>
+
+  <h3 id="s6p4">Part 4: Const pointers</h3>
+  <h3 id="k-ptr">6.4 Const pointers: extremely important!</h3>
+  <p>Yahan bahut log confuse hote hain. Teen major declarations hain. Har ek ke saath compiler ka asli error bhi dekho (<code>Valid</code> wali line compile hoti hai, error sirf <code>ERROR</code> wali line pe aata hai).</p>
+  <p><strong>A. <code>const int* ptr</code>: pointer to a constant integer.</strong> Pointer kahin aur point kara sakte ho, par us pointer se value modify nahi kar sakte.</p>
+<pre><code><span class="k">int</span> a = 10;
+<span class="k">int</span> b = 20;
+
+<span class="k">const</span> <span class="k">int</span>* ptr = &amp;a;
+
+ptr = &amp;b;       <span class="c">// Valid</span>
+*ptr = 30;      <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: assignment of read-only location '* ptr'</pre>
+  <p><em>Data const hai, pointer nahi.</em></p>
+  <p><strong>B. <code>int* const ptr</code>: constant pointer to an integer.</strong> Pointer ko kahin aur point nahi karwa sakte, par value modify kar sakte ho.</p>
+<pre><code><span class="k">int</span> a = 10;
+<span class="k">int</span> b = 20;
+
+<span class="k">int</span>* <span class="k">const</span> ptr = &amp;a;
+
+*ptr = 30;      <span class="c">// Valid</span>
+ptr = &amp;b;       <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: assignment of read-only variable 'ptr'</pre>
+  <p><em>Pointer const hai, data nahi.</em></p>
+  <p><strong>C. <code>const int* const ptr</code>: constant pointer to a constant integer.</strong> Dono nahi badal sakte.</p>
+<pre><code><span class="k">int</span> a = 10;
+<span class="k">int</span> b = 20;
+
+<span class="k">const</span> <span class="k">int</span>* <span class="k">const</span> ptr = &amp;a;
+
+*ptr = 30;      <span class="c">// ERROR</span>
+ptr = &amp;b;       <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: assignment of read-only location '*(const int*)ptr'
+error: assignment of read-only variable 'ptr'</pre>
+  <p><em>Pointer aur data, dono const.</em> (Valid operations ka output: <a href="#k-extra">6.8</a>.)</p>
+
+  <h3 id="k-cmp">6.5 Quick comparison table</h3>
+  <div class="tbl"><table>
+    <tr><th>Declaration</th><th>Modify <code>*ptr</code>?</th><th>Reassign <code>ptr</code>?</th></tr>
+    <tr><td><code>const int* ptr</code></td><td>No</td><td>Yes</td></tr>
+    <tr><td><code>int* const ptr</code></td><td>Yes</td><td>No</td></tr>
+    <tr><td><code>const int* const ptr</code></td><td>No</td><td>No</td></tr>
+  </table></div>
+  <div class="callout say"><span class="tag">Easy trick: variable ke naam se bahar ki taraf padho</span>
+    <ul>
+      <li><code>const int* ptr;</code> &rarr; <strong>pointer to const int</strong>.</li>
+      <li><code>int* const ptr;</code> &rarr; <strong>const pointer to int</strong>.</li>
+      <li><code>const int* const ptr;</code> &rarr; <strong>const pointer to const int</strong>.</li>
+    </ul>
+    <p>Shortcut: <code>*</code> ke <strong>baayein</strong> wala const &rarr; data const. <code>*</code> ke <strong>daayein</strong> wala const &rarr; pointer const. (<code>int const* p</code> aur <code>const int* p</code> same hain, kyunki dono mein const <code>*</code> ke baayein hai.)</p>
+  </div>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"In `const int* p` the pointee is const, so we can re-point the pointer but not modify the value through it. In `int* const p` the pointer itself is const, so we can modify the value but cannot re-point it. In `const int* const p` both are const. A quick way to read it: look at which side of the star the const sits on. Left of the star makes the data const, right of the star makes the pointer const."</p>
+  </div>
+
+  <h3 id="s6p5">Part 5: Const reference</h3>
+  <h3 id="k-ref">6.6 Bonus: const reference</h3>
+  <p>Ye bhi bahut milega:</p>
+<pre><code><span class="k">void</span> display(<span class="k">const</span> <span class="k">int</span>&amp; x) {
+    cout &lt;&lt; x;
+}</code></pre>
+  <p>Iska matlab:</p>
+  <ul>
+    <li>Argument pass karte waqt <strong>copy nahi banti</strong>.</li>
+    <li>Function is reference ke through <code>x</code> ko <strong>modify nahi kar sakta</strong>.</li>
+  </ul>
+  <p>Bade objects (<code>string</code>, <code>vector</code>, class) pass karne ke liye bahut kaam ka. Modify karne ki koshish:</p>
+<pre><code><span class="k">void</span> display(<span class="k">const</span> <span class="k">int</span>&amp; x) {
+    cout &lt;&lt; x;
+    x = 5;                <span class="c">// ERROR: const reference se badal nahi sakte</span>
+}
+
+<span class="k">int</span> n = 1;
+display(n);</code></pre>
+<pre class="out err">error: assignment of read-only reference 'x'</pre>
+  <p><strong>Ek aur fayda:</strong> const reference <strong>temporary (rvalue)</strong> ko bhi bind kar leta hai, non-const reference nahi:</p>
+<pre><code><span class="k">void</span> byConst(<span class="k">const</span> <span class="k">int</span>&amp; x) { cout &lt;&lt; x &lt;&lt; "\n"; }
+<span class="k">void</span> byRef(<span class="k">int</span>&amp; x)         { cout &lt;&lt; x &lt;&lt; "\n"; }
+
+byConst(5);               <span class="c">// theek: const&amp; temporary (5) ko bind kar leta hai</span>
+byRef(5);                 <span class="c">// ERROR</span></code></pre>
+<pre class="out err">error: cannot bind non-const lvalue reference of type 'int&amp;' to an rvalue of type 'int'</pre>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Passing by const reference avoids copying the argument and prevents the function from modifying it. It is the standard way to pass large objects that the function only needs to read. A const reference can also bind to temporaries, which a non-const reference cannot."</p>
+  </div>
+
+  <h3 id="s6p6">Part 6: Revision</h3>
+  <h3 id="k-rev">6.7 Interview revision sheet</h3>
+  <div class="tbl"><table>
+    <tr><th>Concept</th><th>Remember</th></tr>
+    <tr><td><code>const int x</code></td><td>Cannot modify <code>x</code></td></tr>
+    <tr><td><code>void display() const</code></td><td>Cannot modify ordinary object members</td></tr>
+    <tr><td><code>const Test obj</code></td><td>Can call const member functions</td></tr>
+    <tr><td><code>mutable int count</code></td><td>Can change inside const member functions</td></tr>
+    <tr><td><code>const int* p</code></td><td>Cannot modify data through pointer</td></tr>
+    <tr><td><code>int* const p</code></td><td>Cannot change pointer address</td></tr>
+    <tr><td><code>const int* const p</code></td><td>Cannot modify either</td></tr>
+    <tr><td><code>const int&amp; x</code></td><td>Read-only reference</td></tr>
+  </table></div>
+
+  <h3 id="k-extra">6.8 Extra: jo interviewer ek step aage pooch sakta hai</h3>
+  <p><strong>1. Teeno pointer variants ke valid operations (output):</strong></p>
+<pre><code><span class="k">int</span> a = 10, b = 20;
+
+<span class="k">const</span> <span class="k">int</span>* p1 = &amp;a;       <span class="c">// data const</span>
+p1 = &amp;b;                  <span class="c">// pointer badal sakte hain</span>
+cout &lt;&lt; *p1 &lt;&lt; "\n";
+
+<span class="k">int</span>* <span class="k">const</span> p2 = &amp;a;       <span class="c">// pointer const</span>
+*p2 = 30;                 <span class="c">// data badal sakte hain</span>
+cout &lt;&lt; a &lt;&lt; "\n";
+
+<span class="k">int</span> <span class="k">const</span>* p3 = &amp;b;       <span class="c">// "int const*" bhi "const int*" hi hai</span>
+p3 = &amp;a;
+cout &lt;&lt; *p3 &lt;&lt; "\n";</code></pre>
+<pre class="out">20
+30
+30</pre>
+  <p><strong>2. <code>int*</code> &rarr; <code>const int*</code> theek, ulta nahi.</strong> Access kam karna safe hai, badhana nahi:</p>
+<pre><code><span class="k">int</span> a = 10;
+<span class="k">const</span> <span class="k">int</span>* cp = &amp;a;       <span class="c">// int* -&gt; const int*: theek (access kam ho rahi hai)</span>
+<span class="k">int</span>* p = cp;              <span class="c">// const int* -&gt; int*: ERROR</span></code></pre>
+<pre class="out err">error: invalid conversion from 'const int*' to 'int*' [-fpermissive]</pre>
+  <p><strong>3. Const function se non-const function nahi bula sakte</strong> (warna promise tut jaata):</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">void</span> change() { }
+    <span class="k">void</span> show() <span class="k">const</span> {
+        change();            <span class="c">// const function se non-const function: ERROR</span>
+    }
+};
+
+Test t;</code></pre>
+<pre class="out err">error: passing 'const Test' as 'this' argument discards qualifiers [-fpermissive]</pre>
+  <p><strong>4. Const aur non-const dono version (overloading):</strong> standard library ke <code>operator[]</code> / <code>at()</code> aise hi hote hain. Object const hai toh const version chalta hai:</p>
+<pre><code><span class="k">class</span> Box {
+    <span class="k">int</span> v = 7;
+<span class="k">public</span>:
+    <span class="k">int</span>&amp; get()             { cout &lt;&lt; "non-const get  "; <span class="k">return</span> v; }
+    <span class="k">const</span> <span class="k">int</span>&amp; get() <span class="k">const</span> { cout &lt;&lt; "const get       "; <span class="k">return</span> v; }
+};
+
+Box b1;
+<span class="k">const</span> Box b2;
+b1.get() = 50;            <span class="c">// non-const object: non-const version, v badal sakte hain</span>
+cout &lt;&lt; "\n";
+cout &lt;&lt; b1.get() &lt;&lt; "\n";
+cout &lt;&lt; b2.get() &lt;&lt; "\n"; <span class="c">// const object: const version (v nahi badal sakte)</span></code></pre>
+<pre class="out">non-const get  
+non-const get  50
+const get       7</pre>
+  <p><strong>5. Const data member ya reference member</strong> ko constructor ke <strong>body mein assign nahi</strong> kar sakte, <strong>initializer list</strong> mein hi initialize hota hai:</p>
+<pre><code><span class="k">class</span> Test {
+    <span class="k">const</span> <span class="k">int</span> id;
+<span class="k">public</span>:
+    Test(<span class="k">int</span> i) {
+        id = i;              <span class="c">// ERROR: yahan tak toh id ban chuka hai, ab assignment ho rahi hai</span>
+    }
+};
+
+Test t(1);</code></pre>
+<pre class="out err">error: uninitialized const member in 'const int' [-fpermissive]
+error: assignment of read-only member 'Test::id'</pre>
+  <p>Sahi tareeka (initializer list):</p>
+<pre><code><span class="k">class</span> Test {
+    <span class="k">const</span> <span class="k">int</span> id;
+    <span class="k">const</span> <span class="k">int</span>&amp; ref;
+<span class="k">public</span>:
+    Test(<span class="k">int</span> i, <span class="k">int</span>&amp; r) : id(i), ref(r) {}       <span class="c">// const / reference member initializer list mein hi</span>
+    <span class="k">void</span> show() <span class="k">const</span> { cout &lt;&lt; id &lt;&lt; " " &lt;&lt; ref &lt;&lt; "\n"; }
+};
+
+<span class="k">int</span> n = 5;
+Test t(1, n);
+t.show();</code></pre>
+<pre class="out">1 5</pre>
+  <p><strong>6. <code>const_cast</code>:</strong> const hatata hai. Agar object <strong>asli mein const nahi</strong> tha toh theek:</p>
+<pre><code><span class="k">int</span> a = 10;                       <span class="c">// asli mein const NAHI hai</span>
+<span class="k">const</span> <span class="k">int</span>* p = &amp;a;
+<span class="k">int</span>* q = const_cast&lt;<span class="k">int</span>*&gt;(p);     <span class="c">// const hata diya</span>
+*q = 20;                          <span class="c">// theek: a asli mein const nahi tha</span>
+cout &lt;&lt; a &lt;&lt; "\n";</code></pre>
+<pre class="out">20</pre>
+  <div class="callout trap"><span class="tag">Dhyan: asli const object ko const_cast se badalna undefined behavior hai</span>
+    <p>Agar <code>const int a = 10;</code> (asli const) ho aur <code>const_cast</code> se <code>*q = 20</code> karo, toh <strong>undefined behavior</strong> hai (maine ise run nahi kiya, UB ka output bharosemand nahi). <code>const_cast</code> sirf tab theek jab pointee asli mein const nahi tha, aur interview mein ise "last resort / purane API ke liye" hi bolo.</p>
+  </div>
+  <p><strong>7. Note:</strong> <code>const Test t;</code> (bina initializer) tabhi chalta hai jab class ke members ka default initializer ho (jaise <code>int x = 10;</code>) ya koi user-provided constructor ho. Upar <code>mutable</code> example isiliye compile hua.</p>
+
+  <h3 id="k-check">Self-check</h3>
+  <details class="qa"><summary>1. <code>void f() const</code> ka matlab kya hai?</summary><div>
+    Function object ke ordinary data members modify nahi karega (<code>this</code> pointer-to-const ban jaata hai). Const object ye function bula sakta hai.</div></details>
+  <details class="qa"><summary>2. <code>void f() const;</code> aur <code>const void f();</code> mein fark?</summary><div>
+    Pehle mein function const hai. Doosre mein sirf return type <code>const void</code> hai, function const nahi (const object pe call error deta hai).</div></details>
+  <details class="qa"><summary>3. Const object non-const function kyun nahi bula sakta?</summary><div>
+    Non-const function object ko modify kar sakta hai, jo const object ke saath allowed nahi. Error: <em>passing 'const X' as 'this' argument discards qualifiers</em>.</div></details>
+  <details class="qa"><summary>4. <code>mutable</code> kya hai aur kab use karte hain?</summary><div>
+    Non-static data member jo const function/const object ke andar bhi badal sakta hai. Caching, counters, logging, internal bookkeeping jo logical state nahi badalte.</div></details>
+  <details class="qa"><summary>5. <code>const int* p</code>, <code>int* const p</code>, <code>const int* const p</code> mein fark?</summary><div>
+    Pehla: value nahi badal sakte, pointer badal sakte. Doosra: value badal sakte, pointer nahi. Teesra: dono nahi.</div></details>
+  <details class="qa"><summary>6. <code>const int&amp;</code> parameter kyun use karte hain?</summary><div>
+    Copy nahi banti aur function value badal nahi sakta. Temporary (rvalue) ko bhi bind kar leta hai.</div></details>
+  <details class="qa"><summary>7. Const data member ko kaise initialize karte hain?</summary><div>
+    Constructor ke <strong>initializer list</strong> mein. Body mein assignment error hai.</div></details>
+  <details class="qa"><summary>8. <code>int*</code> ko <code>const int*</code> mein de sakte hain? Ulta?</summary><div>
+    <code>int*</code> &rarr; <code>const int*</code> theek. <code>const int*</code> &rarr; <code>int*</code> error (invalid conversion), const_cast chahiye.</div></details>
+
+  <!-- TOPIC 7: abhi baaki, notes yahan aayenge -->
+  <!-- TOPIC 8: abhi baaki, notes yahan aayenge -->
+  <!-- TOPIC 9: abhi baaki, notes yahan aayenge -->
+  <!-- TOPIC 10: abhi baaki, notes yahan aayenge -->
+
+  <div class="footer-nav">
+    <a href="topics.html">← Topics</a>
+    <a href="playlist.html">Playlist →</a>
+  </div>
+</main>
+</body>
+</html>

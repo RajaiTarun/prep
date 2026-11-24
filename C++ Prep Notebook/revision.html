@@ -40,6 +40,8 @@
     <a href="gfg.html">GFG Questions</a>
     <a href="raii.html">RAII</a>
     <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="topics.html">Topics</a>
+    <a href="gaps.html">Gaps (A)</a>
     <a href="playlist.html">Playlist</a>
     <a href="revision.html" aria-current="page">Revision</a>
   </nav>
@@ -201,24 +203,24 @@ arr + 1    // +4 bytes   (int*)
       </div>
     </article>
     <article class="rev" tabindex="0">
-      <div class="rev-head"><span class="rnum">#18</span><h3>How do you return an array from a function?</h3></div>
+      <div class="rev-head"><span class="rnum">#19</span><h3>How do you return an array from a function?</h3></div>
       <div class="rev-body">
         <p class="ans">"Returning a local array from a function is a bug. The array lives on the function's stack and is destroyed when the function returns; only its address is returned, so the caller gets a dangling pointer, and using it is undefined behavior, often a crash. In general we should never return a pointer or reference to a local variable. There are two simple fixes. First, declare the array <code>static</code>, so it lives until the program ends. Second, allocate it on the heap with <code>new</code> and return the pointer; the memory survives the function, but the caller is then responsible for freeing it with <code>delete[]</code>."</p>
         <pre class="ex"><code>int* bad()  { int a[3];        return a; }  // local: dangling, crash
 int* ok1()  { static int a[3]; return a; }  // lives till program ends
 int* ok2()  { return new int[3]; }          // heap: caller does delete[]</code></pre>
-        <p class="src"><a href="playlist.html#v18">Notes dekho →</a></p>
+        <p class="src"><a href="playlist.html#v19">Notes dekho →</a></p>
       </div>
     </article>
     <article class="rev" tabindex="0">
-      <div class="rev-head"><span class="rnum">#19</span><h3>How do you return a 2D array from a function?</h3></div>
+      <div class="rev-head"><span class="rnum">#18</span><h3>How do you return a 2D array from a function?</h3></div>
       <div class="rev-body">
         <p class="ans">"There are three common ways to return a 2D array. First, allocate it dynamically: an array of row pointers with <code>new int*[n]</code>, then each row with <code>new int[n]</code>, and return the <code>int**</code>; it survives because it lives on the heap, but the caller must delete each row and then the outer array. Second, make it a <code>static</code> array and return a pointer to its rows, like <code>int (*)[3]</code>; a <code>typedef</code> makes that syntax readable, and the column size must be a constant. Third, wrap the array in a struct and return the struct by value, which copies every element, so it gets slow for large arrays. In practice we usually avoid returning arrays: the caller creates the array and passes it in, and the function just fills it."</p>
         <pre class="ex"><code>int** f();               // dynamic: new int*[n] + new int[n] per row
 int (*g())[3];           // static array; typedef int (*Rows)[3];
 struct Grid { int a[3][3]; };  Grid h();   // by value, copies all
 void fill(int a[][3]);   // usual: caller owns the array</code></pre>
-        <p class="src"><a href="playlist.html#v19">Notes dekho →</a></p>
+        <p class="src"><a href="playlist.html#v18">Notes dekho →</a></p>
       </div>
     </article>
   <h2 id="ptr">Pointers & references</h2>
@@ -586,20 +588,22 @@ return sign * result;                 // stop at first non-digit</code></pre>
     <article class="rev" tabindex="0">
       <div class="rev-head"><span class="rnum">★</span><h3>What is RAII?</h3></div>
       <div class="rev-body">
-        <p class="ans">RAII, Resource Acquisition Is Initialization, means tying a resource's lifetime to an object's lifetime: the constructor acquires the resource and the destructor releases it. Because C++ guarantees that a stack object's destructor runs when it goes out of scope, whether through a normal return or an exception, the resource is never leaked. Smart pointers, <code>std::vector</code>, file streams and <code>std::lock_guard</code> are all RAII classes, which is why C++ does not need a garbage collector.</p>
+        <p class="ans">RAII stands for Resource Acquisition Is Initialization. The idea is to tie a resource's lifetime to an object's lifetime: the constructor acquires the resource and the destructor releases it. C++ guarantees that a stack object's destructor runs when it goes out of scope, whether the function returns normally, returns early or exits through an exception. During an exception, stack unwinding destroys all local objects in reverse order. So resources can never leak. The standard library is built on this: <code>vector</code> and <code>string</code> for memory, <code>unique_ptr</code> and <code>shared_ptr</code> for heap objects, <code>fstream</code> for files, and <code>lock_guard</code> for mutexes, which prevents a lock from staying held after an exception. The common pitfalls are creating the RAII object itself with raw <code>new</code>, and copying a class that owns a raw resource, which causes a double free; we prevent that by deleting the copy operations, implementing a deep copy, or better, following the Rule of Zero with <code>unique_ptr</code> or <code>vector</code> members. Compared to a garbage collector, RAII is deterministic and works for any resource, not just memory.</p>
         <pre class="ex"><code>{
     std::lock_guard&lt;std::mutex&gt; lock(m);   // lock()
-}                                          // unlock(), even on exception</code></pre>
+}                                          // unlock(), even on exception
+Buffer* p = new Buffer;   // trap: no } owns it -&gt; use make_unique</code></pre>
         <p class="src"><a href="raii.html#interview">Notes dekho →</a></p>
       </div>
     </article>
     <article class="rev" tabindex="0">
       <div class="rev-head"><span class="rnum">★</span><h3>What are smart pointers? unique_ptr vs shared_ptr?</h3></div>
       <div class="rev-body">
-        <p class="ans">Smart pointers are RAII wrappers that manage ownership of heap memory and delete it automatically, which prevents leaks, double frees and dangling pointers. <code>unique_ptr</code> has exclusive ownership: it cannot be copied, only moved, and it is as small as a raw pointer. <code>shared_ptr</code> allows shared ownership through reference counting and deletes the object when the last owner goes away. <code>weak_ptr</code> is a non-owning observer used to break <code>shared_ptr</code> cycles. My default choice is <code>unique_ptr</code>.</p>
-        <pre class="ex"><code>auto a = std::make_unique&lt;Car&gt;();   // one owner
-auto b = std::move(a);              // ownership moved, a is null
-auto s = std::make_shared&lt;Car&gt;();   // reference counted</code></pre>
+        <p class="ans">Smart pointers are RAII wrappers around raw pointers: they delete the object in their destructor, so we avoid leaks, double deletes and dangling pointers. <code>unique_ptr</code> models exclusive ownership. It cannot be copied, only moved, and it has no overhead over a raw pointer, so it is the default choice. <code>shared_ptr</code> models shared ownership: it keeps a reference count in a control block, copying increments the count, destruction decrements it, and the object is deleted when the count reaches zero. Its weakness is cycles: if two objects hold <code>shared_ptr</code>s to each other, the counts never reach zero and they leak. <code>weak_ptr</code> solves this: it observes a <code>shared_ptr</code>-managed object without increasing the count, and we call <code>lock()</code> to get a <code>shared_ptr</code> if the object is still alive. We should create them with <code>make_unique</code> and <code>make_shared</code>, and never create two <code>shared_ptr</code>s from the same raw pointer.</p>
+        <pre class="ex"><code>auto u = make_unique&lt;Dog&gt;(&quot;Tommy&quot;);  auto u2 = move(u);   // u = nullptr
+auto s = make_shared&lt;Dog&gt;(&quot;Bruno&quot;);  auto s2 = s;          // use_count() = 2
+weak_ptr&lt;Dog&gt; w = s;  if (auto p = w.lock()) { ... }      // no count++
+u2.reset();  // delete     u2.release();  // give up, no delete</code></pre>
         <p class="src"><a href="smart-pointers.html#interview">Notes dekho →</a></p>
       </div>
     </article>

@@ -1,0 +1,1804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Interview Topics · C++ Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="notes.css">
+<style>
+  .ck td:first-child { width: 46%; }
+  .ck td:nth-child(2) { white-space: nowrap; }
+  .topic-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .topic-head .pill { font-size: 11px; }
+</style>
+</head>
+<body>
+<header class="topnav"><div class="topnav-inner">
+  <a class="brand" href="index.html">C++ <b>Prep</b> Notebook</a>
+  <nav aria-label="Pages">
+    <a href="index.html">Home</a>
+    <a href="strategy.html">Interview Strategy</a>
+    <a href="foundations.html">Foundations</a>
+    <a href="gfg.html">GFG Questions</a>
+    <a href="raii.html">RAII</a>
+    <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="topics.html" aria-current="page">Topics</a>
+    <a href="gaps.html">Gaps (A)</a>
+    <a href="playlist.html">Playlist</a>
+    <a href="revision.html">Revision</a>
+  </nav>
+</div></header>
+
+<main class="page">
+  <p class="eyebrow">Seniors ke interviews se</p>
+  <h1>Interview Topics</h1>
+  <p class="lede">7 topics jo MathWorks interviews mein pooche gaye. Har topic ka checklist: jo pehle se cover hai uska link, jo naya hai wo yahin. Saare outputs GCC pe run karke verify kiye.</p>
+
+  <nav class="toc" aria-label="On this page">
+    <p>Topics</p>
+    <ol>
+      <li><a href="#struct">Struct</a> <span class="pill done">Done</span></li>
+      <li><a href="#pointer">Pointer</a> <span class="pill done">Done</span></li>
+      <li><a href="#lambda">Lambdas + Functor</a> <span class="pill done">Done</span></li>
+      <li><a href="#static">Static</a> <span class="pill done">Done</span></li>
+      <li><a href="#friend">Friend</a> <span class="pill done">Done</span></li>
+      <li><a href="#namespace">Namespace std</a> <span class="pill done">Done</span></li>
+    </ol>
+  </nav>
+
+  <!-- ================= STRUCT ================= -->
+  <h2 id="struct" class="topic-head">1. Struct <span class="pill done">Done</span></h2>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>C struct vs C++ struct</td><td><span class="pill done">✅ Naya</span></td><td><a href="#st-c">Yahan</a></td></tr>
+    <tr><td>struct vs class (default public, inheritance bhi)</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v54">#54</a> + <a href="#st-c">yahan</a></td></tr>
+    <tr><td><code>-&gt;</code> vs <code>.</code>, <code>*p.x</code> error</td><td><span class="pill done">✅ Naya</span></td><td><a href="#st-arrow">Yahan</a></td></tr>
+    <tr><td>Padding (sizeof questions, bade se chhota order)</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v1">#1</a>, <a href="playlist.html#v77">#77</a> + <a href="#st-pad">quick recap</a></td></tr>
+    <tr><td>Struct mein pointer → shallow copy → double free</td><td><span class="pill done">✅ Naya</span></td><td><a href="#st-shallow">Yahan</a>, <a href="raii.html#trap2">RAII Trap 2</a>, <a href="playlist.html#v58">#58</a></td></tr>
+    <tr><td>Self-referential struct (linked list Node)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#st-node">Yahan</a></td></tr>
+    <tr><td>Struct by value vs pointer (copy cost)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#st-pass">Yahan</a></td></tr>
+    <tr><td>C mein apna Vector (<code>realloc</code>)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#st-vec">Yahan</a></td></tr>
+    <tr><td class="muted">Skip: bit fields, flexible array members</td><td></td><td></td></tr>
+  </table></div>
+
+  <h3 id="st-c">1.1 C struct vs C++ struct</h3>
+  <p><strong>C mein struct sirf data ka dabba hai.</strong> 2 cheezein yaad rakho:</p>
+  <ol>
+    <li><strong>Type ke aage <code>struct</code> likhna padta hai</strong> (ya <code>typedef</code> karo).</li>
+    <li><strong>Andar function nahi</strong> likh sakte, aur <code>public</code>/<code>private</code> bhi nahi hote.</li>
+  </ol>
+<pre><code><span class="c">// C</span>
+<span class="k">struct</span> Point { <span class="k">int</span> x, y; };
+Point p;                        <span class="c">// ❌ C mein error</span>
+<span class="k">struct</span> Point p = {1, 2};       <span class="c">// ✅ struct likhna padega</span>
+
+<span class="k">typedef struct</span> { <span class="k">int</span> x, y; } Pt;
+Pt q = {3, 4};                  <span class="c">// ✅ typedef ke baad seedha naam</span></code></pre>
+<pre class="out err">Point p;  →  error: unknown type name 'Point'; use 'struct' keyword to refer to the type
+struct mein function  →  error: expected ':', ',', ';', '}' ... before '{' token</pre>
+<pre class="out">C: p.x=1 q.x=3</pre>
+  <p><strong>C++ mein struct = class</strong>, bas default <strong>public</strong> hai. Functions, constructors, inheritance, virtual sab chalta hai. <code>struct</code> keyword likhna bhi zaroori nahi.</p>
+  <p><strong>Inheritance ka default bhi alag hai</strong> (ye log bhool jaate hain):</p>
+<pre><code><span class="k">struct</span> Animal { <span class="k">int</span> age = 3; <span class="k">void</span> speak(); };
+<span class="k">struct</span> Dog : Animal { };      <span class="c">// struct: default PUBLIC inheritance</span>
+<span class="k">class</span>  Cat : Animal { };      <span class="c">// class:  default PRIVATE inheritance</span>
+
+Dog d;  d.age;                  <span class="c">// ✅ 3</span>
+Cat c;  c.age = 5;              <span class="c">// ❌</span></code></pre>
+<pre class="out err">error: 'int Animal::age' is inaccessible within this context</pre>
+  <div class="tbl"><table>
+    <tr><th></th><th>C struct</th><th>C++ struct</th><th>C++ class</th></tr>
+    <tr><td>Member functions</td><td>❌</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Access specifiers</td><td>❌</td><td>✅ (default <strong>public</strong>)</td><td>✅ (default <strong>private</strong>)</td></tr>
+    <tr><td>Inheritance default</td><td>-</td><td><strong>public</strong></td><td><strong>private</strong></td></tr>
+    <tr><td><code>struct</code> keyword likhna</td><td>Zaroori (ya typedef)</td><td>Nahi</td><td>-</td></tr>
+  </table></div>
+  <p><strong>Convention:</strong> sirf data ho (jaise Point) toh <code>struct</code>; behaviour aur hidden data ho toh <code>class</code>.</p>
+
+  <h3 id="st-arrow">1.2 <code>-&gt;</code> vs <code>.</code></h3>
+<pre><code>Animal a;   Animal* p = &amp;a;
+
+a.age;        <span class="c">// object pe:  .</span>
+p-&gt;age;       <span class="c">// pointer pe: -&gt;</span>
+(*p).age;     <span class="c">// same as p-&gt;age (pehle * se object, phir .)</span>
+*p.age;       <span class="c">// ❌</span></code></pre>
+<pre class="out">p-&gt;age = 3, (*p).age = 3</pre>
+<pre class="out err">*p.age  →  error: request for member 'age' in 'p', which is of pointer type 'Animal*' (maybe you meant to use '-&gt;' ?)</pre>
+  <p><strong>Kyun error?</strong> <code>.</code> ki priority <code>*</code> se <strong>zyada</strong> hai. Toh <code>*p.age</code> = <code>*(p.age)</code>: pehle pointer pe <code>.</code> lagaya, jo galat hai. Isliye bracket chahiye: <code>(*p).age</code>. Ye likhna boring tha, isliye <code>-&gt;</code> bana: <strong><code>p-&gt;x</code> = <code>(*p).x</code></strong>.</p>
+
+  <h3 id="st-pad">1.3 Padding (quick recap)</h3>
+  <p>Detail <a href="playlist.html#v1">#1</a>, <a href="playlist.html#v77">#77</a> mein. Yaad rakho: har member apne size ke multiple wale address pe baithta hai, beech mein khaali bytes (padding) aa jaate hain. <strong>Members bade se chhote order mein rakho</strong>, padding kam:</p>
+<pre><code><span class="k">struct</span> Bad  { <span class="k">char</span> a; <span class="k">int</span> b; <span class="k">char</span> c; };      <span class="c">// 1 + 3 pad + 4 + 1 + 3 pad</span>
+<span class="k">struct</span> Good { <span class="k">int</span> b; <span class="k">char</span> a; <span class="k">char</span> c; };      <span class="c">// 4 + 1 + 1 + 2 pad</span>
+<span class="k">struct</span> Mix  { <span class="k">char</span> a; <span class="k">double</span> d; <span class="k">int</span> i; };
+<span class="k">struct</span> Mix2 { <span class="k">double</span> d; <span class="k">int</span> i; <span class="k">char</span> a; };</code></pre>
+<pre class="out">Bad=12 Good=8 Mix=24 Mix2=16</pre>
+
+  <h3 id="st-shallow">1.4 Struct mein pointer: copy = shallow copy</h3>
+  <p>Struct copy karo toh har member ki <strong>value</strong> copy hoti hai. Member pointer hai toh sirf <strong>address</strong> copy hota hai, memory nahi. Dono struct <strong>same memory</strong> pe:</p>
+<pre><code><span class="k">struct</span> Buf { <span class="k">int</span>* data; };
+
+Buf a;  a.data = (<span class="k">int</span>*)malloc(4 * <span class="k">sizeof</span>(<span class="k">int</span>));  a.data[0] = 5;
+Buf b = a;                 <span class="c">// sirf pointer copy hua</span>
+b.data[0] = 100;           <span class="c">// b ne badla...</span>
+free(a.data);
+free(b.data);              <span class="c">// ❌ wahi memory dobara</span></code></pre>
+<pre class="out crash">a.data[0] = 100  (b ne badla, a pe asar)
+a.data == b.data ? 1
+free(): double free detected in tcache 2</pre>
+  <p>2 problems: ek ne badla toh doosre pe asar, aur do baar free = crash. Ye wahi <a href="raii.html#trap2">RAII Trap 2</a> hai. C++ mein fix: deep copy (Rule of Three, <a href="playlist.html#v58">#58</a>), copy <code>= delete</code>, ya pointer ki jagah <code>vector</code>.</p>
+
+  <h3 id="st-node">1.5 Self-referential struct (linked list)</h3>
+  <p>Struct jo apne hi type ka <strong>pointer</strong> rakhe:</p>
+<pre><code><span class="k">struct</span> Node {
+    <span class="k">int</span> val;
+    Node* next;             <span class="c">// ✅ pointer: hamesha 8 bytes</span>
+};
+
+Node c{30, <span class="k">nullptr</span>}, b{20, &amp;c}, a{10, &amp;b};
+<span class="k">for</span> (Node* p = &amp;a; p != <span class="k">nullptr</span>; p = p-&gt;next)
+    cout &lt;&lt; p-&gt;val &lt;&lt; <span class="s">" -&gt; "</span>;</code></pre>
+<pre class="out">10 -&gt; 20 -&gt; 30 -&gt; nullptr
+sizeof(Node) = 16        (4 int + 4 padding + 8 pointer)</pre>
+  <p><strong>Pointer kyun, Node kyun nahi?</strong> <code>Node next;</code> likha toh Node ke andar poora Node, uske andar phir Node... size infinite. Compiler mana kar deta hai:</p>
+<pre class="out err">struct Node { int val; Node next; };  →  error: field 'next' has incomplete type 'Node'</pre>
+  <p>Pointer ka size fixed hai (8 bytes), chahe wo kisi pe bhi point kare. Isliye chalta hai.</p>
+
+  <h3 id="st-pass">1.6 Struct by value vs by pointer / reference</h3>
+<pre><code><span class="k">struct</span> Big { <span class="k">int</span> data[1000]; <span class="k">int</span> x = 0; };   <span class="c">// 4004 bytes</span>
+
+<span class="k">void</span> byValue(Big b)  { b.x = 99; }     <span class="c">// poore 4004 bytes copy, copy badli</span>
+<span class="k">void</span> byPtr(Big* b)   { b-&gt;x = 99; }    <span class="c">// sirf 8 byte address gaya, asli badla</span>
+<span class="k">void</span> byRef(Big&amp; b)   { b.x = 77; }     <span class="c">// C++: copy nahi, asli badla</span></code></pre>
+<pre class="out">sizeof(Big) = 4004
+byValue ke baad x = 0   (copy badli, asli nahi)
+byPtr ke baad x = 99
+byRef ke baad x = 77</pre>
+  <div class="tbl"><table>
+    <tr><th>Tareeka</th><th>Kitna copy</th><th>Asli badal sakta hai?</th></tr>
+    <tr><td>By value</td><td>Poora struct (4004 bytes)</td><td>Nahi</td></tr>
+    <tr><td>By pointer (C, C++)</td><td>8 bytes</td><td>Haan (<code>const Big*</code> se roko)</td></tr>
+    <tr><td>By reference (C++)</td><td>Kuch nahi</td><td>Haan (<code>const Big&amp;</code> se roko)</td></tr>
+  </table></div>
+  <p>Bada struct sirf padhna ho toh <strong><code>const Big&amp;</code></strong> (C mein <code>const Big*</code>). Same baat <a href="playlist.html#v20">#20</a> mein (bada object pass karna).</p>
+
+  <h3 id="st-vec">1.7 C mein apna Vector (<code>realloc</code> ke saath)</h3>
+  <p>Ye ek senior ko notepad pe likhwaya gaya tha. Idea bilkul C++ <code>vector</code> jaisa (<a href="playlist.html#v6">#6</a>): data ka pointer + size + capacity, full ho toh double.</p>
+<pre><code><span class="k">typedef struct</span> {
+    <span class="k">int</span>* data;
+    size_t size, cap;
+} Vector;
+
+<span class="k">void</span> vec_init(Vector* v) { v-&gt;data = NULL; v-&gt;size = 0; v-&gt;cap = 0; }
+
+<span class="k">void</span> vec_push_back(Vector* v, <span class="k">int</span> x) {
+    <span class="k">if</span> (v-&gt;size == v-&gt;cap) {                                  <span class="c">// jagah khatam</span>
+        size_t newCap = (v-&gt;cap == 0) ? 1 : v-&gt;cap * 2;       <span class="c">// double</span>
+        <span class="k">int</span>* p = realloc(v-&gt;data, newCap * <span class="k">sizeof</span>(<span class="k">int</span>));     <span class="c">// bada block, purana data copy</span>
+        <span class="k">if</span> (p == NULL) { printf(<span class="s">"out of memory\n"</span>); exit(1); }
+        v-&gt;data = p;
+        v-&gt;cap = newCap;
+    }
+    v-&gt;data[v-&gt;size++] = x;                                   <span class="c">// daalo, size badhao</span>
+}
+
+<span class="k">void</span> vec_free(Vector* v) { free(v-&gt;data); v-&gt;data = NULL; v-&gt;size = v-&gt;cap = 0; }
+
+<span class="c">// main</span>
+Vector v;
+vec_init(&amp;v);
+<span class="k">for</span> (<span class="k">int</span> i = 1; i &lt;= 5; i++) vec_push_back(&amp;v, i * 10);
+vec_free(&amp;v);</code></pre>
+<pre class="out">push 10: size=1 cap=1
+push 20: size=2 cap=2
+push 30: size=3 cap=4
+push 40: size=4 cap=4
+push 50: size=5 cap=8
+10 20 30 40 50</pre>
+  <div class="callout tip"><span class="tag">Notepad pe yaad rakhne wali 4 baatein</span>
+    <ol>
+      <li>Function ko <strong><code>Vector*</code></strong> do (by value doge toh copy badlegi, asli nahi).</li>
+      <li><code>realloc(NULL, n)</code> = <code>malloc(n)</code>, toh pehli baar alag case nahi chahiye.</li>
+      <li><code>realloc</code> ka result <strong>pehle alag variable</strong> (<code>p</code>) mein lo. Fail hua toh NULL aata hai; seedha <code>v-&gt;data</code> mein daala toh purana pointer kho jaata (leak).</li>
+      <li><code>free</code> ke baad pointer NULL kar do (dangling se bachao).</li>
+    </ol>
+  </div>
+
+  <div class="callout say"><span class="tag">Interview mein</span>
+    <p>"In C, a struct is just a group of data members: it cannot have member functions or access specifiers, and we must write <code>struct Point</code> or use a <code>typedef</code>. In C++, a struct is the same as a class except that members and inheritance are public by default, while a class defaults to private. We access members with <code>.</code> on an object and <code>-&gt;</code> on a pointer, where <code>p-&gt;x</code> is shorthand for <code>(*p).x</code>; <code>*p.x</code> fails because <code>.</code> binds tighter than <code>*</code>. Because of alignment, the compiler inserts padding, so ordering members from largest to smallest reduces the size. Copying a struct that holds a raw pointer copies only the address, a shallow copy, which leads to shared data and double frees. A struct can refer to its own type only through a pointer, as in a linked-list node, since a member of its own type would have infinite size. Large structs should be passed by pointer or const reference instead of by value to avoid the copy."</p>
+  </div>
+
+  <!-- ================= POINTER ================= -->
+  <h2 id="pointer" class="topic-head">2. Pointer <span class="pill done">Done</span></h2>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>Precedence: <code>*p++</code>, <code>++*p</code>, <code>*++p</code>, <code>(*p)++</code></td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-prec">Yahan</a></td></tr>
+    <tr><td>Arithmetic: <code>p + 1</code> = sizeof bytes aage, pointer − pointer = elements</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-arith">Yahan</a>, thoda <a href="playlist.html#v79">#79</a></td></tr>
+    <tr><td><code>arr</code> vs <code>&amp;arr</code> vs <code>&amp;arr[0]</code></td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v79">#79</a></td></tr>
+    <tr><td><code>sizeof</code> pointer (8/4 bytes) vs <code>sizeof</code> reference (referred type ka size)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-sizeof">Yahan</a></td></tr>
+    <tr><td>Function mein <code>sizeof(arr)</code> = pointer size (decay)</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v46">#46</a>, <a href="#p-drills">drills</a></td></tr>
+    <tr><td><code>char s[]</code> vs <code>char* s</code> (sizeof, likh sakte ya nahi)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-chars">Yahan</a></td></tr>
+    <tr><td><code>const int*</code> vs <code>int* const</code> vs <code>const int* const</code></td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-const">Yahan</a></td></tr>
+    <tr><td><code>void*</code> (dereference, qsort)</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v13">#13</a> + <a href="#p-void">yahan</a></td></tr>
+    <tr><td><code>void*</code> pe arithmetic nahi, C++ mein malloc ko cast</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-void">Yahan</a></td></tr>
+    <tr><td>Function pointers (syntax, array, callback, typedef)</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v5">#5</a> + <a href="#p-fp">recap</a> + <a href="#fp-what">poore notes</a></td></tr>
+    <tr><td>Double pointer: function mein list ka head badalna</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-head">Yahan</a></td></tr>
+    <tr><td>2D <code>malloc</code> (<code>int**</code>, har row malloc, reverse free) + stack se heap copy</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-2d">Yahan</a>, <code>new</code> wala: <a href="playlist.html#v18">#18</a></td></tr>
+    <tr><td>Bug: local ka address return</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v19">#19</a></td></tr>
+    <tr><td>Bug: wild (uninitialized) pointer</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-bugs">Yahan</a></td></tr>
+    <tr><td>Bug: use after free / double free</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v73">#73</a>, <a href="raii.html#trap2">RAII</a>, <a href="#p-bugs">yahan</a></td></tr>
+    <tr><td>Bug: <code>delete</code> vs <code>delete[]</code></td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v3">#3</a></td></tr>
+    <tr><td>Bug: string literal pe likhna (<code>char* s = "abc"; s[0]='x';</code>)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-bugs">Yahan</a></td></tr>
+    <tr><td>Bug: memory leak</td><td><span class="pill done">✅</span></td><td><a href="raii.html#problem">RAII</a> + <a href="#p-bugs">yahan</a></td></tr>
+    <tr><td><code>NULL</code> vs <code>nullptr</code></td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-null">Yahan</a></td></tr>
+    <tr><td>Output drills (kaagaz pe trace karo)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#p-drills">Yahan</a></td></tr>
+    <tr><td class="muted">Skip: pointer to member, restrict</td><td></td><td></td></tr>
+  </table></div>
+
+  <h3 id="p-prec">2.1 Precedence: <code>*p++</code>, <code>++*p</code>, <code>*++p</code>, <code>(*p)++</code></h3>
+  <p>Do rule yaad rakho: <strong>postfix</strong> (<code>x++</code>, <code>[]</code>, <code>-&gt;</code>, <code>.</code>) sabse upar. <strong>Prefix</strong> (<code>++x</code>, <code>*</code>, <code>&amp;</code>) ek level neeche aur <strong>right-to-left</strong> padhte hain. Toh <code>*p++</code> = <code>*(p++)</code> (value pehle, pointer baad mein) aur <code>++*p</code> = <code>++(*p)</code> (value badhti hai).</p>
+<pre><code><span class="k">int</span> a[] = {10, 20, 30, 40};
+<span class="k">int</span>* p = a;
+
+printf("%d\n", *p++);      <span class="c">// 10 print, phir p aage (a[1])</span>
+printf("%d\n", *p);        <span class="c">// 20</span>
+printf("%d\n", ++*p);      <span class="c">// pehle *p (a[1]) ko ++ : 21</span>
+printf("%d\n", *++p);      <span class="c">// pehle p aage (a[2]), phir 30</span>
+printf("%d\n", (*p)++);    <span class="c">// 30 print, phir a[2] = 31</span>
+printf("%d %d %d %d\n", a[0], a[1], a[2], a[3]);
+printf("p - a = %ld\n", (<span class="k">long</span>)(p - a));</code></pre>
+<pre class="out">10
+20
+21
+30
+30
+10 21 31 40
+p - a = 2</pre>
+  <div class="tbl"><table>
+    <tr><th>Expression</th><th>Matlab</th><th>Kya badla</th></tr>
+    <tr><td><code>*p++</code></td><td><code>*(p++)</code></td><td>purani jagah ki value mili, <strong>pointer</strong> aage</td></tr>
+    <tr><td><code>++*p</code></td><td><code>++(*p)</code></td><td>pointer wahin, <strong>value</strong> +1, nayi value mili</td></tr>
+    <tr><td><code>*++p</code></td><td><code>*(++p)</code></td><td>pehle pointer aage, phir naye ki value</td></tr>
+    <tr><td><code>(*p)++</code></td><td>value, phir +1</td><td>pointer wahin, value +1, <strong>purani</strong> value mili</td></tr>
+  </table></div>
+  <p>Ye idiom <code>strcpy</code> ka dil hai, notepad pe aksar poochha jaata hai:</p>
+<pre><code><span class="k">char</span> src[] = "hey", dst[8];
+<span class="k">char</span> *s = src, *d = dst;
+<span class="k">while</span> ((*d++ = *s++)) ;        <span class="c">// strcpy ka pura code: copy, dono pointer aage, '\0' pe ruk</span>
+printf("%s\n", dst);</code></pre>
+<pre class="out">hey</pre>
+  <div class="callout trap"><span class="tag">Trap</span>
+    <p>Ek expression mein ek hi variable ko do baar badalna (<code>*p++ + *p++</code>, <code>a[i] = i++</code>) = <strong>undefined behaviour</strong>. Interviewer isse "output kya aayega?" ke roop mein poochhe toh bolo: "unspecified / undefined hai, compiler pe depend". Ye sahi jawab hai.</p>
+  </div>
+
+  <h3 id="p-arith">2.2 Arithmetic: <code>p + 1</code> kitna aage?</h3>
+  <p><code>p + n</code> = <strong>n × sizeof(*p)</strong> bytes aage. <code>q - p</code> = beech mein kitne <strong>elements</strong> (bytes nahi). Dono pointer <strong>ek hi array</strong> ke hone chahiye.</p>
+<pre><code><span class="k">char</span> c[4]; <span class="k">int</span> i[4]; <span class="k">double</span> d[4];
+<span class="k">char</span>* pc = c; <span class="k">int</span>* pi = i; <span class="k">double</span>* pd = d;
+printf("p+1 kitne byte aage: char=%ld int=%ld double=%ld\n",
+       (<span class="k">long</span>)((<span class="k">char</span>*)(pc + 1) - (<span class="k">char</span>*)pc),
+       (<span class="k">long</span>)((<span class="k">char</span>*)(pi + 1) - (<span class="k">char</span>*)pi),
+       (<span class="k">long</span>)((<span class="k">char</span>*)(pd + 1) - (<span class="k">char</span>*)pd));
+
+<span class="k">int</span> a[5] = {1, 2, 3, 4, 5};
+<span class="k">int</span> *p = &amp;a[0], *q = &amp;a[4];
+printf("q - p = %ld elements, %ld bytes\n", (<span class="k">long</span>)(q - p), (<span class="k">long</span>)((<span class="k">char</span>*)q - (<span class="k">char</span>*)p));
+printf("a[2]=%d  *(a+2)=%d  2[a]=%d\n", a[2], *(a + 2), 2[a]);</code></pre>
+<pre class="out">p+1 kitne byte aage: char=1 int=4 double=8
+q - p = 4 elements, 16 bytes
+a[2]=3  *(a+2)=3  2[a]=3</pre>
+  <ul>
+    <li><code>p + q</code> (pointer + pointer) <strong>illegal</strong>. <code>p - q</code>, <code>p + n</code>, <code>p &lt; q</code> theek.</li>
+    <li><code>a[i]</code> ka matlab hi <code>*(a + i)</code> hai, isliye <code>2[a]</code> bhi chalta hai (mazedaar trick, interview mein ek baar kaam aata).</li>
+    <li>Array ke <strong>ek aage</strong> wala pointer (<code>a + 5</code>) banana legal hai (loops ke liye), par us pe <code>*</code> nahi.</li>
+    <li><code>arr</code> vs <code>&amp;arr</code> (<code>&amp;arr + 1</code> poora array kood jaata hai) ye <a href="playlist.html#v79">#79</a> mein hai.</li>
+  </ul>
+
+  <h3 id="p-sizeof">2.3 <code>sizeof</code> pointer vs <code>sizeof</code> reference</h3>
+  <p><strong>Pointer:</strong> <code>sizeof</code> kisi bhi pointer ka <strong>fixed</strong> hota hai: <strong>8 bytes (64-bit system)</strong> aur <strong>4 bytes (32-bit system)</strong>. Isse farak nahi padta ki wo <code>char*</code> hai, <code>int*</code>, <code>double*</code> ya function pointer: pointer sirf ek <strong>address</strong> rakhta hai, aur address ka size machine pe depend karta hai (64-bit address = 8 bytes), pointed type pe nahi.</p>
+  <p><strong>Reference:</strong> <code>sizeof(ref)</code> reference ka size <strong>nahi</strong> batata, balki <strong>jis type ko wo refer kar raha hai uska size</strong> batata hai. Matlab <code>int&amp;</code> pe 4, <code>double&amp;</code> pe 8, <code>char&amp;</code> pe 1: bilkul waisa jaise <code>sizeof</code> us variable pe lagaya ho.</p>
+<pre><code><span class="k">struct</span> R { <span class="k">int</span>&amp; r; };            <span class="c">// reference MEMBER</span>
+
+<span class="k">int</span> x = 5;  <span class="k">double</span> d = 1.5;  <span class="k">char</span> c = 'a';
+<span class="k">int</span>&amp; rx = x;  <span class="k">double</span>&amp; rd = d;  <span class="k">char</span>&amp; rc = c;
+<span class="k">int</span>* px = &amp;x;  <span class="k">double</span>* pd = &amp;d;  <span class="k">char</span>* pc = &amp;c;  <span class="k">void</span> (*fp)() = <span class="k">nullptr</span>;
+
+printf("pointers : int*=%zu double*=%zu char*=%zu void(*)()=%zu\n", <span class="k">sizeof</span>(px), <span class="k">sizeof</span>(pd), <span class="k">sizeof</span>(pc), <span class="k">sizeof</span>(fp));
+printf("references: int&amp;=%zu double&amp;=%zu char&amp;=%zu\n", <span class="k">sizeof</span>(rx), <span class="k">sizeof</span>(rd), <span class="k">sizeof</span>(rc));
+printf("struct R { int&amp; r; } = %zu\n", <span class="k">sizeof</span>(R));
+<span class="k">int</span> a[10];
+printf("array=%zu  &amp;array=%zu\n", <span class="k">sizeof</span>(a), <span class="k">sizeof</span>(&amp;a));</code></pre>
+<pre class="out">pointers : int*=8 double*=8 char*=8 void(*)()=8
+references: int&amp;=4 double&amp;=8 char&amp;=1
+struct R { int&amp; r; } = 8
+array=40  &amp;array=8</pre>
+  <div class="tbl"><table>
+    <tr><th>Expression</th><th>Kya milta hai</th><th>Kyun</th></tr>
+    <tr><td><code>sizeof(p)</code> (koi bhi pointer)</td><td>8 (64-bit) / 4 (32-bit)</td><td>pointer ek address hai, type ka size nahi</td></tr>
+    <tr><td><code>sizeof(*p)</code></td><td>pointed type ka size (<code>int*</code> pe 4)</td><td>*p wo object hai jise p dekh raha</td></tr>
+    <tr><td><code>sizeof(r)</code> (r = reference)</td><td><strong>referred type</strong> ka size</td><td>standard: reference pe sizeof = referenced type ka sizeof</td></tr>
+    <tr><td><code>sizeof(struct{ int&amp; r; })</code></td><td>8 (pointer jitna, 64-bit pe)</td><td>reference <strong>member</strong> ko compiler andar se pointer ki tarah rakhta hai</td></tr>
+  </table></div>
+  <div class="callout trap"><span class="tag">Trap</span>
+    <p>Do alag baatein: <code>sizeof(r)</code> expression referent ka size deta hai (4), par jab reference class/struct ka <strong>member</strong> ho toh us <strong>class ka</strong> <code>sizeof</code> badhta hai (upar 8), kyunki andar address store hota hai. Isliye "reference ki size 0 hoti hai / koi jagah nahi leta" bolna galat hai. Sahi: <em>"standard ke hisaab se <code>sizeof(ref)</code> referred type ka size hai; reference ko memory chahiye ya nahi ye implementation detail hai (aam taur pe pointer ki tarah)."</em></p>
+  </div>
+  <p>Output sawaalon mein aksar: <code>sizeof(p)</code> = 8 par <code>sizeof(*p)</code> = type ka size, aur function ke andar <code>sizeof(arr)</code> = 8 (decay) jabki bahar <code>sizeof(arr)</code> = poora array (<a href="#p-drills">drills</a>). Pointer ke 32-bit wale 4 bytes: yahan ke outputs 64-bit machine pe chalaye gaye hain, 32-bit wali value standard knowledge hai (verify nahi).</p>
+
+  <h3 id="p-chars">2.4 <code>char s[]</code> vs <code>char* s</code></h3>
+<pre><code><span class="k">char</span> s1[] = "abc";            <span class="c">// array: apni copy, 4 byte</span>
+<span class="k">const</span> <span class="k">char</span>* s2 = "abc";       <span class="c">// pointer: read-only literal ki taraf, 8 byte</span>
+printf("sizeof s1=%zu  s2=%zu  strlen=%zu\n", <span class="k">sizeof</span>(s1), <span class="k">sizeof</span>(s2), strlen(s1));
+s1[0] = 'X';                  <span class="c">// ✅ chalega</span>
+printf("%s\n", s1);
+<span class="c">// s2[0] = 'X';               // ❌ literal read-only</span></code></pre>
+<pre class="out">sizeof s1=4  s2=8  strlen=3
+Xbc</pre>
+  <p><code>char s1[] = "abc"</code>: literal ki <strong>copy</strong> tumhare array mein (4 byte, likh sakte). <code>const char* s2 = "abc"</code>: sirf <strong>pointer</strong> (8 byte), jo read-only literal ko dekhta hai. <code>sizeof</code> alag, aur literal pe likhna bug hai (<a href="#p-bugs">neeche</a>).</p>
+
+  <h3 id="p-const">2.5 <code>const</code> + pointer: 3 variants</h3>
+  <p>Trick: <strong><code>*</code> ke baad padho</strong>. <code>const</code> jo bhi <strong>seedha apne left</strong> mein hai (ya sabse pehle ho toh right mein) usi ko const karta hai.</p>
+  <div class="tbl"><table>
+    <tr><th>Declaration</th><th>Padho aise</th><th>Value badal sakte?</th><th>Pointer badal sakte?</th></tr>
+    <tr><td><code>const int* p</code> (= <code>int const* p</code>)</td><td>p ek pointer hai, <strong>const int</strong> ka</td><td>❌</td><td>✅</td></tr>
+    <tr><td><code>int* const p</code></td><td>p ek <strong>const pointer</strong> hai, int ka</td><td>✅</td><td>❌</td></tr>
+    <tr><td><code>const int* const p</code></td><td>const pointer, const int ka</td><td>❌</td><td>❌</td></tr>
+  </table></div>
+<pre><code><span class="k">int</span> x = 1, y = 2;
+<span class="k">const</span> <span class="k">int</span>* p1 = &amp;x;          <span class="c">// pointer to const int</span>
+<span class="k">int</span>* <span class="k">const</span> p2 = &amp;x;          <span class="c">// const pointer to int</span>
+<span class="k">const</span> <span class="k">int</span>* <span class="k">const</span> p3 = &amp;x;    <span class="c">// dono const</span>
+
+p1 = &amp;y;                     <span class="c">// ✅ pointer badla (value read-only)</span>
+*p2 = 5;                     <span class="c">// ✅ value badli (pointer fixed)</span>
+printf("%d %d %d\n", *p1, *p2, *p3);</code></pre>
+<pre class="out">2 5 5</pre>
+  <p>Ab galat lines. Teeno compile hi nahi hotin:</p>
+<pre><code><span class="k">int</span> x = 1, y = 2;
+<span class="k">const</span> <span class="k">int</span>* p1 = &amp;x;
+<span class="k">int</span>* <span class="k">const</span> p2 = &amp;x;
+<span class="k">const</span> <span class="k">int</span>* <span class="k">const</span> p3 = &amp;x;
+
+*p1 = 5;        <span class="c">// ❌ value nahi badal sakte</span>
+p2 = &amp;y;        <span class="c">// ❌ pointer nahi badal sakte</span>
+p3 = &amp;y;        <span class="c">// ❌ dono band</span></code></pre>
+<pre class="out err">error: assignment of read-only location '* p1'
+error: assignment of read-only variable 'p2'
+error: assignment of read-only variable 'p3'</pre>
+  <p>Function parameter mein: <code>void show(const int* p)</code> = "main teri value nahi badlunga" ka waada. <code>const int*</code> mein non-const <code>int*</code> daal sakte ho, ulta nahi (<code>int* q = p;</code> error).</p>
+
+  <h3 id="p-void">2.6 <code>void*</code>: generic pointer</h3>
+  <p><code>void*</code> = "kisi bhi type ka address, par type pata nahi". Isliye: (1) <strong>dereference nahi</strong> (kitne byte padhein?), (2) C++ mein <code>malloc</code> ke result ko <strong>cast</strong> karna padta hai (C mein nahi).</p>
+<pre><code><span class="k">int</span> x = 5;
+<span class="k">void</span>* v = &amp;x;
+printf("%d\n", *v);                 <span class="c">// ❌ void* ko dereference nahi</span>
+<span class="k">int</span>* p = malloc(<span class="k">sizeof</span>(<span class="k">int</span>));       <span class="c">// ❌ C++ mein cast chahiye</span></code></pre>
+<pre class="out err">error: 'void*' is not a pointer-to-object type
+error: invalid conversion from 'void*' to 'int*' [-fpermissive]</pre>
+  <p>Sahi tareeka:</p>
+<pre><code><span class="k">int</span> x = 5;
+<span class="k">void</span>* v = &amp;x;
+printf("%d\n", *(<span class="k">int</span>*)v);                 <span class="c">// pehle sahi type mein cast, phir *</span>
+<span class="k">int</span>* p = (<span class="k">int</span>*)malloc(<span class="k">sizeof</span>(<span class="k">int</span>));       <span class="c">// C++ mein malloc ko cast</span>
+*p = 7;
+printf("%d\n", *p);
+free(p);</code></pre>
+<pre class="out">5
+7</pre>
+  <p><code>void*</code> pe arithmetic <strong>standard mein nahi hai</strong>. GCC extension ki tarah size 1 maan ke chala deta hai (portable nahi):</p>
+<pre><code><span class="k">int</span> a[4] = {0};
+<span class="k">void</span>* v = a;
+printf("%ld\n", (<span class="k">long</span>)((<span class="k">char</span>*)(v + 1) - (<span class="k">char</span>*)v));   <span class="c">// GCC extension: void* ka size 1 maan leta</span></code></pre>
+<pre class="out">1</pre>
+  <p>Aur <code>-pedantic-errors</code> lagao toh:</p>
+<pre><code><span class="k">int</span> a[4] = {0};
+<span class="k">void</span>* v = a;
+<span class="k">void</span>* w = v + 1;            <span class="c">// standard mein ❌</span></code></pre>
+<pre class="out err">error: pointer of type 'void *' used in arithmetic [-Wpointer-arith]</pre>
+  <p>Asli use: <code>malloc</code>, <code>memcpy</code>, aur <code>qsort</code> (compare function <code>void*</code> leta hai, andar cast karte ho). Apna generic swap bhi aise banta hai:</p>
+<pre><code><span class="k">int</span> cmp(<span class="k">const</span> <span class="k">void</span>* a, <span class="k">const</span> <span class="k">void</span>* b) {         <span class="c">// qsort ko void* hi chahiye</span>
+  <span class="k">return</span> *(<span class="k">const</span> <span class="k">int</span>*)a - *(<span class="k">const</span> <span class="k">int</span>*)b;       <span class="c">// (overflow ka dhyan: bade ints pe a&lt;b se compare karo)</span>
+}
+<span class="k">void</span> swap_any(<span class="k">void</span>* a, <span class="k">void</span>* b, size_t n) {     <span class="c">// kisi bhi type ka swap</span>
+  <span class="k">char</span> tmp[16];
+  memcpy(tmp, a, n); memcpy(a, b, n); memcpy(b, tmp, n);
+}
+
+<span class="k">int</span> a[] = {40, 10, 30, 20};
+qsort(a, 4, <span class="k">sizeof</span>(<span class="k">int</span>), cmp);
+<span class="k">for</span> (<span class="k">int</span> x : a) printf("%d ", x);
+printf("\n");
+
+<span class="k">double</span> p = 1.5, q = 2.5;
+swap_any(&amp;p, &amp;q, <span class="k">sizeof</span>(<span class="k">double</span>));
+printf("%.1f %.1f\n", p, q);</code></pre>
+<pre class="out">10 20 30 40 
+2.5 1.5</pre>
+  <div class="callout tip"><span class="tag">qsort comparator</span>
+    <p><code>a - b</code> bade values pe <strong>overflow</strong> kar sakta hai (<code>INT_MIN</code>, <code>INT_MAX</code>). Safe: <code>return (x &gt; y) - (x &lt; y);</code>. Lambda/<code>sort</code> wali baat <a href="#lambda">Lambdas</a> mein.</p>
+  </div>
+
+  <h3 id="p-fp">2.7 Function pointers (quick recap)</h3>
+  <p>Detail <a href="playlist.html#v5">#5</a> mein, aur <strong>poore notes</strong> (bracket kyun zaroori, argument ki tarah pass, vs Lambda vs Functor, 5 interview questions) <a href="#fp-what">Lambdas section 3.8&ndash;3.12</a> mein. Notepad pe yahi 4 cheezein likhni aani chahiye: syntax, typedef, array, callback.</p>
+<pre><code><span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b) { <span class="k">return</span> a + b; }
+<span class="k">int</span> sub(<span class="k">int</span> a, <span class="k">int</span> b) { <span class="k">return</span> a - b; }
+<span class="k">int</span> apply(<span class="k">int</span> (*op)(<span class="k">int</span>, <span class="k">int</span>), <span class="k">int</span> x, <span class="k">int</span> y) { <span class="k">return</span> op(x, y); }   <span class="c">// callback</span>
+<span class="k">typedef</span> <span class="k">int</span> (*BinOp)(<span class="k">int</span>, <span class="k">int</span>);                                     <span class="c">// typedef se saaf</span>
+
+<span class="k">int</span> (*fp)(<span class="k">int</span>, <span class="k">int</span>) = add;
+printf("%d %d\n", fp(2, 3), (*fp)(2, 3));              <span class="c">// dono same</span>
+BinOp table[] = {add, sub};                            <span class="c">// function pointers ka array</span>
+printf("%d %d\n", table[0](9, 4), table[1](9, 4));
+printf("%d\n", apply(sub, 10, 3));
+printf("%d\n", fp == &amp;add);</code></pre>
+<pre class="out">5 5
+13 5
+7
+1</pre>
+  <ul>
+    <li>Padho: <code>int (*fp)(int, int)</code> = "fp ek pointer, jo (int, int) leke int return karne wale function ko dekhta hai". Bracket hata diye (<code>int *fp(int, int)</code>) toh ye <code>int*</code> return karne wala <strong>function</strong> ban gaya.</li>
+    <li><code>fp(2,3)</code> aur <code>(*fp)(2,3)</code> dono same. <code>add</code> aur <code>&amp;add</code> bhi same.</li>
+    <li>Kahan: callbacks (<code>qsort</code>), dispatch table, signal handlers (<code>sigaction</code>, tumhare shell mein). Virtual functions ki <strong>vtable</strong> bhi andar se function pointers ka array hi hai.</li>
+  </ul>
+
+  <h3 id="p-head">2.8 Double pointer: function mein list ka head badalna</h3>
+  <p>C/C++ mein sab kuch <strong>by value</strong> jaata hai. Pointer ko function mein bhejoge toh pointer ki <strong>copy</strong> badlegi. Asli pointer badalna hai toh uska <strong>address</strong> (<code>Node**</code>) bhejo.</p>
+<pre><code><span class="k">struct</span> Node { <span class="k">int</span> val; Node* next; };
+
+<span class="k">void</span> pushWrong(Node* head, <span class="k">int</span> v) { head = <span class="k">new</span> Node{v, head}; }       <span class="c">// head ki COPY badli</span>
+<span class="k">void</span> pushRight(Node** head, <span class="k">int</span> v) { *head = <span class="k">new</span> Node{v, *head}; }    <span class="c">// asli head badla</span>
+<span class="k">void</span> print(Node* h) { <span class="k">for</span> (; h; h = h-&gt;next) printf("%d ", h-&gt;val); printf("\n"); }
+
+Node* head = <span class="k">nullptr</span>;
+pushWrong(head, 1);
+print(head);               <span class="c">// kuch nahi (aur wo Node leak bhi hua)</span>
+pushRight(&amp;head, 1);
+pushRight(&amp;head, 2);
+print(head);</code></pre>
+<pre class="out">
+2 1 </pre>
+  <p>C++ mein <code>Node*&amp; head</code> (pointer ka reference) se bhi hota hai, <code>*head</code> likhna nahi padta. Ye "head null ho sakta hai" wale saare linked list questions (insert at front, delete head) ki jad hai.</p>
+
+  <h3 id="p-2d">2.9 2D array heap pe: <code>malloc</code> (aur free ka sahi order)</h3>
+  <p>Anubhav se poochha gaya tha: "stack wala 2D array heap pe copy karo". 3 tareeke:</p>
+  <div class="tbl"><table>
+    <tr><th>Tareeka</th><th>malloc kitne</th><th>Memory</th><th>free</th></tr>
+    <tr><td><code>int**</code> (array of row pointers)</td><td><code>1 + rows</code></td><td>rows alag-alag jagah</td><td>pehle har row, <strong>phir</strong> <code>m</code></td></tr>
+    <tr><td>Flat <code>int*</code> + <code>[i*cols + j]</code></td><td>1</td><td>ek block</td><td>ek free</td></tr>
+    <tr><td><code>int (*m)[COLS]</code> (pointer to array)</td><td>1</td><td>ek block, <code>m[i][j]</code> seedha</td><td>ek free</td></tr>
+  </table></div>
+  <p><strong>1) <code>int**</code> wala</strong> (sabse zyada poochha jaata hai):</p>
+<pre><code><span class="k">int</span> rows = 3, cols = 4;
+<span class="k">int</span>** m = (<span class="k">int</span>**)malloc(rows * <span class="k">sizeof</span>(<span class="k">int</span>*));        <span class="c">// 1) row pointers ka array</span>
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; rows; i++)
+  m[i] = (<span class="k">int</span>*)malloc(cols * <span class="k">sizeof</span>(<span class="k">int</span>));           <span class="c">// 2) har row alag malloc</span>
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; rows; i++)
+  <span class="k">for</span> (<span class="k">int</span> j = 0; j &lt; cols; j++) m[i][j] = i * cols + j;
+printf("%d %d\n", m[1][2], m[2][3]);
+
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; rows; i++) free(m[i]);           <span class="c">// pehle rows</span>
+free(m);                                             <span class="c">// phir row-pointer array</span></code></pre>
+<pre class="out">6 11</pre>
+  <p><strong>Stack se heap copy</strong> (wahi sawaal): har row pe ek <code>memcpy</code>, aur copy ke baad asli badlo toh heap wali pe asar nahi (deep copy):</p>
+<pre><code><span class="k">int</span> src[2][3] = {{1, 2, 3}, {4, 5, 6}};              <span class="c">// stack pe</span>
+<span class="k">int</span>** dst = (<span class="k">int</span>**)malloc(2 * <span class="k">sizeof</span>(<span class="k">int</span>*));         <span class="c">// heap pe</span>
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; 2; i++) {
+  dst[i] = (<span class="k">int</span>*)malloc(3 * <span class="k">sizeof</span>(<span class="k">int</span>));
+  memcpy(dst[i], src[i], 3 * <span class="k">sizeof</span>(<span class="k">int</span>));           <span class="c">// ek row ek memcpy</span>
+}
+src[0][2] = 99;                                      <span class="c">// heap wali copy pe asar nahi</span>
+printf("%d %d %d\n", dst[0][2], dst[1][0], src[0][2]);
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; 2; i++) free(dst[i]);
+free(dst);</code></pre>
+<pre class="out">3 4 99</pre>
+  <p><strong>2) Flat</strong> (cache-friendly, free aasan):</p>
+<pre><code><span class="k">int</span> rows = 3, cols = 4;
+<span class="k">int</span>* flat = (<span class="k">int</span>*)malloc(rows * cols * <span class="k">sizeof</span>(<span class="k">int</span>));  <span class="c">// ek hi block</span>
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; rows; i++)
+  <span class="k">for</span> (<span class="k">int</span> j = 0; j &lt; cols; j++) flat[i * cols + j] = i * cols + j;   <span class="c">// [i][j] = [i*cols + j]</span>
+printf("%d\n", flat[1 * cols + 2]);
+free(flat);                                           <span class="c">// ek hi free</span></code></pre>
+<pre class="out">6</pre>
+  <p><strong>3) Pointer to array</strong> (column count compile time pe pata ho toh):</p>
+<pre><code><span class="k">int</span> (*m)[4] = (<span class="k">int</span>(*)[4])malloc(3 * <span class="k">sizeof</span> *m);     <span class="c">// m: "4 int ke array ka pointer", 3 rows ek block mein</span>
+m[1][2] = 6;                                         <span class="c">// seedha m[i][j], flat jaisa hi contiguous</span>
+printf("%d %zu\n", m[1][2], <span class="k">sizeof</span> *m);              <span class="c">// *m = ek row = 4 int = 16 byte</span>
+free(m);</code></pre>
+<pre class="out">6 16</pre>
+  <div class="callout trap"><span class="tag">Free ka order</span>
+    <p>Pehle <code>m</code> free kar diya toh rows ke pointers kho gaye: sab rows <strong>leak</strong>. Hamesha: rows pehle, array baad mein (malloc ka ulta). Har <code>malloc</code> ke liye ek <code>free</code>.</p>
+  </div>
+
+  <h3 id="p-bugs">2.10 "Find the error": pointer bugs ki cheat sheet</h3>
+  <p>Digvijay ko "find the error in pointer code" mila tha. Code dekhte hi ye 10 cheezein check karo:</p>
+  <div class="tbl"><table>
+    <tr><th>Bug</th><th>Code</th><th>Kyun / Fix</th></tr>
+    <tr><td>Wild (uninitialized) pointer</td><td><code>int* p; *p = 5;</code></td><td>p mein kachra address. Fix: <code>int* p = nullptr;</code> ya kisi valid memory pe point karao.</td></tr>
+    <tr><td>Local ka address return</td><td><code>int* f(){ int x=1; return &amp;x; }</code></td><td>x function ke saath mar gaya (dangling). <a href="playlist.html#v19">#19</a>. Fix: <code>static</code>, heap, ya value return.</td></tr>
+    <tr><td>Use after free</td><td><code>free(p); *p = 1;</code></td><td>Memory wapas ho chuki. Fix: <code>free</code> ke baad <code>p = NULL</code>.</td></tr>
+    <tr><td>Double free</td><td><code>free(p); free(p);</code></td><td>Heap corrupt/crash. <code>p = NULL</code> kar do (<code>free(NULL)</code> safe).</td></tr>
+    <tr><td><code>delete</code> vs <code>delete[]</code>, mix</td><td><code>new int[5]; delete p;</code></td><td><code>new[]</code> ke saath <code>delete[]</code>. <code>new</code>/<code>delete</code> aur <code>malloc</code>/<code>free</code> kabhi mix nahi. <a href="playlist.html#v3">#3</a></td></tr>
+    <tr><td>String literal pe likhna</td><td><code>char* s = "abc"; s[0] = 'x';</code></td><td>Literal read-only memory mein. Fix: <code>char s[] = "abc";</code> ya <code>const char*</code> (compiler pakad leta).</td></tr>
+    <tr><td>Memory leak</td><td><code>p = malloc(..); p = malloc(..);</code> ya early <code>return</code></td><td>Pehla address kho gaya / free tak pahunche hi nahi. Fix: RAII (<a href="raii.html">RAII</a>).</td></tr>
+    <tr><td>Out of bounds</td><td><code>a[5]</code> jab size 5, <code>for (i &lt;= n)</code></td><td>Off-by-one = UB, kabhi crash nahi bhi hota (<a href="playlist.html#v82">#82</a>, segfault: <a href="playlist.html#v74">#74</a>).</td></tr>
+    <tr><td><code>sizeof</code> galat jagah</td><td><code>p = malloc(sizeof(p));</code></td><td><code>sizeof(p)</code> = 8 (pointer). Fix: <code>malloc(n * sizeof(*p))</code>.</td></tr>
+    <tr><td>NULL dereference / unchecked malloc</td><td><code>*malloc(..)</code> bina check</td><td><code>malloc</code> fail pe NULL deta. Check karo, aur <code>realloc</code> ka result alag variable mein lo.</td></tr>
+  </table></div>
+  <p>Use-after-free ka bachaav:</p>
+<pre><code><span class="k">int</span>* p = (<span class="k">int</span>*)malloc(<span class="k">sizeof</span>(<span class="k">int</span>));
+*p = 5;
+free(p);
+<span class="c">// printf("%d", *p);      // ❌ use after free</span>
+p = NULL;                  <span class="c">// ✅ free ke baad NULL: ab galti pakdi ja sakti hai</span>
+<span class="k">if</span> (p == NULL) puts("NULL check ne bacha liya");
+free(p);                   <span class="c">// free(NULL) bilkul safe, kuch nahi karta</span></code></pre>
+<pre class="out">NULL check ne bacha liya</pre>
+  <pre class="out crash">// char* s = "abc"; s[0] = 'x';
+Segmentation fault   (Linux; macOS pe Bus error). Standard mein: undefined behaviour</pre>
+
+  <h3 id="p-null">2.11 <code>NULL</code> vs <code>nullptr</code></h3>
+  <p><code>NULL</code> ek <strong>macro</strong> hai jo basically <code>0</code> hai (ek integer). <code>nullptr</code> (C++11) ka <strong>apna type</strong> hai (<code>std::nullptr_t</code>): har pointer mein badal sakta hai, <code>int</code> mein nahi. Farak overloading mein dikhta hai:</p>
+<pre><code><span class="k">void</span> f(<span class="k">int</span>)   { puts("f(int)"); }
+<span class="k">void</span> f(<span class="k">char</span>*) { puts("f(char*)"); }
+
+f(0);          <span class="c">// 0 ek int hai</span>
+f(<span class="k">nullptr</span>);    <span class="c">// nullptr ka apna type: pointer hi banega</span></code></pre>
+<pre class="out">f(int)
+f(char*)</pre>
+  <p>Aur <code>NULL</code> daalo toh:</p>
+<pre><code><span class="k">void</span> f(<span class="k">int</span>)   {}
+<span class="k">void</span> f(<span class="k">char</span>*) {}
+
+f(NULL);       <span class="c">// NULL = 0 jaisa: dono overloads match</span></code></pre>
+<pre class="out err">error: call of overloaded 'f(NULL)' is ambiguous</pre>
+  <p>(GCC pe ambiguous error: <code>NULL</code> ek integer jaisa hai toh pointer wale overload pe bharosa nahi.) Toh C++ mein hamesha <code>nullptr</code>. <code>delete nullptr</code> aur <code>free(NULL)</code> safe hain; <code>if (p)</code> null check ke liye kaafi hai.</p>
+
+  <h3 id="p-drills">2.12 Output drills (pehle kaagaz pe, phir output dekho)</h3>
+  <p>Notepad pe har line ke baad pointer aur value ki state likho. 6 sawaal ek hi program mein:</p>
+<pre><code><span class="c">// 1</span>
+<span class="k">int</span> a[] = {5, 6, 7};
+<span class="k">int</span>* p = a + 1;
+printf("%d %d\n", p[-1], *(p + 1));
+<span class="c">// 2</span>
+<span class="k">int</span> x = 10; <span class="k">int</span>* q = &amp;x; <span class="k">int</span>** pp = &amp;q;
+**pp = 20;
+printf("%d\n", x);
+<span class="c">// 3</span>
+<span class="k">char</span> s[] = "hello";
+printf("%s %c\n", s + 2, *(s + 1));
+<span class="c">// 4</span>
+<span class="k">int</span> m[2][3] = {{1, 2, 3}, {4, 5, 6}};
+printf("%d %d\n", *(*(m + 1) + 2), **m);
+<span class="c">// 5</span>
+<span class="k">int</span> b[] = {1, 2, 3, 4};
+<span class="k">int</span>* r = b;
+r += 2;
+printf("%d ", *r--);
+printf("%d\n", *r);
+<span class="c">// 6</span>
+<span class="k">int</span> c[10]; <span class="k">int</span>* t = c;
+printf("%zu %zu %zu\n", <span class="k">sizeof</span>(c), <span class="k">sizeof</span>(t), <span class="k">sizeof</span>(c) / <span class="k">sizeof</span>(c[0]));</code></pre>
+<pre class="out">5 7
+20
+llo e
+6 1
+3 2
+40 8 10</pre>
+  <ol>
+    <li><code>p = a + 1</code> toh <code>p[-1]</code> = <code>a[0]</code> = 5 (negative index legal), <code>*(p+1)</code> = <code>a[2]</code> = 7.</li>
+    <li><code>**pp</code> = <code>x</code>, toh x = 20.</li>
+    <li><code>s + 2</code> = "llo" se shuru hone wala string; <code>*(s+1)</code> = 'e'.</li>
+    <li><code>m + 1</code> = doosri row, <code>*(m+1)</code> uska pehla element ka pointer, <code>+2</code> = us row ka 3rd = 6. <code>**m</code> = 1.</li>
+    <li><code>*r--</code> = <code>*(r--)</code>: purani value 3, phir r ek peeche, isliye agla print 2.</li>
+    <li><code>sizeof(c)</code> = 40, <code>sizeof(t)</code> = 8 (pointer), <code>40/4</code> = 10 elements.</li>
+  </ol>
+
+  <div class="callout say"><span class="tag">Interview mein</span>
+    <p>"A pointer holds an address; <code>p + 1</code> moves by <code>sizeof(*p)</code> bytes, and subtracting two pointers into the same array gives the number of elements. Postfix <code>++</code> binds tighter than <code>*</code>, so <code>*p++</code> reads the value and then advances the pointer, while <code>++*p</code> increments the value. <code>const int*</code> is a pointer to const data, <code>int* const</code> is a const pointer, and I read declarations after the <code>*</code>. A <code>void*</code> cannot be dereferenced or used in arithmetic until it is cast, and in C++ the result of <code>malloc</code> needs a cast. To change a caller's pointer I pass a pointer to it (<code>Node**</code>) or a reference. For a 2D array on the heap I either allocate an array of row pointers and free the rows before the array, or one flat block indexed by <code>i*cols + j</code>. The size of any pointer is fixed by the platform, 8 bytes on a 64-bit system and 4 bytes on a 32-bit system, whatever the pointed type, whereas <code>sizeof</code> applied to a reference gives the size of the type it refers to. The usual bugs are uninitialized and dangling pointers, use after free, double free, mixing <code>new[]</code> with <code>delete</code>, writing to a string literal, and leaks. In C++ I use <code>nullptr</code>, not <code>NULL</code>."</p>
+  </div>
+  <details class="qa"><summary>1. <code>*p++</code> aur <code>++*p</code> mein farak?</summary><div>
+    <code>*p++</code>: value padho, pointer aage. <code>++*p</code>: pointer wahin, value +1.</div></details>
+  <details class="qa"><summary>1b. Pointer ka <code>sizeof</code> kitna hota hai? Reference ka?</summary><div>
+    <p>Pointer: 8 bytes (64-bit) ya 4 bytes (32-bit), type chahe koi bhi. <code>sizeof(ref)</code> = jis type ko refer karta hai uska size (<code>int&amp;</code> pe 4, <code>double&amp;</code> pe 8).</p></div></details>
+  <details class="qa"><summary>2. <code>p + 1</code> kitne byte aage jaata hai? <code>q - p</code> kya deta hai?</summary><div>
+    <code>sizeof(*p)</code> byte. <code>q - p</code> = elements ki ginti (same array mein).</div></details>
+  <details class="qa"><summary>3. <code>const int*</code> vs <code>int* const</code>?</summary><div>
+    Pehla: value read-only, pointer badal sakte. Doosra: pointer fixed, value badal sakte. <code>*</code> ke baad padho.</div></details>
+  <details class="qa"><summary>4. <code>void*</code> pe <code>*</code> kyun nahi chalta? C++ mein malloc ko cast kyun?</summary><div>
+    Type nahi pata toh kitne byte padhna pata nahi. C++ void* se T* ka implicit conversion nahi deta, C deta hai.</div></details>
+  <details class="qa"><summary>5. Function mein head badalna ho toh?</summary><div>
+    <code>Node**</code> (ya <code>Node*&amp;</code>): pointer by value jaata hai, copy badalne se asli nahi badalta.</div></details>
+  <details class="qa"><summary>6. <code>int**</code> 2D array kaise free karte hain, aur ulta kiya toh?</summary><div>
+    Pehle har row, phir <code>m</code>. Ulta kiya toh rows ke pointers kho gaye: leak.</div></details>
+  <details class="qa"><summary>7. <code>char* s = "abc"; s[0] = 'x';</code> kyun crash?</summary><div>
+    Literal read-only memory mein hota hai. <code>char s[] = "abc"</code> use karo (copy).</div></details>
+  <details class="qa"><summary>8. NULL vs nullptr?</summary><div>
+    NULL ek integer 0 hai (overload ambiguity), nullptr ka apna type hai jo sirf pointers mein badalta hai.</div></details>
+  <!-- ================= LAMBDA ================= -->
+  <h2 id="lambda" class="topic-head">3. Lambdas + Functor <span class="pill done">Done</span></h2>
+  <p>Interview level notes: zyada theory nahi, zyada depth nahi, bas itna ki interview mein confidently answer de sako aur OA mein code likh sako. Har concept ka format: <strong>1) Hinglish explanation, 2) C++ code (output GCC pe run karke verify kiya), 3) Interview answer (English), 4) Important interview points.</strong></p>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>Lambda kya hai (anonymous function), syntax</td><td><span class="pill done">✅</span></td><td><a href="#l-what">Yahan</a>, thoda <a href="playlist.html#v5">#5</a></td></tr>
+    <tr><td>Capture clause: <code>[=]</code>, <code>[&amp;]</code>, <code>[x]</code>, <code>[&amp;x]</code>, mix</td><td><span class="pill done">✅</span></td><td><a href="#l-cap">Yahan</a></td></tr>
+    <tr><td>Capture ki hui value badalna: <code>mutable</code></td><td><span class="pill done">✅</span></td><td><a href="#l-cap">Yahan</a></td></tr>
+    <tr><td>Lambda + STL: <code>sort</code> comparator, <code>count_if</code>, <code>find_if</code>...</td><td><span class="pill done">✅</span></td><td><a href="#l-stl">Yahan</a></td></tr>
+    <tr><td>Functor: <code>operator()</code> wali class</td><td><span class="pill done">✅</span></td><td><a href="#f-what">Yahan</a></td></tr>
+    <tr><td>Functor kyun: state yaad rakhta hai</td><td><span class="pill done">✅</span></td><td><a href="#f-why">Yahan</a></td></tr>
+    <tr><td>Lambda vs Functor (table)</td><td><span class="pill done">✅</span></td><td><a href="#l-vs">Yahan</a></td></tr>
+    <tr><td>Quick quiz (4 sawaal)</td><td><span class="pill done">✅</span></td><td><a href="#l-quiz">Yahan</a></td></tr>
+    <tr><td>Bonus traps: <code>[=]</code> aur <code>this</code>, functor ki copy, init capture, function pointer, recursion</td><td><span class="pill done">✅ Bonus</span></td><td><a href="#l-bonus">Yahan</a></td></tr>
+    <tr><td>Function pointer: syntax, bracket kyun zaroori, runtime pe function badalna</td><td><span class="pill done">✅ Naya</span></td><td><a href="#fp-what">Yahan</a>, <a href="playlist.html#v5">#5</a></td></tr>
+    <tr><td>Function pointer ko argument ki tarah pass karna (callback)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#fp-arg">Yahan</a></td></tr>
+    <tr><td>Function pointer vs Lambda vs Functor (table + 5 interview questions)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#fp-vs">Yahan</a></td></tr>
+    <tr><td class="muted">Skip: generic lambda internals, constexpr lambda</td><td></td><td></td></tr>
+  </table></div>
+
+  <h3 id="p1">Part 1: Lambda Expressions</h3>
+
+  <h3 id="l-what">3.1 Lambda Expression kya hai?</h3>
+  <p>Imagine tumhare paas ek function hai jo sirf ek particular jagah use hona hai. Normally tum function define karoge:</p>
+<pre><code><span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+}</code></pre>
+  <p>Par agar mujhe ye function sirf ek baar use karna hai, toh alag se function banane ki kya zarurat? Yahin aata hai <strong>Lambda Expression</strong>.</p>
+  <p>Lambda basically ek <strong>anonymous function</strong> hai (bina naam ka function) jise tum wahin define kar sakte ho jahan chahiye.</p>
+  <p><strong>Syntax:</strong></p>
+<pre><code>[capture](parameters) -&gt; return_type {
+    <span class="c">// function body</span>
+};</code></pre>
+  <div class="tbl"><table>
+    <tr><th>Part</th><th>Meaning</th></tr>
+    <tr><td><code>[]</code></td><td>Capture clause</td></tr>
+    <tr><td><code>(parameters)</code></td><td>Function arguments</td></tr>
+    <tr><td><code>-&gt; return_type</code></td><td>Return type (kai cases mein optional)</td></tr>
+    <tr><td><code>{}</code></td><td>Function body</td></tr>
+  </table></div>
+  <p><strong>Example 1: Basic Lambda</strong></p>
+<pre><code><span class="k">auto</span> add = [](<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+};
+
+cout &lt;&lt; add(10, 20);</code></pre>
+<pre class="out">30</pre>
+  <p>Dhyan do:</p>
+  <ul>
+    <li><code>[ ]</code> ka matlab hum kuch capture nahi kar rahe.</li>
+    <li><code>add</code> lambda ko store karta hai.</li>
+    <li><code>auto</code> khud uska type nikaal leta hai.</li>
+    <li>Hum use bilkul normal function ki tarah call karte hain.</li>
+  </ul>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A lambda expression in C++ is an anonymous function that can be defined inline. It is useful for writing short, local functions without explicitly defining a separate function. Lambdas can also capture variables from their surrounding scope."</p>
+  </div>
+
+  <h3 id="l-cap">3.2 Capture Clause: VERY IMPORTANT</h3>
+  <p>Bro, ye lambdas ka shayad sabse important part hai. Maan lo:</p>
+<pre><code><span class="k">int</span> x = 10;
+
+<span class="k">auto</span> print = []() {
+    cout &lt;&lt; x;
+};
+
+print();</code></pre>
+<pre class="out err">error: 'x' is not captured</pre>
+  <p>Kya ye chalega? <strong>Nahi!</strong> Kyunki lambda surrounding scope ke local variables ko apne aap access nahi kar sakta. Iske liye <strong>capture clause</strong> chahiye.</p>
+
+  <h4>A. Capture by value <code>[=]</code></h4>
+  <p>Lambda <code>x</code> ki <strong>copy</strong> le leta hai. Socho: lambda ke paas x ki apni copy hai. Ab dekho:</p>
+<pre><code><span class="k">int</span> x = 10;
+
+<span class="k">auto</span> print = [=]() {
+    cout &lt;&lt; x;
+};
+
+x = 50;
+
+print();</code></pre>
+<pre class="out">10</pre>
+  <p>Kyun 10? Kyunki lambda ne <strong>banate waqt</strong> ki value capture kar li thi. Baad mein x badla toh lambda ko farak nahi pada.</p>
+
+  <h4>B. Capture by reference <code>[&amp;]</code></h4>
+<pre><code><span class="k">int</span> x = 10;
+
+<span class="k">auto</span> print = [&amp;]() {
+    cout &lt;&lt; x;
+};
+
+x = 50;
+
+print();</code></pre>
+<pre class="out">50</pre>
+  <p>Kyun 50? Kyunki lambda ke paas <strong>original variable</strong> ka access hai, alag copy nahi.</p>
+
+  <p><strong>Capture comparison</strong></p>
+  <div class="tbl"><table>
+    <tr><th>Capture</th><th>Meaning</th></tr>
+    <tr><td><code>[]</code></td><td>Kuch capture nahi</td></tr>
+    <tr><td><code>[=]</code></td><td>Use hue local variables <strong>value</strong> se</td></tr>
+    <tr><td><code>[&amp;]</code></td><td>Use hue local variables <strong>reference</strong> se</td></tr>
+    <tr><td><code>[x]</code></td><td>Sirf x value se</td></tr>
+    <tr><td><code>[&amp;x]</code></td><td>Sirf x reference se</td></tr>
+    <tr><td><code>[=, &amp;x]</code></td><td>Sab value se, x reference se</td></tr>
+    <tr><td><code>[&amp;, x]</code></td><td>Sab reference se, x value se</td></tr>
+  </table></div>
+
+  <h4>Important: captured variable ko modify kar sakte hain?</h4>
+<pre><code><span class="k">int</span> x = 10;
+
+<span class="k">auto</span> fun = [=]() {
+    x++;
+};
+
+fun();</code></pre>
+<pre class="out err">error: increment of read-only variable 'x'</pre>
+  <p>Compilation error. Kyun? Kyunki value se capture ki hui copy lambda mein default <strong>const</strong> hoti hai. Us copy ko badalna ho toh <code>mutable</code> use karo:</p>
+<pre><code><span class="k">int</span> x = 10;
+
+<span class="k">auto</span> fun = [=]() <span class="k">mutable</span> {
+    x++;
+    cout &lt;&lt; x &lt;&lt; "\n";
+};
+
+fun();
+
+cout &lt;&lt; x;</code></pre>
+<pre class="out">11
+10</pre>
+  <p>Dhyan do: original <code>x</code> abhi bhi 10 hai, sirf lambda ki apni copy 11 hui.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"The capture clause specifies how a lambda accesses variables from its enclosing scope. Variables can be captured by value, which creates copies, or by reference, which allows access to the original variables. We can also capture specific variables individually."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li><code>[=]</code> = copy (snapshot, banate waqt ki value). <code>[&amp;]</code> = original (hamesha taaza value).</li><li>By-value copy <strong>const</strong> hoti hai: badalne ke liye <code>mutable</code>. Original phir bhi nahi badalta.</li><li>Reference capture mein dhyan: variable mar gaya (scope se bahar) toh lambda dangling reference rakhega (<a href="#l-bonus">bonus</a>).</li></ul>
+  </div>
+
+  <h3 id="l-stl">3.3 Lambda with STL: OA ke liye extremely important</h3>
+  <p>Yahan lambdas sach mein kaam aate hain. Maan lo array ko descending sort karna hai. Normally: <code>sort(arr.begin(), arr.end(), greater&lt;int&gt;());</code>. Par custom condition chahiye, jaise <strong>absolute values</strong> ke hisaab se sort:</p>
+<pre><code>vector&lt;<span class="k">int</span>&gt; arr = {-5, 2, -1, 4, -3};
+
+sort(arr.begin(), arr.end(), [](<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> abs(a) &lt; abs(b);
+});
+
+<span class="k">for</span> (<span class="k">int</span> v : arr) cout &lt;&lt; v &lt;&lt; " ";</code></pre>
+<pre class="out">-1 2 -3 4 -5 </pre>
+  <p>Lambda yahan <strong>custom comparator</strong> ka kaam karta hai. <strong>Comparator kaise kaam karta hai?</strong> <code>return a &lt; b</code> ka matlab: <em>a ko b se pehle aana chahiye</em>. Condition true hai toh a pehle aata hai b se.</p>
+  <p>Lambda ke saath use kar sakte ho: <code>sort()</code>, <code>stable_sort()</code>, <code>count_if()</code>, <code>find_if()</code>, <code>remove_if()</code>, <code>for_each()</code>.</p>
+  <p><strong>Example: <code>count_if()</code></strong></p>
+<pre><code>vector&lt;<span class="k">int</span>&gt; arr = {1, 2, 3, 4, 5, 6};
+
+<span class="k">int</span> cnt = count_if(arr.begin(), arr.end(), [](<span class="k">int</span> x) {
+    <span class="k">return</span> x % 2 == 0;
+});
+
+cout &lt;&lt; cnt;</code></pre>
+<pre class="out">3</pre>  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Lambdas are commonly used with STL algorithms as custom comparators or predicates. They help us write concise and readable logic without creating separate function objects."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li>Comparator mein <code>&lt;</code> (ya <code>&gt;</code>) use karo, <strong><code>&lt;=</code> nahi</strong>: <code>sort</code> ko strict weak ordering chahiye, warna undefined behaviour / crash ho sakta hai.</li><li><code>sort</code> comparator = 2 arguments, bool return. <code>count_if</code> / <code>find_if</code> predicate = 1 argument, bool return.</li><li><code>for_each</code> ke saath <code>[&amp;total]</code> se bahar ka variable badal sakte ho (sum, count).</li></ul>
+  </div>
+
+  <h3 id="p2">Part 2: Functors</h3>
+
+  <h3 id="f-what">3.4 Functor kya hai?</h3>
+  <p>Bro, ye concept actually kaafi simple hai. <strong>Functor</strong> ek class ya struct hai jiske objects ko <strong>function ki tarah call</strong> kiya ja sakta hai. Kaise? <code>()</code> operator ko <strong>overload</strong> karke.</p>
+<pre><code><span class="k">class</span> Add {
+<span class="k">public</span>:
+    <span class="k">int</span> <span class="k">operator</span>()(<span class="k">int</span> a, <span class="k">int</span> b) {
+        <span class="k">return</span> a + b;
+    }
+};
+
+Add obj;
+
+cout &lt;&lt; obj(10, 20);</code></pre>
+<pre class="out">30</pre>
+  <p>Dhyan do: <code>obj(10, 20);</code>. Normally <code>obj</code> ek object hai, par hum use function ki tarah call kar rahe hain! Ye isliye possible hai kyunki humne function call operator <code>()</code> overload kiya.</p>
+  <p><strong>Yaad kaise rakhein?</strong></p>
+  <ul>
+    <li>Normal function &rarr; <code>add(10, 20)</code></li>
+    <li>Functor &rarr; <code>obj(10, 20)</code></li>
+    <li>Lambda &rarr; <code>add(10, 20)</code></li>
+  </ul>
+  <p>Teeno ko similar call kar sakte hain, par implementation alag hai.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A functor, also known as a function object, is an object of a class or struct that overloads the function call operator operator(). This allows the object to be invoked like a regular function."</p>
+  </div>
+
+  <h3 id="f-why">3.5 Functors kyun chahiye?</h3>
+  <p>Ek important advantage: functors <strong>state maintain</strong> kar sakte hain.</p>
+<pre><code><span class="k">class</span> Counter {
+    <span class="k">int</span> count = 0;
+
+<span class="k">public</span>:
+    <span class="k">void</span> <span class="k">operator</span>()() {
+        count++;
+        cout &lt;&lt; count &lt;&lt; endl;
+    }
+};
+
+Counter c;
+
+c();
+c();
+c();</code></pre>
+<pre class="out">1
+2
+3</pre>
+  <p>Dekha kya hua? Object ko apni pichhli state <strong>yaad</strong> hai. Ye tab kaam aata hai jab callable object ko calls ke beech kuch data yaad rakhna ho.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Functors are useful when we need callable objects that maintain state. Unlike ordinary functions, they can store data as member variables and preserve that state across multiple invocations."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li>Functor = class + <code>operator()</code>. State member variables mein rehti hai.</li><li>STL mein bahut use: <code>greater&lt;int&gt;</code>, <code>less&lt;int&gt;</code> standard functors hain (<code>sort(..., greater&lt;int&gt;())</code>, <code>priority_queue</code>).</li><li>Trap: STL algorithms functor ko <strong>by value</strong> lete hain, toh algorithm ke baad tumhare original object mein state nahi dikhti (<a href="#l-bonus">bonus</a>).</li></ul>
+  </div>
+
+  <h3 id="p3">Part 3: Lambda vs Functor</h3>
+  <p>Ye ek very likely interview question hai.</p>
+  <h3 id="l-vs">3.6 Lambda vs Functor</h3>
+  <div class="tbl"><table>
+    <tr><th>Feature</th><th>Lambda</th><th>Functor</th></tr>
+    <tr><td>Definition</td><td>Inline anonymous function</td><td>Class/struct with overloaded <code>()</code></td></tr>
+    <tr><td>Syntax</td><td>Short and concise</td><td>Class/struct chahiye</td></tr>
+    <tr><td>State</td><td>Variables capture kar sakta</td><td>Member variables rakh sakta</td></tr>
+    <tr><td>Reusability</td><td>Usually local</td><td>Class ki tarah reuse ho sakta</td></tr>
+    <tr><td>Usage</td><td>STL algorithms, callbacks</td><td>STL algorithms, custom callable objects</td></tr>
+  </table></div>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Both lambdas and functors represent callable objects in C++. Lambdas provide a concise way to define anonymous functions inline, whereas functors require defining a class or struct with an overloaded function call operator. Both can maintain state and can be used with STL algorithms."</p>
+  </div>
+  <div class="callout tip"><span class="tag">Dono ka link: ek line extra</span>
+    <p>Lambda andar se <strong>compiler ka banaya functor</strong> hi hota hai: captured variables uske members ban jaate hain aur body uska <code>operator()</code> (default <code>const</code>, isliye <code>mutable</code> chahiye). Isse upar ki saari baatein samajh aati hain. Interviewer isko pasand karta hai, bonus mein code hai.</p>
+  </div>
+
+  <h3 id="p4">Part 4: Interview Questions</h3>
+  <h3 id="l-quiz">3.7 Quick interview quiz</h3>
+  <details class="qa"><summary>Q1. What will this print?<br><code>int x = 10; auto f = [x]() mutable { x++; return x; }; cout &lt;&lt; f() &lt;&lt; " " &lt;&lt; x;</code></summary><div>
+    <p>Options: 10 10 &nbsp;|&nbsp; <strong>11 10</strong> &nbsp;|&nbsp; 11 11 &nbsp;|&nbsp; Compilation error</p>
+<pre class="out">11 10</pre>
+    <p><strong>Answer: 11 10.</strong> <code>[x]</code> copy capture karta hai. <code>mutable</code> us copy ko badalne deta hai, par original <code>x</code> nahi badalta. (C++17 se <code>&lt;&lt;</code> chain left-to-right evaluate hoti hai, isliye <code>f()</code> pehle chalta hai. Purane standard mein order unspecified tha.)</p>
+  </div></details>
+  <details class="qa"><summary>Q2. Which operator makes a class object callable like a function?</summary><div>
+    <p>Options: <code>operator[]</code> &nbsp;|&nbsp; <code>operator-&gt;</code> &nbsp;|&nbsp; <strong><code>operator()</code></strong> &nbsp;|&nbsp; <code>operator=</code></p>
+    <p><strong>Answer: <code>operator()</code>.</strong> Isko overload karne se object ko function-call syntax se bula sakte hain.</p>
+  </div></details>
+  <details class="qa"><summary>Q3. What does <code>[&amp;]</code> mean in a lambda? (<code>int x = 10; auto f = [&amp;]() { x++; };</code>)</summary><div>
+    <p>Options: Capture everything by value &nbsp;|&nbsp; <strong>Capture used local variables by reference</strong> &nbsp;|&nbsp; Capture nothing &nbsp;|&nbsp; Capture only global variables</p>
+<pre class="out">11</pre>
+    <p><strong>Answer: used local variables by reference.</strong> Isliye modification original variable pe asar karta hai (<code>f()</code> ke baad x = 11).</p>
+  </div></details>
+  <details class="qa"><summary>Q4. What is the main purpose of a lambda in STL? (<code>sort(v.begin(), v.end(), /* lambda */);</code>)</summary><div>
+    <p>Options: Allocate memory &nbsp;|&nbsp; <strong>Create custom comparison/predicate logic</strong> &nbsp;|&nbsp; Replace every STL container &nbsp;|&nbsp; Make sorting always O(1)</p>
+    <p><strong>Answer: custom comparison / predicate logic.</strong> Lambdas STL algorithms ko comparator aur predicate aasaani se dete hain.</p>
+  </div></details>
+
+  <h3 id="p5">Part 5: Function Pointers</h3>
+
+  <h3 id="fp-what">3.8 Function Pointer kya hai?</h3>
+  <p>Normally jab hum function call karte hain:</p>
+<pre><code><span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+}
+
+<span class="k">int</span> main() {
+    cout &lt;&lt; add(10, 20);
+}</code></pre>
+  <p>Par kya pata hai, <strong>functions ka bhi memory address</strong> hota hai? Variables ki tarah hum function ka address bhi ek pointer mein store kar sakte hain. Wahi <strong>Function Pointer</strong> karta hai: function ka address store karta hai aur pointer ke through us function ko call karne deta hai.</p>
+  <p><strong>Syntax:</strong></p>
+<pre><code>return_type (*pointer_name)(parameter_types);</code></pre>
+  <p><strong>Example:</strong></p>
+<pre><code><span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+}
+
+<span class="k">int</span> (*ptr)(<span class="k">int</span>, <span class="k">int</span>) = add;
+
+cout &lt;&lt; ptr(10, 20);</code></pre>
+<pre class="out">30</pre>
+  <p>Tod ke samjho: <code>int (*ptr)(int, int);</code></p>
+  <ul>
+    <li><code>int</code> &rarr; function ka return type.</li>
+    <li><code>*ptr</code> &rarr; function ka pointer.</li>
+    <li><code>(int, int)</code> &rarr; function do integer arguments leta hai.</li>
+  </ul>
+  <div class="callout trap"><span class="tag">Important: <code>*ptr</code> ke bracket matter karte hain!</span>
+    <p>Bracket ke bina <code>int *ptr(int, int);</code> ek <strong>function declare</strong> karta hai jo <code>int*</code> return karta hai, function pointer nahi:</p>
+<pre><code><span class="k">int</span> *ptr(<span class="k">int</span>, <span class="k">int</span>) = add;     <span class="c">// bracket nahi: ye function declaration ban gaya</span></code></pre><pre class="out err">error: function 'int* ptr(int, int)' is initialized like a variable</pre>
+  </div>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A function pointer is a pointer that stores the address of a function. It allows us to invoke a function indirectly through the pointer. The pointer's type must match the function's return type and parameter types."</p>
+  </div>
+
+  <h3 id="fp-use">3.9 Function Pointers kaise use karte hain?</h3>
+<pre><code><span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+}
+
+<span class="k">int</span> subtract(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a - b;
+}
+
+<span class="k">int</span> (*operation)(<span class="k">int</span>, <span class="k">int</span>);
+
+operation = add;
+cout &lt;&lt; operation(10, 5) &lt;&lt; endl;
+
+operation = subtract;
+cout &lt;&lt; operation(10, 5) &lt;&lt; endl;</code></pre>
+<pre class="out">15
+5</pre>
+  <p>Dekha? Humne <strong>sirf ek</strong> function pointer banaya (<code>int (*operation)(int, int);</code>) aur usme alag-alag functions assign kiye. Ye tab kaam aata hai jab <strong>runtime pe decide</strong> karna ho ki kaunsa function chalega. Jaise: calculator operations, callback functions, event handling, functions ko arguments ki tarah pass karna.</p>
+
+  <h3 id="fp-arg">3.10 Function Pointers ko arguments ki tarah pass karna</h3>
+  <p>Ye ek common interview concept hai. Maan lo ek function banana hai jo do numbers pe koi bhi operation kare:</p>
+<pre><code><span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+}
+
+<span class="k">int</span> multiply(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a * b;
+}
+
+<span class="k">int</span> calculate(<span class="k">int</span> a, <span class="k">int</span> b, <span class="k">int</span> (*operation)(<span class="k">int</span>, <span class="k">int</span>)) {
+    <span class="k">return</span> operation(a, b);
+}
+
+cout &lt;&lt; calculate(10, 5, add) &lt;&lt; endl;
+cout &lt;&lt; calculate(10, 5, multiply);</code></pre>
+<pre class="out">15
+50</pre>
+  <p>Kya ho raha hai? Hum ek <strong>function ko argument ki tarah</strong> doosre function ko de rahe hain. <code>int (*operation)(int, int)</code> wala parameter aisa function pointer leta hai jo do integers leke integer return karta ho.</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"Function pointers allow us to pass functions as arguments to other functions. This is commonly used to implement callbacks, where a function is passed to another function and invoked when required."</p>
+  </div>  <div class="callout tip"><span class="tag">Important interview points</span>
+    <ul><li>Function pointer ka type function ke <strong>return type + parameter types</strong> se match hona chahiye.</li><li><code>ptr(10, 20)</code> aur <code>(*ptr)(10, 20)</code> dono same. <code>add</code> aur <code>&amp;add</code> bhi same (<a href="#p-fp">Pointer 2.7</a>).</li><li><code>typedef</code> / <code>using</code> se lamba syntax saaf: <code>using Op = int(*)(int, int);</code> (typedef wala example <a href="#p-fp">Pointer 2.7</a> mein).</li></ul>
+  </div>
+
+  <h3 id="fp-vs">3.11 Function Pointer vs Lambda vs Functor</h3>
+  <p>Ab interesting part. Teeno callable entities ki tarah behave karte hain (function-call syntax se bula sakte hain), par implementation aur capabilities alag hain.</p>
+  <div class="tbl"><table>
+    <tr><th>Feature</th><th>Function Pointer</th><th>Lambda</th><th>Functor</th></tr>
+    <tr><td>Kya hai?</td><td>Function ka pointer</td><td>Anonymous callable expression</td><td>Overloaded <code>()</code> wala object</td></tr>
+    <tr><td>State</td><td>Captured state nahi</td><td>Variables capture kar sakta</td><td>Member variables rakh sakta</td></tr>
+    <tr><td>Syntax</td><td>Function pointer declaration</td><td><code>[](){}</code></td><td>Class/struct</td></tr>
+    <tr><td>Argument ki tarah pass?</td><td>Haan</td><td>Haan</td><td>Haan</td></tr>
+    <tr><td>STL ke saath?</td><td>Haan</td><td>Haan</td><td>Haan</td></tr>
+    <tr><td>Local variables capture?</td><td>Nahi</td><td>Haan</td><td>Members / constructor se</td></tr>
+    <tr><td>Complexity</td><td>Simple</td><td>Concise</td><td>Zyada boilerplate</td></tr>
+  </table></div>
+  <p><strong>Same functionality, teeno tareeke se</strong> (addition):</p>
+<pre><code><span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+}
+
+<span class="k">class</span> Add {
+<span class="k">public</span>:
+    <span class="k">int</span> <span class="k">operator</span>()(<span class="k">int</span> a, <span class="k">int</span> b) {
+        <span class="k">return</span> a + b;
+    }
+};
+
+<span class="k">int</span> (*op1)(<span class="k">int</span>, <span class="k">int</span>) = add;                       <span class="c">// 1. Function pointer</span>
+<span class="k">auto</span> op2 = [](<span class="k">int</span> a, <span class="k">int</span> b) { <span class="k">return</span> a + b; };    <span class="c">// 2. Lambda</span>
+Add op3;                                          <span class="c">// 3. Functor</span>
+
+cout &lt;&lt; op1(10, 20) &lt;&lt; " " &lt;&lt; op2(10, 20) &lt;&lt; " " &lt;&lt; op3(10, 20);</code></pre>
+<pre class="out">30 30 30</pre>
+  <ul>
+    <li>Function pointer &rarr; <strong>maujooda function</strong> ko point karta hai.</li>
+    <li>Lambda &rarr; ek <strong>unnamed callable object</strong> banata hai.</li>
+    <li>Functor &rarr; <strong>user-defined class</strong> ka object banata hai.</li>
+  </ul>
+  <p><strong>Ek interesting fact:</strong> bina capture wala lambda function pointer mein convert ho sakta hai (signature compatible ho toh):</p>
+<pre><code><span class="k">auto</span> lambda = [](<span class="k">int</span> a, <span class="k">int</span> b) {
+    <span class="k">return</span> a + b;
+};
+
+<span class="k">int</span> (*ptr)(<span class="k">int</span>, <span class="k">int</span>) = lambda;
+
+cout &lt;&lt; ptr(10, 20);</code></pre>
+<pre class="out">30</pre>
+  <p>Ye chalta hai! Par jo lambda variables <strong>capture</strong> karta hai wo ordinary function pointer mein convert nahi hota:</p>
+<pre><code><span class="k">int</span> k = 5;
+<span class="k">auto</span> lambda = [k](<span class="k">int</span> a, <span class="k">int</span> b) { <span class="k">return</span> a + b + k; };
+<span class="k">int</span> (*ptr)(<span class="k">int</span>, <span class="k">int</span>) = lambda;      <span class="c">// ❌ capture hai</span></code></pre>
+<pre class="out err">error: cannot convert 'main()::&lt;lambda(int, int)&gt;' to 'int (*)(int, int)' in initialization</pre>
+  <div class="callout tip"><span class="tag">Kyun?</span>
+    <p>Capture wale lambda ke andar data (<code>k</code>) hota hai, aur function pointer sirf code ka address hota hai, data rakhne ki jagah nahi. Isliye state chahiye toh lambda/functor (ya <code>std::function</code>), plain function pointer nahi.</p>
+  </div>
+
+  <h3 id="fp-qs">3.12 Important interview questions (Part 3 of the notes)</h3>
+  <details class="qa"><summary>Q1. Can a function pointer store a lambda?</summary><div>
+    <p>A <strong>non-capturing</strong> lambda can be converted to a compatible function pointer. A <strong>capturing</strong> lambda cannot be converted to an ordinary function pointer.</p>
+  </div></details>
+  <details class="qa"><summary>Q2. Can a functor maintain state?</summary><div>
+    <p>Yes. A functor can maintain state using member variables, which persist across multiple function calls.</p>
+  </div></details>
+  <details class="qa"><summary>Q3. What is the difference between a function pointer and a functor?</summary><div>
+    <p>A function pointer stores the address of an existing function, whereas a functor is an object that overloads the function call operator.</p>
+  </div></details>
+  <details class="qa"><summary>Q4. Are lambdas internally implemented using functors?</summary><div>
+    <p>Essentially, yes. The compiler generates a unique unnamed closure type for every lambda expression. This type has an overloaded function call operator. (Captures become its data members; see the <code>sizeof</code> demo in the bonus section.)</p>
+  </div></details>
+  <details class="qa"><summary>Q5. Which one would you prefer?</summary><div>
+    <p>It depends on the use case:</p>
+    <ul>
+      <li><strong>Function pointer</strong> for simple callbacks and when a plain function pointer interface is required.</li>
+      <li><strong>Lambda</strong> for concise inline logic and capturing local variables.</li>
+      <li><strong>Functor</strong> for reusable callable objects with state and more complex behavior.</li>
+    </ul>
+  </div></details>
+  <div class="callout say"><span class="tag">Function pointers: yaad rakhne wali baatein</span>
+    <ul>
+      <li>Function ka address store karta hai: <code>ret (*p)(params)</code>. Bracket zaroori.</li>
+      <li>Runtime pe decide karne ke liye (ek pointer, alag functions) aur callbacks ke liye (function ko argument ki tarah pass).</li>
+      <li>State nahi rakhta. State chahiye toh lambda (capture) ya functor (members).</li>
+      <li>Bina capture wala lambda &rarr; function pointer ban sakta hai. Capture wala nahi.</li>
+    </ul>
+  </div>
+
+  <h3 id="l-rev">3.13 Final revision: yaad rakhne wali baatein</h3>
+  <div class="callout say"><span class="tag">Lambdas</span>
+    <ul>
+      <li>Anonymous functions. Inline defined.</li>
+      <li><code>[ ]</code> capture clause hai.</li>
+      <li><code>[=]</code> = capture by value. <code>[&amp;]</code> = capture by reference.</li>
+      <li><code>mutable</code> value-captured copy ko modify karne deta hai.</li>
+      <li>STL algorithms ke saath bahut useful.</li>
+    </ul>
+  </div>
+  <div class="callout say"><span class="tag">Functors</span>
+    <ul>
+      <li>Objects jo functions ki tarah behave karte hain.</li>
+      <li><code>operator()</code> se banta hai.</li>
+      <li>Member variables se state maintain kar sakta hai.</li>
+      <li>STL algorithms ke saath useful.</li>
+    </ul>
+  </div>
+
+  <h3 id="l-bonus">3.14 Bonus: extra traps jo interviewer pooch sakta hai</h3>
+  <p>Upar wale notes core hain. Ye extra cheezein tab kaam aati hain jab interviewer ek step aur gehra jaaye. Time kam ho toh inhe baad mein padho.</p>
+
+  <p><strong>1) Lambda andar se functor hi hai</strong> (captures = members, <code>operator()</code> const). <code>sizeof</code> bhi wahi batata hai:</p>
+<pre><code><span class="k">struct</span> AddX {                                   <span class="c">// compiler isi tarah ka class banata hai</span>
+  <span class="k">int</span> x;                                        <span class="c">// capture = member</span>
+  <span class="k">int</span> <span class="k">operator</span>()(<span class="k">int</span> a) <span class="k">const</span> { <span class="k">return</span> a + x; } <span class="c">// aur operator() const hota hai</span>
+};
+
+<span class="k">int</span> x = 5;
+<span class="k">auto</span> lam = [x](<span class="k">int</span> a) { <span class="k">return</span> a + x; };
+AddX fn{5};
+printf("%d %d\n", lam(10), fn(10));
+
+<span class="k">auto</span> none = [] {};
+<span class="k">auto</span> one  = [x] { <span class="k">return</span> x; };
+<span class="k">auto</span> two  = [x, d = 1.5] { <span class="k">return</span> x + d; };
+<span class="k">auto</span> ref  = [&amp;x] { <span class="k">return</span> x; };
+printf("sizeof: none=%zu int=%zu int+double=%zu ref=%zu\n",
+       <span class="k">sizeof</span>(none), <span class="k">sizeof</span>(one), <span class="k">sizeof</span>(two), <span class="k">sizeof</span>(ref));</code></pre>
+<pre class="out">15 15
+sizeof: none=1 int=4 int+double=16 ref=8</pre>
+  <p>Kuch capture nahi toh 1 byte (empty class), <code>int</code> capture toh 4, reference capture toh pointer jitna (8). (Exact size implementation-defined, GCC pe aise hi aata.)</p>
+
+  <p><strong>2) <code>[=]</code> member function ke andar <code>this</code> capture karta hai, members ki copy nahi.</strong> Object badla toh lambda mein bhi badla dikhta hai (aur object mara toh dangling):</p>
+<pre><code><span class="k">struct</span> W {
+  <span class="k">int</span> v = 1;
+  <span class="k">auto</span> get()  { <span class="k">return</span> [=]()     { <span class="k">return</span> v; }; }   <span class="c">// [=] ne v copy nahi kiya, this copy kiya</span>
+  <span class="k">auto</span> get2() { <span class="k">return</span> [v = v]() { <span class="k">return</span> v; }; }   <span class="c">// asli copy</span>
+};
+
+W w;
+<span class="k">auto</span> f = w.get();
+w.v = 5;
+printf("%d\n", f());          <span class="c">// 1 nahi, 5</span>
+<span class="k">auto</span> g = w.get2();
+w.v = 9;
+printf("%d %d\n", g(), f());</code></pre>
+<pre class="out">5
+5 9</pre>
+  <p><code>get()</code> ne <code>w.v = 5</code> ke baad 5 diya (1 nahi). <code>get2()</code> ne <code>v = v</code> (init capture) se asli copy li, toh baad ke 9 ka asar nahi. C++17 mein <code>[*this]</code> bhi yahi karta hai.</p>
+
+  <p><strong>3) <code>[&amp;]</code> dangling:</strong> local variable ke reference wala lambda function se bahar nikal gaya, variable mar chuka:</p>
+<pre><code><span class="k">auto</span> make() { <span class="k">int</span> n = 5; <span class="k">return</span> [&amp;]() { <span class="k">return</span> n; }; }   <span class="c">// ❌ n function ke saath mara, lambda dangling</span>
+<span class="k">auto</span> ok()   { <span class="k">int</span> n = 5; <span class="k">return</span> [=]() { <span class="k">return</span> n; }; }   <span class="c">// ✅ copy leke gaya</span></code></pre>
+
+  <p><strong>4) Init capture</strong> (C++14): <code>unique_ptr</code> copy nahi hota, toh usko capture karne ka ek hi tareeka:</p>
+<pre><code><span class="k">auto</span> up = make_unique&lt;<span class="k">int</span>&gt;(42);
+<span class="k">auto</span> f = [p = std::move(up)]() { <span class="k">return</span> *p; };       <span class="c">// init capture: unique_ptr ko move kiya</span>
+printf("%d %d\n", f(), up == <span class="k">nullptr</span>);</code></pre>
+<pre class="out">42 1</pre>
+
+  <p><strong>5) Recursive lambda:</strong> lambda apne naam se khud ko nahi bula sakta (abhi naam bana hi nahi). <code>std::function</code> ya "self" parameter se:</p>
+<pre><code>function&lt;<span class="k">int</span>(<span class="k">int</span>)&gt; fact = [&amp;fact](<span class="k">int</span> n) { <span class="k">return</span> n &lt;= 1 ? 1 : n * fact(n - 1); };
+printf("%d\n", fact(5));
+
+<span class="k">auto</span> fib = [](<span class="k">auto</span> self, <span class="k">int</span> n) -&gt; <span class="k">int</span> { <span class="k">return</span> n &lt; 2 ? n : self(self, n - 1) + self(self, n - 2); };
+printf("%d\n", fib(fib, 10));</code></pre>
+<pre class="out">120
+55</pre>
+
+  <p><strong>6) STL functor ki <em>copy</em> leta hai:</strong> <code>count_if</code> ne copy li, isliye asli <code>c.calls</code> = 0 raha. State chahiye toh <code>for_each</code> ka return value lo ya <code>std::ref(c)</code> do:</p>
+<pre><code><span class="k">struct</span> Counter {
+  <span class="k">int</span> calls = 0;
+  <span class="k">bool</span> <span class="k">operator</span>()(<span class="k">int</span> x) { ++calls; <span class="k">return</span> x % 2 == 0; }     <span class="c">// state rakhta hai</span>
+};
+<span class="k">struct</span> Desc { <span class="k">bool</span> <span class="k">operator</span>()(<span class="k">int</span> a, <span class="k">int</span> b) <span class="k">const</span> { <span class="k">return</span> a &gt; b; } };
+
+vector&lt;<span class="k">int</span>&gt; v = {4, 7, 2, 9, 6};
+
+Counter c;
+<span class="k">int</span> evens = count_if(v.begin(), v.end(), c);                 <span class="c">// algorithm ne c ki COPY li</span>
+printf("evens=%d  c.calls=%d\n", evens, c.calls);
+
+Counter r = for_each(v.begin(), v.end(), Counter{});         <span class="c">// for_each functor wapas deta hai</span>
+printf("r.calls=%d\n", r.calls);
+
+sort(v.begin(), v.end(), Desc());
+<span class="k">for</span> (<span class="k">int</span> x : v) printf("%d ", x);
+printf("\n");
+
+priority_queue&lt;<span class="k">int</span>, vector&lt;<span class="k">int</span>&gt;, greater&lt;<span class="k">int</span>&gt;&gt; pq(v.begin(), v.end());   <span class="c">// min-heap</span>
+printf("min-heap top=%d\n", pq.top());
+set&lt;<span class="k">int</span>, Desc&gt; s(v.begin(), v.end());                                    <span class="c">// ulta sorted set</span>
+printf("set first=%d\n", *s.begin());</code></pre>
+<pre class="out">evens=3  c.calls=0
+r.calls=5
+9 7 6 4 2 
+min-heap top=2
+set first=9</pre>
+  <p><code>priority_queue</code>/<code>set</code>/<code>map</code> ko comparator <strong>type</strong> chahiye, toh wahan functor (ya <code>decltype(lambda)</code>) jaata hai.</p>
+
+  <p><strong>7) Captureless lambda &rarr; function pointer, aur <code>std::function</code>:</strong> bina capture wala lambda plain function pointer mein badal sakta hai (C API/callback ke liye). Capture hai toh nahi. <code>std::function</code> kuch bhi call hone wala rakh leta hai:</p>
+<pre><code><span class="k">struct</span> Triple { <span class="k">int</span> <span class="k">operator</span>()(<span class="k">int</span> x) <span class="k">const</span> { <span class="k">return</span> 3 * x; } };
+
+<span class="k">int</span> (*fp)(<span class="k">int</span>) = [](<span class="k">int</span> x) { <span class="k">return</span> x * 2; };        <span class="c">// captureless lambda → function pointer</span>
+printf("%d\n", fp(21));
+
+<span class="k">int</span> k = 4;
+function&lt;<span class="k">int</span>(<span class="k">int</span>)&gt; f1 = fp;                          <span class="c">// function pointer</span>
+function&lt;<span class="k">int</span>(<span class="k">int</span>)&gt; f2 = [k](<span class="k">int</span> x) { <span class="k">return</span> x * k; };<span class="c">// capture wala lambda</span>
+function&lt;<span class="k">int</span>(<span class="k">int</span>)&gt; f3 = Triple();                    <span class="c">// functor</span>
+printf("%d %d %d\n", f1(1), f2(2), f3(3));</code></pre>
+<pre class="out">42
+2 8 9</pre><pre><code><span class="k">int</span> k = 4;
+<span class="k">int</span> (*bad)(<span class="k">int</span>) = [k](<span class="k">int</span> x) { <span class="k">return</span> x * k; };      <span class="c">// ❌ capture hai toh function pointer nahi</span></code></pre>
+<pre class="out err">error: cannot convert 'main()::&lt;lambda(int)&gt;' to 'int (*)(int)' in initialization</pre>
+  <p><code>std::function</code> = type erasure, thoda overhead (indirect call, kabhi heap). <code>auto</code> lambda ka asli type hai: zero overhead. Isliye <code>auto</code>/template parameter pehle, <code>std::function</code> tab jab alag-alag callables ek jagah store karne ho (callbacks ki vector).</p>
+  <div class="callout tip"><span class="tag">Bonus: ek line mein</span>
+    <ul><li><code>[=]</code> member function mein = <code>this</code> capture (fix: <code>[v = v]</code> ya <code>[*this]</code>).</li><li><code>[&amp;]</code> + variable mar gaya = dangling. <code>[=]</code> ya value se capture karo.</li><li>STL algorithms functor ki copy lete hain: state bahar nahi dikhti.</li><li>Captureless lambda hi function pointer mein badalta hai.</li></ul>
+  </div>
+  <div class="callout say"><span class="tag">Interview mein (ek saath, bonus ke saath)</span>
+    <p>"A lambda is an unnamed function object written in place, and the compiler turns it into a class whose data members are the captured variables and whose <code>operator()</code> is const unless I write <code>mutable</code>. A functor is the same idea written by hand: a class with <code>operator()</code> that can keep state. Capture by value takes a copy when the lambda is created; capture by reference sees later changes but can dangle. Inside a member function <code>[=]</code> captures <code>this</code>, not the members. I use both with STL algorithms as comparators and predicates. A lambda without captures converts to a function pointer, and <code>std::function</code> can hold any callable at the cost of type erasure."</p>
+  </div>
+  <details class="qa"><summary>1. Lambda kya hai aur compiler uska kya banata hai?</summary><div>
+    Naamless function object. Compiler ek class banata hai: captures = members, body = <code>const operator()</code>.</div></details>
+  <details class="qa"><summary>2. <code>[=]</code> vs <code>[&amp;]</code>?</summary><div>
+    <code>[=]</code> banate waqt ki copy (snapshot), <code>[&amp;]</code> reference (taaza value, par dangling ka khatra).</div></details>
+  <details class="qa"><summary>3. <code>mutable</code> kyun chahiye?</summary><div>
+    <code>operator()</code> default const hai, toh by-value copy badal nahi sakte. <code>mutable</code> se badal sakte, aur state call-to-call yaad rehti.</div></details>
+  <details class="qa"><summary>4. Functor vs lambda?</summary><div>
+    Dono callable objects. Lambda inline aur chhota; functor ek poori class (reuse, naam). Dono state rakh sakte, aur dono STL algorithms mein chalte.</div></details>
+  <details class="qa"><summary>5. Functor kyun use karte hain?</summary><div>
+    Callable object jo member variables mein state rakhe aur calls ke beech yaad rakhe.</div></details>
+  <details class="qa"><summary>6. Lambda ko function pointer mein kab badal sakte hain?</summary><div>
+    Jab koi capture na ho. Capture wala lambda ek object hai jisko data chahiye.</div></details>
+  <details class="qa"><summary>7. Member function mein <code>[=]</code> kya capture karta hai?</summary><div>
+    <code>this</code> pointer, members ki copy nahi. Object mara toh dangling. Fix: <code>[v = v]</code> ya C++17 <code>[*this]</code>.</div></details>
+
+  <!-- ================= STATIC ================= -->
+  <h2 id="static" class="topic-head">4. Static <span class="pill done">Done</span></h2>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>Static local variable (ek baar init, value yaad rakhta hai)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-local">Yahan</a></td></tr>
+    <tr><td>Static global variable / function (sirf usi file mein)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-global">Yahan</a></td></tr>
+    <tr><td>Static data member: ek copy, .cpp mein define, sizeof mein nahi</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v57">#57</a>, <a href="playlist.html#v81">#81</a> + <a href="#s-member">yahan</a></td></tr>
+    <tr><td>Static data member derived class ke saath bhi shared</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-member">Yahan</a></td></tr>
+    <tr><td>Static member function: <code>this</code> nahi</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v75">#75</a> + <a href="#s-fn">yahan</a></td></tr>
+    <tr><td>Static member function: virtual/const nahi, <code>Class::f()</code> ya object se call</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-fn">Yahan</a></td></tr>
+    <tr><td>Singleton (function-local static, C++11 se thread-safe)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-single">Yahan</a></td></tr>
+    <tr><td>Output traps: object counter, recursion mein static local</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-local">Yahan</a>, <a href="#s-trap">yahan</a></td></tr>
+    <tr><td>Static member function: object ke bina call, kyun chahiye (student counter)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-n1">Yahan</a>, <a href="#s-n2">counter</a></td></tr>
+    <tr><td>Static member function ke 4 rules + overload, static vs normal table</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-n3">Yahan</a>, <a href="#s-n4">table</a></td></tr>
+    <tr><td>Static method se non-static members indirectly (object pass karke)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#s-n5">Yahan</a></td></tr>
+  </table></div>
+
+  <div class="tbl"><table>
+    <tr><th>Kahan likha</th><th>Matlab (ek line)</th><th>Rehta kahan</th></tr>
+    <tr><td>Function ke andar (<code>static int x</code>)</td><td>ek baar init, <strong>calls ke beech value yaad</strong></td><td>data segment</td></tr>
+    <tr><td>File level (<code>static int g</code>, <code>static void f()</code>)</td><td><strong>internal linkage</strong>: sirf is file mein dikhta</td><td>data segment</td></tr>
+    <tr><td>Class ke andar data member</td><td>poori class ka <strong>ek</strong> copy, object mein nahi</td><td>data segment</td></tr>
+    <tr><td>Class ke andar member function</td><td>object ke bina chalta, <code>this</code> nahi</td><td>code</td></tr>
+  </table></div>
+
+  <h3 id="s-local">4.1 Static local variable</h3>
+  <p>Normal local har call pe stack pe naya banta hai. <code>static</code> local <strong>sirf pehli baar</strong> init hota hai aur program ke end tak jeeta hai. (C++11 se is pehli baar ka init thread-safe bhi hai.)</p>
+<pre><code><span class="k">void</span> counter() {
+  <span class="k">static</span> <span class="k">int</span> calls = 0;     <span class="c">// sirf pehli baar init hota hai, data segment mein rehta hai</span>
+  <span class="k">int</span> fresh = 0;            <span class="c">// har call pe naya, stack pe</span>
+  calls++; fresh++;
+  printf("static=%d normal=%d\n", calls, fresh);
+}
+
+counter();
+counter();
+counter();</code></pre>
+<pre class="out">static=1 normal=1
+static=2 normal=1
+static=3 normal=1</pre>
+  <p>Interview ke output sawaal yahin se aate hain: <strong>recursion</strong> aur <strong>loop</strong> mein static local. Init line sirf ek baar chalti hai, baaki baar skip:</p>
+<pre><code><span class="k">int</span> f(<span class="k">int</span> n) {
+  <span class="k">static</span> <span class="k">int</span> calls = 0;
+  calls++;
+  <span class="k">if</span> (n &lt;= 1) <span class="k">return</span> calls;
+  <span class="k">return</span> f(n - 1);
+}
+
+printf("%d\n", f(4));
+printf("%d\n", f(2));       <span class="c">// calls pichli baar ka yaad hai</span>
+<span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; 3; i++) {
+  <span class="k">static</span> <span class="k">int</span> s = 0;
+  <span class="k">int</span> a = 0;
+  s++; a++;
+  printf("%d %d\n", s, a);
+}</code></pre>
+<pre class="out">4
+6
+1 1
+2 1
+3 1</pre>
+  <p><code>f(4)</code> = 4 (4 calls). <code>f(2)</code> ne <code>calls</code> ko <strong>4 se</strong> aage badhaya (5, 6), reset nahi hua. Loop mein <code>s</code> 1, 2, 3 hai par normal <code>a</code> har baar 1.</p>
+
+  <h3 id="s-global">4.2 Static global variable / function: file tak seemit</h3>
+  <p>File level pe <code>static</code> = <strong>internal linkage</strong>: naam sirf usi <code>.cpp</code> (translation unit) mein dikhta hai. Doosri file se us function ko call karoge toh <strong>linker error</strong> (<code>undefined reference</code>). Do .cpp mein same naam ke static functions/variables ek doosre se takraate nahi.</p>
+  <div class="callout trap"><span class="tag">Header mein static variable</span>
+    <p>Header <code>#include</code> hota hai, toh har <code>.cpp</code> ko <strong>apni alag copy</strong> milti hai:</p>
+<pre><code><span class="c">// ---- counter.h</span>
+<span class="k">static</span> <span class="k">int</span> cnt = 0;            <span class="c">// header mein static: har .cpp ko apni alag copy</span>
+<span class="k">void</span> bump();
+
+<span class="c">// ---- a.cpp</span>
+#include "counter.h"
+<span class="k">void</span> bump() { cnt++; }          <span class="c">// a.cpp wali copy badli</span>
+
+<span class="c">// ---- main.cpp</span>
+#include &lt;cstdio&gt;
+#include "counter.h"
+<span class="k">int</span> main() { bump(); bump(); printf("main ka cnt = %d\n", cnt); }</code></pre>
+<pre class="out">main ka cnt = 0</pre>
+    <p><code>a.cpp</code> ne apni copy badhayi, <code>main.cpp</code> ko 0 dikha. Variable share karna ho toh header mein <code>extern int cnt;</code> aur ek <code>.cpp</code> mein definition (ya C++17 <code>inline int cnt = 0;</code>).</p>
+  </div>
+  <p>C++ mein file-level ke liye <code>static</code> ki jagah <a href="#n-anon">anonymous namespace</a> bhi use hota hai (types pe bhi chalta hai).</p>
+
+  <h3 id="s-member">4.3 Static data member</h3>
+<pre><code><span class="k">struct</span> B { <span class="k">static</span> <span class="k">int</span> n; B() { n++; } };
+<span class="k">struct</span> D : B { };
+<span class="k">int</span> B::n = 0;                                   <span class="c">// .cpp mein define</span>
+
+<span class="k">struct</span> T {
+  <span class="k">static</span> <span class="k">inline</span> <span class="k">int</span> hits = 0;                   <span class="c">// C++17: andar hi define (inline)</span>
+  <span class="k">static</span> <span class="k">const</span> <span class="k">int</span> MAX = 10;                    <span class="c">// integral const: andar hi value</span>
+  <span class="k">static</span> <span class="k">constexpr</span> <span class="k">double</span> PI = 3.14;
+};
+
+B b; D d1, d2;
+printf("%d %d %d\n", B::n, D::n, d1.n);          <span class="c">// teeno ek hi variable</span>
+printf("same address: %d\n", &amp;B::n == &amp;D::n);
+printf("sizeof(B)=%zu\n", <span class="k">sizeof</span>(B));            <span class="c">// static member object mein nahi</span>
+T::hits++;
+printf("%d %d %.2f\n", T::hits, T::MAX, T::PI);</code></pre>
+<pre class="out">3 3 3
+same address: 1
+sizeof(B)=1
+1 10 3.14</pre>
+  <ul>
+    <li>Class mein sirf <strong>declaration</strong>, definition <code>.cpp</code> mein: <code>int B::n = 0;</code> (kyun: <a href="playlist.html#v57">#57</a>).</li>
+    <li><strong>Ek hi copy</strong>, sab objects aur derived classes ke liye (<code>B::n</code>, <code>D::n</code>, <code>d1.n</code> teeno wahi variable, address bhi same).</li>
+    <li>Object ke andar <strong>nahi</strong>, <code>sizeof</code> mein count nahi (<a href="playlist.html#v81">#81</a>).</li>
+    <li>Class ke andar hi value: <code>static const</code> integral, <code>static constexpr</code>, ya C++17 <code>static inline</code> (alag definition nahi chahiye).</li>
+  </ul>
+
+  <div class="callout trap"><span class="tag">Important: static member class mein jagah nahi leta</span>
+    <p><strong>Static data member object ke andar nahi hota.</strong> Wo poori class ka ek shared variable hai jo data segment mein alag rehta hai, isliye <code>sizeof(class)</code> mein <strong>count nahi hota</strong>. Sirf <strong>non-static</strong> data members (aur <code>virtual</code> ho toh <code>vptr</code>) <code>sizeof</code> badhate hain. Member functions (static ya normal) bhi nahi badhate.</p>
+  </div>
+<pre><code><span class="k">struct</span> A { <span class="k">int</span> x; };
+<span class="k">struct</span> B { <span class="k">int</span> x; <span class="k">static</span> <span class="k">int</span> n; };                                   <span class="c">// + 1 static</span>
+<span class="k">struct</span> C { <span class="k">static</span> <span class="k">int</span> n; };                                          <span class="c">// sirf static</span>
+<span class="k">struct</span> D { <span class="k">int</span> x; <span class="k">static</span> <span class="k">int</span> n; <span class="k">static</span> <span class="k">double</span> d; <span class="k">static</span> <span class="k">char</span> s[100]; };   <span class="c">// bahut saare static</span>
+<span class="k">struct</span> E { <span class="k">int</span> x; <span class="k">virtual</span> <span class="k">void</span> f() {} };                             <span class="c">// virtual = vptr jodta hai</span>
+<span class="k">int</span> B::n = 0; <span class="k">int</span> C::n = 0; <span class="k">int</span> D::n = 0; <span class="k">double</span> D::d = 0; <span class="k">char</span> D::s[100] = {};
+
+printf("A=%zu B=%zu C=%zu D=%zu E=%zu\n", <span class="k">sizeof</span>(A), <span class="k">sizeof</span>(B), <span class="k">sizeof</span>(C), <span class="k">sizeof</span>(D), <span class="k">sizeof</span>(E));</code></pre>
+<pre class="out">A=4 B=4 C=1 D=4 E=16</pre>
+  <p><code>A</code> aur <code>B</code> dono 4: <code>B</code> mein <code>static int n</code> ke hone se kuch nahi badla. <code>D</code> mein 100 bytes ka static array bhi hai, phir bhi 4. <code>C</code> sirf static wali class hai, par <strong>empty class ka size 1</strong> hota hai (har object ka alag address chahiye, <a href="playlist.html#v55">#55</a>), isliye 1, 0 nahi. <code>E</code> mein <code>virtual</code> ne <code>vptr</code> jodha: <strong>16</strong> = vptr (8) + <code>x</code> (4) + padding (4), 64-bit pe.</p>
+
+  <h3 id="s-fn">4.4 Static member function</h3>
+<pre><code><span class="k">struct</span> Util {
+  <span class="k">static</span> <span class="k">int</span> twice(<span class="k">int</span> x) { <span class="k">return</span> 2 * x; }      <span class="c">// this nahi milta</span>
+  <span class="k">int</span> id = 7;
+};
+
+Util u;
+printf("%d %d %d\n", Util::twice(4), u.twice(5), (&amp;u)-&gt;twice(6));   <span class="c">// teen tareeke</span></code></pre>
+<pre class="out">8 10 12</pre>
+  <ul>
+    <li><strong><code>this</code> nahi</strong> (<a href="playlist.html#v75">#75</a>), isliye non-static members ko chhoo nahi sakta.</li>
+    <li><code>Class::f()</code> se bulao (object ki zaroorat nahi). Object/pointer se bhi chalta hai, par wo bhram paida karta hai.</li>
+    <li><code>virtual</code> nahi ho sakta (vptr object mein hota, object hi nahi), aur <code>const</code> bhi nahi (const <code>this</code> ko hota hai).</li>
+  </ul>
+<pre><code><span class="k">struct</span> Util {
+  <span class="k">int</span> id = 7;
+  <span class="k">static</span> <span class="k">int</span> bad() { <span class="k">return</span> id; }               <span class="c">// ❌ this nahi, id kiska?</span>
+  <span class="k">static</span> <span class="k">void</span> f() <span class="k">const</span>;                        <span class="c">// ❌ const kis object ka?</span>
+  <span class="k">virtual</span> <span class="k">static</span> <span class="k">void</span> g();                      <span class="c">// ❌ virtual this/vptr se chalta hai</span>
+};</code></pre>
+<pre class="out err">error: static member function 'static void Util::f()' cannot have cv-qualifier
+error: member 'g' cannot be declared both 'virtual' and 'static'
+error: invalid use of member 'Util::id' in static member function</pre>
+  <p>Use: factory function (<code>Shape::create(...)</code>), utility/helper, shared counters, singleton ka <code>get()</code>.</p>
+
+  <h3 id="s-single">4.5 Singleton (function-local static)</h3>
+  <p>Teen cheezein: constructor <strong>private</strong>, copy <strong>delete</strong>, aur <code>get()</code> mein <strong>function-local static</strong>. C++11 se aisa static pehli call pe <strong>thread-safe</strong> banta hai (compiler lock lagata), toh alag se mutex nahi chahiye. (Concurrency wali baat <code>cc3</code> quiz mein bhi hai.)</p>
+<pre><code><span class="k">class</span> Logger {
+<span class="k">public</span>:
+  <span class="k">static</span> Logger&amp; get() { <span class="k">static</span> Logger inst; <span class="k">return</span> inst; }   <span class="c">// pehli call pe ek baar bana</span>
+  Logger(<span class="k">const</span> Logger&amp;) = <span class="k">delete</span>;                              <span class="c">// copy band</span>
+  Logger&amp; <span class="k">operator</span>=(<span class="k">const</span> Logger&amp;) = <span class="k">delete</span>;
+  <span class="k">void</span> log(<span class="k">const</span> <span class="k">char</span>* m) { printf("[%d] %s\n", ++n, m); }
+<span class="k">private</span>:
+  Logger() { puts("Logger bana"); }                            <span class="c">// bahar se bana nahi sakte</span>
+  <span class="k">int</span> n = 0;
+};
+
+Logger::get().log("a");
+Logger::get().log("b");
+printf("%d\n", &amp;Logger::get() == &amp;Logger::get());</code></pre>
+<pre class="out">Logger bana
+[1] a
+[2] b
+1</pre>
+  <p>Pehli call pe "Logger bana", baaki sab ek hi object (address same). Purana <code>static Logger* inst</code> + <code>if (!inst) inst = new ...</code> style thread-safe <strong>nahi</strong> (race) aur delete ka sawaal alag.</p>
+
+  <h3 id="s-trap">4.6 Output trap: object counter</h3>
+<pre><code><span class="k">struct</span> S {
+  <span class="k">static</span> <span class="k">int</span> n;
+  S() { ++n; }
+  S(<span class="k">const</span> S&amp;) { ++n; }
+  ~S() { --n; }
+};
+<span class="k">int</span> S::n = 0;
+<span class="k">void</span> f(S s) { printf("andar: %d\n", S::n); }       <span class="c">// by value: copy ctor</span>
+
+S a;                                  <span class="c">// n = 1</span>
+f(a);                                 <span class="c">// copy bani (2), print, copy mari (1)</span>
+printf("%d\n", S::n);
+{ S b, c; printf("%d\n", S::n); }     <span class="c">// 3, phir b, c mare</span>
+printf("%d\n", S::n);
+S arr[3];                             <span class="c">// 3 object ek saath</span>
+printf("%d\n", S::n);</code></pre>
+<pre class="out">andar: 2
+1
+3
+1
+4</pre>
+  <p>Dhyan do: <code>f(S s)</code> <strong>by value</strong> hai, toh copy constructor chala (n=2), aur wo copy <code>f</code> ke bahar mari (n=1). Block <code>{ S b, c; }</code> mein 3, bahar 1. <code>S arr[3]</code> ek saath 3 constructor (4). Agar copy constructor tum define nahi karte, compiler wala copy <code>n</code> badhata nahi par destructor <code>--n</code> karta hai. Wahi program chalane pe (maine chalaya) output <strong>1, 0, 2, 0, 3</strong> aata hai: ginti galat. Isliye counter wale sawaal mein pehle dekho copy constructor hai ya nahi.</p>
+  <div class="callout tip"><span class="tag">Init order fiasco</span>
+    <p>Alag-alag <code>.cpp</code> ke global/static objects ka init <strong>order</strong> tay nahi hota. Ek doosre pe depend karein toh bug. Fix: function-local static (upar wala Singleton pattern): pehli use pe init hota hai.</p>
+  </div>
+
+  <h3 id="s-n1">4.7 Static member function: poore notes (what + kyun)</h3>
+  <p>Static member function <strong>class ka</strong> hota hai, kisi ek object ka nahi.</p>
+<pre><code><span class="k">class</span> Student {
+<span class="k">public</span>:
+    <span class="k">static</span> <span class="k">void</span> show() {
+        cout &lt;&lt; "Hello\n";
+    }
+};
+
+Student::show();       <span class="c">// object ki zaroorat nahi</span>
+
+Student s;
+s.show();              <span class="c">// valid, par preferred nahi</span></code></pre>
+<pre class="out">Hello
+Hello</pre>
+  <p>Humne <code>Student::show();</code> se call kiya, <strong>object banane ki zaroorat nahi</strong>. Object se bhi bula sakte ho (<code>s.show();</code>), par class ke naam se bulana preferred hai (saaf dikhta hai ki ye object ka nahi, class ka kaam hai).</p>
+  <p><strong>Static methods ki zaroorat kyun?</strong> Maan lo college mein 500 students hain aur tumhe <strong>total students ki ginti</strong> rakhni hai. Kya har student object apna alag count rakhe? Nahi! Poori class ke liye <strong>ek shared count</strong> chahiye. Wahi static members ka kaam hai.</p>
+
+  <h3 id="s-n2">4.8 Static data member (counter example)</h3>
+  <p>Static data member ki <strong>poori class ke liye ek hi copy</strong> hoti hai, har object ki alag nahi.</p>
+<pre><code><span class="k">class</span> Student {
+<span class="k">public</span>:
+    <span class="k">static</span> <span class="k">int</span> count;
+
+    Student() {
+        count++;
+    }
+};
+
+<span class="k">int</span> Student::count = 0;
+
+Student s1;
+Student s2;
+Student s3;
+
+cout &lt;&lt; Student::count;</code></pre>
+<pre class="out">3</pre>
+<pre>Student class:  count = 3        &larr; ek shared static variable
+                  ^   ^   ^
+                  |   |   |
+                 s1  s2  s3     &larr; teeno objects isi count ko access karte hain</pre>
+  <p>Teeno objects <strong>wahi ek <code>count</code></strong> share karte hain. (Sizeof mein count nahi hota: <a href="#s-member">4.3</a>.)</p>
+  <div class="callout trap"><span class="tag">Important: out-of-class definition (C++17 se pehle zaroori)</span>
+    <p>Static data member ki class ke andar sirf <strong>declaration</strong> hoti hai, <strong>definition</strong> class ke bahar (<code>int Student::count = 0;</code>) alag se deni padti hai. Bhool gaye toh <strong>linker error</strong>:</p>
+<pre><code><span class="k">class</span> Student {
+<span class="k">public</span>:
+    <span class="k">static</span> <span class="k">int</span> count;                 <span class="c">// sirf declaration</span>
+    Student() { count++; }
+};
+<span class="c">// int Student::count = 0;            // definition bhool gaye</span>
+
+Student s1;
+cout &lt;&lt; Student::count;</code></pre><pre class="out err">Undefined symbols for architecture arm64:
+  "Student::count", referenced from:
+      Student::Student() in your .o file</pre>
+
+    <p>(Ye macOS linker ka message hai; Linux pe <code>undefined reference to Student::count</code> aata hai.) <strong>C++17 se</strong> class ke andar hi <code>static inline int count = 0;</code> likh sakte ho, alag definition nahi chahiye (<a href="#s-member">4.3</a> mein dikhaya hai).</p>
+  </div>
+
+  <h3 id="s-n3">4.9 Static member function ke rules (interview ke liye sabse important)</h3>
+  <p><strong>Rule 1: Non-static members ko seedha access nahi kar sakta.</strong></p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x = 10;
+    <span class="k">static</span> <span class="k">int</span> y;
+
+    <span class="k">static</span> <span class="k">void</span> show() {
+        cout &lt;&lt; y;      <span class="c">// Valid</span>
+        cout &lt;&lt; x;      <span class="c">// ERROR</span>
+    }
+};
+<span class="k">int</span> Test::y = 0;
+
+Test::show();</code></pre>
+<pre class="out err">error: invalid use of member 'Test::x' in static member function</pre>
+  <p>Kyun? Static method kisi particular object ka nahi hai, usko pata hi nahi ki <strong>kis object ka <code>x</code></strong> chahiye.</p>
+  <p><strong>Rule 2: <code>this</code> pointer nahi hota.</strong> Normal member function mein <code>this</code> hota hai, static mein <strong>nahi</strong>:</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x = 10;
+    <span class="k">static</span> <span class="k">void</span> show() {
+        cout &lt;&lt; <span class="k">this</span>-&gt;x;     <span class="c">// ERROR</span>
+    }
+};
+
+Test::show();</code></pre>
+<pre class="out err">error: 'this' is unavailable for static member functions</pre>
+  <p><strong>Rule 3: Static members ko seedha access kar sakta hai.</strong> Ye bilkul valid hai:</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">static</span> <span class="k">int</span> count;
+
+    <span class="k">static</span> <span class="k">void</span> show() {
+        count++;
+        cout &lt;&lt; count &lt;&lt; "\n";
+    }
+};
+
+<span class="k">int</span> Test::count = 0;
+
+Test::show();
+Test::show();</code></pre>
+<pre class="out">1
+2</pre>
+  <p><strong>Rule 4: Virtual nahi ho sakta.</strong></p>
+<pre><code><span class="k">class</span> Base {
+<span class="k">public</span>:
+    <span class="k">static</span> <span class="k">virtual</span> <span class="k">void</span> show();     <span class="c">// ERROR</span>
+};</code></pre>
+<pre class="out err">error: member 'show' cannot be declared both 'virtual' and 'static'</pre>
+  <p>Kyun? Virtual functions <strong>object-based runtime polymorphism</strong> use karte hain (object ke <code>vptr</code> se), jabki static method ka koi object-specific <code>this</code> hi nahi hota.</p>
+  <p><strong>Rule 5 (bonus): Overload ho sakta hai</strong> (normal functions ki tarah, alag parameters se):</p>
+<pre><code><span class="k">class</span> Calc {
+<span class="k">public</span>:
+    <span class="k">static</span> <span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b)       { <span class="k">return</span> a + b; }
+    <span class="k">static</span> <span class="k">double</span> add(<span class="k">double</span> a, <span class="k">double</span> b) { <span class="k">return</span> a + b; }
+    <span class="k">static</span> <span class="k">int</span> add(<span class="k">int</span> a, <span class="k">int</span> b, <span class="k">int</span> c)   { <span class="k">return</span> a + b + c; }
+};
+
+cout &lt;&lt; Calc::add(1, 2) &lt;&lt; " " &lt;&lt; Calc::add(1.5, 2.5) &lt;&lt; " " &lt;&lt; Calc::add(1, 2, 3) &lt;&lt; "\n";</code></pre>
+<pre class="out">3 4 6</pre>
+  <p>Par static aur non-static function <strong>sirf static ke farak se</strong> overload nahi hote (same parameters ho toh):</p>
+<pre class="out err">error: 'void Test::f(int)' cannot be overloaded with 'static void Test::f(int)'</pre>
+
+  <h3 id="s-n4">4.10 Static method vs normal method</h3>
+  <div class="tbl"><table>
+    <tr><th>Feature</th><th>Static method</th><th>Normal method</th></tr>
+    <tr><td>Belongs to</td><td>Class</td><td>Object</td></tr>
+    <tr><td><code>this</code> pointer</td><td>No</td><td>Yes</td></tr>
+    <tr><td>Access static members</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td>Access non-static members directly</td><td>No</td><td>Yes</td></tr>
+    <tr><td>Can be virtual?</td><td>No</td><td>Yes</td></tr>
+    <tr><td>Can be called without object?</td><td>Yes</td><td>No</td></tr>
+  </table></div>
+  <div class="callout tip"><span class="tag">Extra: static member function ka pointer</span>
+    <p>Static member function ka address ek <strong>simple function pointer</strong> hota hai (kyunki <code>this</code> nahi), jabki non-static ke liye <strong>member function pointer</strong> (<code>int (Test::*)(int)</code>) aur object chahiye. Isliye C-style callbacks ke liye static member function use hota hai (<a href="#fp-what">Function pointers 3.8</a>):</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">static</span> <span class="k">int</span> twice(<span class="k">int</span> x) { <span class="k">return</span> 2 * x; }
+    <span class="k">int</span> thrice(<span class="k">int</span> x)       { <span class="k">return</span> 3 * x; }
+};
+
+<span class="k">int</span> (*p)(<span class="k">int</span>) = &amp;Test::twice;            <span class="c">// static member function: simple function pointer</span>
+cout &lt;&lt; p(5) &lt;&lt; "\n";
+
+<span class="k">int</span> (Test::*q)(<span class="k">int</span>) = &amp;Test::thrice;     <span class="c">// non-static: member function pointer, object chahiye</span>
+Test t;
+cout &lt;&lt; (t.*q)(5) &lt;&lt; "\n";</code></pre>
+<pre class="out">10
+15</pre>
+  </div>
+
+  <h3 id="s-n5">4.11 Static method non-static members ko indirectly access kar sakta hai!</h3>
+  <p>Ye ek common interview trap hai.</p>
+<pre><code><span class="k">class</span> Test {
+<span class="k">public</span>:
+    <span class="k">int</span> x = 10;
+    <span class="k">static</span> <span class="k">int</span> y;
+
+    <span class="k">static</span> <span class="k">void</span> show(Test&amp; obj) {
+        cout &lt;&lt; obj.x &lt;&lt; " ";
+        cout &lt;&lt; y;
+    }
+};
+
+<span class="k">int</span> Test::y = 20;
+
+Test t;
+Test::show(t);</code></pre>
+<pre class="out">10 20</pre>
+  <p>Ye kyun chalta hai? Kyunki hum <strong>explicitly ek object pass kar rahe hain</strong>. Static method ke paas <code>this</code> nahi hai, par <code>obj</code> ke through us object ke members (<code>obj.x</code>) access kar sakta hai. (Private members bhi, kyunki wo isi class ka member function hai.)</p>
+  <div class="callout say"><span class="tag">Interview answer (English)</span>
+    <p>"A static member function belongs to the class, not to an object, so it has no this pointer. It can directly access only static members, cannot be virtual because virtual dispatch depends on an object's vptr, and can be called without an object as ClassName::f(). It can still reach non-static members indirectly if we pass it an object or a pointer to one, because then it accesses them through that object."</p>
+  </div>
+
+  <h3 id="s-n6">4.12 Interview revision (static member functions)</h3>
+  <div class="tbl"><table>
+    <tr><th>Question</th><th>Answer</th></tr>
+    <tr><td>Can static methods access static variables?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>Can they directly access non-static variables?</td><td><strong>No</strong></td></tr>
+    <tr><td>Do they have <code>this</code> pointer?</td><td><strong>No</strong></td></tr>
+    <tr><td>Can they be virtual?</td><td><strong>No</strong></td></tr>
+    <tr><td>Can they be overloaded?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>Can they be called without an object?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>Can they access non-static members through an object?</td><td><strong>Yes</strong></td></tr>
+  </table></div>
+
+  <div class="callout say"><span class="tag">Interview mein</span>
+    <p>"<code>static</code> has four uses. A static local is initialized once and keeps its value between calls, stored in the data segment, and since C++11 its initialization is thread-safe. A static global variable or function has internal linkage, so it is visible only in that file. A static data member is one copy shared by all objects and derived classes; it is declared in the class, defined once in a .cpp file (or <code>inline</code> in C++17), and it does not add to <code>sizeof</code>. A static member function has no <code>this</code>, so it can only touch static members, and it cannot be virtual or const. I build a singleton with a private constructor, deleted copy operations and a function-local static."</p>
+  </div>
+  <details class="qa"><summary>1. Static local variable kab init hota hai, aur kitni baar?</summary><div>
+    Pehli baar control wahan pahunchne pe, sirf ek baar. Baad mein value yaad rehti hai.</div></details>
+  <details class="qa"><summary>2. File-level static aur static data member mein farak?</summary><div>
+    File-level: internal linkage (sirf us file mein). Data member: class ka ek shared copy.</div></details>
+  <details class="qa"><summary>2b. Static data member <code>sizeof(class)</code> mein count hota hai?</summary><div>
+    <p>Nahi. Wo class ka shared variable hai, data segment mein, object ke andar nahi. Sirf non-static members (aur vptr) size badhate hain. Sirf static member wali class ka size 1 (empty class rule).</p></div></details>
+  <details class="qa"><summary>3. Static member function mein <code>this</code> kyun nahi, aur virtual kyun nahi ho sakta?</summary><div>
+    Wo kisi object ka nahi hota. Virtual vptr (object) se chalta hai, toh object ke bina meaningless.</div></details>
+  <details class="qa"><summary>4. Static data member ko .cpp mein kyun define karte hain?</summary><div>
+    Header mein define kiya toh har .cpp mein ek definition: multiple definition error. (C++17 <code>inline</code> ye theek kar deta.)</div></details>
+  <details class="qa"><summary>5. Header mein <code>static int x</code> likhne se kya hota?</summary><div>
+    Har .cpp ko apni alag copy. Share nahi hoti.</div></details>
+  <details class="qa"><summary>6. Meyers singleton thread-safe kyun?</summary><div>
+    C++11 guarantee: function-local static ka init ek hi thread karta, baaki wait karte.</div></details>
+  <details class="qa"><summary>7. Static method non-static member kaise access karega?</summary><div>
+    Seedha nahi (this nahi). Object/pointer/reference argument mein pass karo: <code>static void show(Test&amp; obj) { cout &lt;&lt; obj.x; }</code>.</div></details>
+  <details class="qa"><summary>8. Static data member ki definition class ke bahar kyun, aur bhool gaye toh?</summary><div>
+    Class mein sirf declaration hoti hai; storage ek baar kisi .cpp mein <code>int C::n = 0;</code> se milti hai. Bhoolne pe linker error (undefined reference). C++17 <code>static inline</code> se class ke andar hi ho jaata hai.</div></details>
+  <details class="qa"><summary>9. Static member function ko overload ya function pointer mein de sakte hain?</summary><div>
+    Overload haan (par same signature ka non-static nahi). Uska address simple function pointer hota hai, kyunki <code>this</code> nahi.</div></details>
+  <!-- ================= FRIEND ================= -->
+  <h2 id="friend" class="topic-head">5. Friend <span class="pill done">Done</span></h2>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>Friend function, friend class</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v7">#7</a></td></tr>
+    <tr><td>Doosri class ka member function friend (<code>friend void Admin::raise(...)</code>)</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v7">#7</a> (friend class section)</td></tr>
+    <tr><td>Inherit nahi hoti, mutual nahi</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v7">#7</a> + <a href="#fr-rules">yahan</a></td></tr>
+    <tr><td>Transitive nahi, friend ke paas <code>this</code> nahi</td><td><span class="pill done">✅ Naya</span></td><td><a href="#fr-rules">Yahan</a></td></tr>
+    <tr><td>Public/private kahin bhi declare</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v7">#7</a></td></tr>
+    <tr><td><code>friend ostream&amp; operator&lt;&lt;</code> (member kyun nahi ho sakta)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#fr-ostream">Yahan</a></td></tr>
+    <tr><td>Symmetric operators: <code>1 + obj</code></td><td><span class="pill done">✅ Naya</span></td><td><a href="#fr-symm">Yahan</a></td></tr>
+    <tr><td>Encapsulation todta hai? Kab use na karein?</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v7">#7</a> + <a href="#fr-enc">yahan</a></td></tr>
+  </table></div>
+
+  <h3 id="fr-rules">5.1 Rules (rapid fire)</h3>
+  <ul>
+    <li><strong>Mutual nahi:</strong> <code>B</code> ko <code>A</code> ne friend banaya toh <code>B</code>, <code>A</code> ke private dekh sakta, <code>A</code> <code>B</code> ke nahi.</li>
+    <li><strong>Transitive nahi:</strong> A ka friend B, B ka friend C, toh C ko A ke private nahi milte ("mere dost ka dost mera dost nahi").</li>
+    <li><strong>Inherit nahi:</strong> friend class ki derived class friend nahi hoti. Base ka friend, derived ke naye private members nahi dekhta.</li>
+    <li><strong>Friend member nahi hai:</strong> <code>this</code> nahi, object parameter mein lena padta hai, aur <code>public/private</code> mein kahin likho farak nahi.</li>
+    <li>Class ke andar <strong>body ke saath</strong> likha friend (<code>friend ostream&amp; operator&lt;&lt;(...) { ... }</code>) asal mein class ka member nahi, namespace ka free function hai jo sirf <strong>ADL</strong> se milta hai (hidden friend).</li>
+  </ul>
+<pre><code><span class="k">class</span> B;
+<span class="k">class</span> A { <span class="k">int</span> a = 1; <span class="k">friend</span> <span class="k">class</span> B; <span class="k">public</span>: <span class="k">int</span> peekB(B&amp; x); };
+<span class="k">class</span> B { <span class="k">int</span> b = 2; <span class="k">friend</span> <span class="k">class</span> C; <span class="k">public</span>: <span class="k">int</span> peekA(A&amp; x) { <span class="k">return</span> x.a; } };   <span class="c">// ✅ B, A ka friend</span>
+<span class="k">int</span> A::peekB(B&amp; x) { <span class="k">return</span> x.b; }                     <span class="c">// ❌ mutual nahi</span>
+<span class="k">class</span> C { <span class="k">public</span>: <span class="k">int</span> peekA(A&amp; x) { <span class="k">return</span> x.a; } };   <span class="c">// ❌ transitive nahi</span></code></pre>
+<pre class="out err">error: 'int B::b' is private within this context
+error: 'int A::a' is private within this context</pre>
+  <p>Pehla error <code>A::peekB</code> pe (mutual nahi), doosra <code>C::peekA</code> pe (transitive nahi).</p>
+
+  <h3 id="fr-ostream">5.2 <code>operator&lt;&lt;</code> friend kyun, member kyun nahi</h3>
+  <p><code>cout &lt;&lt; p</code> ka matlab <code>operator&lt;&lt;(cout, p)</code>. Member function hota toh <strong>left operand</strong> apni class ka object hona chahiye (<code>p &lt;&lt; cout</code>). <code>cout</code> <code>ostream</code> ka hai, uski class hum badal nahi sakte, toh free function banao. Private data chahiye toh <code>friend</code> kar do:</p>
+<pre><code><span class="k">class</span> Point {
+  <span class="k">int</span> x, y;
+<span class="k">public</span>:
+  Point(<span class="k">int</span> x, <span class="k">int</span> y) : x(x), y(y) {}
+  <span class="k">friend</span> ostream&amp; <span class="k">operator</span>&lt;&lt;(ostream&amp; os, <span class="k">const</span> Point&amp; p) {    <span class="c">// member nahi, friend</span>
+    <span class="k">return</span> os &lt;&lt; "(" &lt;&lt; p.x &lt;&lt; ", " &lt;&lt; p.y &lt;&lt; ")";
+  }
+  <span class="k">friend</span> istream&amp; <span class="k">operator</span>&gt;&gt;(istream&amp; is, Point&amp; p) { <span class="k">return</span> is &gt;&gt; p.x &gt;&gt; p.y; }
+};
+
+Point p(3, 4);
+cout &lt;&lt; p &lt;&lt; " " &lt;&lt; Point(5, 6) &lt;&lt; "\n";        <span class="c">// chaining: har &lt;&lt; ostream&amp; wapas karta hai</span>
+istringstream in("7 8");
+in &gt;&gt; p;
+cout &lt;&lt; p &lt;&lt; "\n";</code></pre>
+<pre class="out">(3, 4) (5, 6)
+(7, 8)</pre>
+  <p><code>ostream&amp;</code> return karne se chaining chalti hai (<code>cout &lt;&lt; a &lt;&lt; b</code>). Agar member bana diya:</p>
+<pre><code><span class="k">struct</span> M {
+  <span class="k">int</span> v = 1;
+  ostream&amp; <span class="k">operator</span>&lt;&lt;(ostream&amp; os) { <span class="k">return</span> os &lt;&lt; v; }   <span class="c">// member: left operand M hona chahiye</span>
+};
+
+M m;
+m &lt;&lt; cout;                 <span class="c">// ulta likhna padta hai (aur chaining nahi)</span>
+cout &lt;&lt; "\n";</code></pre>
+<pre class="out">1</pre><pre><code>cout &lt;&lt; m;                 <span class="c">// ❌ ye likhna chahte the</span></code></pre>
+<pre class="out err">error: no match for 'operator&lt;&lt;' (operand types are 'std::ostream' {aka 'std::basic_ostream&lt;char&gt;'} and 'M')</pre>
+  <p>Ulta likhna padta (<code>m &lt;&lt; cout</code>), aur <code>cout &lt;&lt; m</code> compile hi nahi hota. Yahi <code>operator&gt;&gt;</code> ke liye.</p>
+
+  <h3 id="fr-symm">5.3 Symmetric operators: <code>m + 5</code> aur <code>5 + m</code></h3>
+  <p>Member <code>operator+</code> mein left operand hamesha object hota hai, toh <code>5 + m</code> nahi chalega. Free (friend) function dono taraf chalata hai:</p>
+<pre><code><span class="k">class</span> Money {
+  <span class="k">int</span> rs;
+<span class="k">public</span>:
+  Money(<span class="k">int</span> r) : rs(r) {}                                                       <span class="c">// int → Money (non-explicit)</span>
+  Money <span class="k">operator</span>+(<span class="k">int</span> x) <span class="k">const</span> { <span class="k">return</span> Money(rs + x); }                        <span class="c">// m + 5</span>
+  <span class="k">friend</span> Money <span class="k">operator</span>+(<span class="k">int</span> x, <span class="k">const</span> Money&amp; m) { <span class="k">return</span> Money(x + m.rs); }     <span class="c">// 5 + m</span>
+  <span class="k">int</span> get() <span class="k">const</span> { <span class="k">return</span> rs; }
+};
+
+Money m(10);
+printf("%d %d\n", (m + 5).get(), (5 + m).get());</code></pre>
+<pre class="out">15 15</pre>
+  <p>Sirf member rakha toh:</p>
+<pre><code>Money r = 5 + m;           <span class="c">// ❌ left operand 5 hai, member nahi chalega</span></code></pre>
+<pre class="out err">error: no match for 'operator+' (operand types are 'int' and 'Money')</pre>
+  <p>Thumb rule: <code>=</code>, <code>[]</code>, <code>()</code>, <code>-&gt;</code> <strong>member hi</strong> hone chahiye. <code>&lt;&lt;</code>, <code>&gt;&gt;</code> aur symmetric binary operators (<code>+</code>, <code>==</code> jab left side pe conversion chahiye) <strong>non-member/friend</strong>.</p>
+
+  <h3 id="fr-enc">5.4 Encapsulation todta hai? Kab use na karein?</h3>
+  <ul>
+    <li>Class <strong>khud</strong> decide karti hai kisko dena hai (koi bahar se zabardasti nahi le sakta), isliye ye <strong>controlled</strong> access hai. Par friend jitne zyada, coupling utni zyada.</li>
+    <li><strong>Mat use karo</strong> agar public getter se kaam ban jaata. Friend tab, jab operator ya do tightly-coupled classes (container + iterator, class + uska test/builder) ko andar ka data chahiye.</li>
+  </ul>
+
+  <div class="callout say"><span class="tag">Interview mein</span>
+    <p>"A friend function or class can access another class's private and protected members, but it is not a member: it has no <code>this</code>, and where I declare it does not matter. Friendship is granted by the class itself, and it is not mutual, not transitive and not inherited. The main use is operators whose left operand is not our class, such as <code>operator&lt;&lt;</code> for <code>ostream</code>, and symmetric binary operators like <code>5 + money</code>. It does not really break encapsulation because the class chooses its friends, but I use it sparingly because it increases coupling."</p>
+  </div>
+  <details class="qa"><summary>1. Friend function member hai kya? <code>this</code> milta?</summary><div>
+    Nahi. Free function hai, object parameter mein lena padta.</div></details>
+  <details class="qa"><summary>2. A ne B ko friend banaya, B ne C ko. C A ke private dekh sakta?</summary><div>
+    Nahi: friendship transitive nahi. Aur A bhi B ke private nahi dekh sakta (mutual nahi).</div></details>
+  <details class="qa"><summary>3. <code>operator&lt;&lt;</code> member kyun nahi bana sakte?</summary><div>
+    Left operand <code>ostream</code> hai, hamari class nahi. Member hota toh <code>obj &lt;&lt; cout</code> likhna padta.</div></details>
+  <details class="qa"><summary>4. <code>5 + obj</code> kaise chalega?</summary><div>
+    Non-member (friend) <code>operator+(int, const T&amp;)</code>. Member mein left operand object hona chahiye.</div></details>
+  <details class="qa"><summary>5. Friend inherit hota?</summary><div>
+    Nahi. Friend class ki derived class friend nahi banti.</div></details>
+  <details class="qa"><summary>6. Kya friend encapsulation todta hai?</summary><div>
+    Controlled tareeke se thoda: class khud friend chunti hai. Par sparingly use karo.</div></details>
+  <!-- ================= NAMESPACE ================= -->
+  <h2 id="namespace" class="topic-head">6. Namespace std <span class="pill done">Done</span></h2>
+  <div class="tbl"><table class="ck">
+    <tr><th>Concept</th><th>Status</th><th>Kahan</th></tr>
+    <tr><td>Namespace kya, name collision, <code>using namespace std</code>, header mein kabhi nahi, alternatives</td><td><span class="pill done">✅</span></td><td><a href="playlist.html#v60">#60</a> + <a href="#n-coll">yahan</a></td></tr>
+    <tr><td><code>::</code> scope resolution operator</td><td><span class="pill done">✅ Naya</span></td><td><a href="#n-scope">Yahan</a></td></tr>
+    <tr><td>Anonymous namespace (= file-level static)</td><td><span class="pill done">✅ Naya</span></td><td><a href="#n-anon">Yahan</a></td></tr>
+    <tr><td>Alias, <code>using</code> declaration, nested, namespace dobara kholna</td><td><span class="pill done">✅ Naya</span></td><td><a href="#n-forms">Yahan</a></td></tr>
+    <tr><td>ADL (<code>swap(a, b)</code> bina <code>std::</code> ke kyun chalta)</td><td><span class="pill done">✅ Naya (bonus)</span></td><td><a href="#n-adl">Yahan</a></td></tr>
+  </table></div>
+
+  <h3 id="n-scope">6.1 <code>::</code> scope resolution operator</h3>
+  <p><code>::</code> ka matlab "is scope ka naam". Chaar jagah dikhta hai:</p>
+  <ul>
+    <li><code>std::cout</code>, <code>Shapes::x</code>: namespace ka naam.</li>
+    <li><code>S::x</code>, <code>Base::f()</code>: class ka member (aur class ke bahar member define karte waqt: <code>int S::x = 3;</code>).</li>
+    <li><code>::x</code> (aage kuch nahi): <strong>global</strong> scope. Local variable ne global ko chhupa diya ho toh yahi rasta.</li>
+  </ul>
+<pre><code><span class="k">int</span> x = 1;                                         <span class="c">// global</span>
+<span class="k">namespace</span> Shapes { <span class="k">int</span> x = 2; <span class="k">void</span> hi() { puts("Shapes::hi"); } }
+<span class="k">struct</span> S { <span class="k">static</span> <span class="k">int</span> x; };
+<span class="k">int</span> S::x = 3;                                      <span class="c">// S ka x define: S::</span>
+
+<span class="k">int</span> x = 4;                                         <span class="c">// local: baaki sab ko shadow</span>
+printf("%d %d %d %d\n", x, ::x, Shapes::x, S::x);
+Shapes::hi();</code></pre>
+<pre class="out">4 1 2 3
+Shapes::hi</pre>
+
+  <h3 id="n-coll">6.2 Collision, aur <code>using namespace std</code> kyun bura</h3>
+  <p>Namespace ka kaam: alag libraries ke same naam takraayein nahi. <code>std</code> ke <strong>saare</strong> naam (<code>count</code>, <code>max</code>, <code>distance</code>, <code>list</code>...) <code>using namespace std;</code> se tumhare scope mein aa jaate hain. Tumhara apna naam bhi wahi nikla toh:</p>
+<pre><code><span class="k">int</span> count = 5;                                     <span class="c">// apna global</span>
+
+printf("%d\n", count);                             <span class="c">// apna ya std::count?</span></code></pre>
+<pre class="out err">error: reference to 'count' is ambiguous</pre>
+  <ul>
+    <li><strong>Header mein kabhi nahi:</strong> jo bhi tumhari header <code>#include</code> karega uske scope mein bhi <code>std</code> ka sab ghus jaata.</li>
+    <li>Behtar: <code>std::cout</code> likho, ya sirf ek naam lao <code>using std::cout;</code>. Chhote .cpp ya practice mein theek hai, interview code mein bhi chalta (poochhe toh ye wajah batao).</li>
+  </ul>
+
+  <h3 id="n-forms">6.3 Namespace ke tareeke</h3>
+<pre><code><span class="k">namespace</span> Net::Http { <span class="k">int</span> port() { <span class="k">return</span> 80; } }  <span class="c">// C++17: nested ek line mein</span>
+<span class="k">namespace</span> Net { <span class="k">int</span> ping() { <span class="k">return</span> 1; } }         <span class="c">// namespace dobara khol ke badha sakte</span>
+<span class="k">namespace</span> web = Net::Http;                         <span class="c">// alias</span>
+
+<span class="k">using</span> std::cout;                                   <span class="c">// sirf ek name lao</span>
+cout &lt;&lt; Net::Http::port() &lt;&lt; " " &lt;&lt; web::port() &lt;&lt; " " &lt;&lt; Net::ping() &lt;&lt; "\n";</code></pre>
+<pre class="out">80 80 1</pre>
+  <ul>
+    <li><strong>Nested:</strong> <code>namespace A::B { }</code> (C++17), purane mein <code>namespace A { namespace B { } }</code>.</li>
+    <li><strong>Dobara kholna:</strong> alag-alag files mein same namespace ka hissa badha sakte (<code>std</code> aise hi bana). <code>std</code> mein apni cheezein daalna <strong>mana</strong> hai (undefined behaviour).</li>
+    <li><strong>Alias:</strong> <code>namespace fs = std::filesystem;</code> lambe naam chhote karne ko.</li>
+  </ul>
+
+  <h3 id="n-anon">6.4 Anonymous namespace = file-level static</h3>
+  <p><code>namespace { ... }</code> (bina naam) ke andar ka sab <strong>sirf us file</strong> mein dikhta hai: internal linkage, bilkul file-level <code>static</code> jaisa. Do file mein same naam, koi takraav nahi:</p>
+<pre><code><span class="c">// ---- a.cpp</span>
+<span class="k">namespace</span> { <span class="k">int</span> hidden = 5; }       <span class="c">// anonymous namespace: sirf is file mein</span>
+<span class="k">int</span> getA() { <span class="k">return</span> hidden; }
+
+<span class="c">// ---- b.cpp</span>
+<span class="k">namespace</span> { <span class="k">int</span> hidden = 9; }       <span class="c">// same naam, koi takraav nahi</span>
+<span class="k">int</span> getB() { <span class="k">return</span> hidden; }
+
+<span class="c">// ---- main.cpp</span>
+#include &lt;cstdio&gt;
+<span class="k">int</span> getA(); <span class="k">int</span> getB();
+<span class="k">int</span> main() { printf("%d %d\n", getA(), getB()); }</code></pre>
+<pre class="out">5 9</pre>
+  <p>Plain global <code>int hidden</code> do file mein hota toh <strong>multiple definition</strong> linker error. C++ mein anonymous namespace <code>static</code> se behtar maana jaata hai kyunki <strong>types</strong> (class/struct) pe bhi chalta hai, <code>static</code> sirf variable/function pe.</p>
+
+  <h3 id="n-adl">6.5 Bonus: ADL (Argument-Dependent Lookup)</h3>
+  <p>Function call mein arguments ke type ke namespace mein bhi naam dhoondha jaata hai. Isliye:</p>
+<pre><code><span class="k">using</span> std::string;
+<span class="k">using</span> std::cout;
+
+string a = "x", b = "y";
+swap(a, b);                <span class="c">// std:: nahi likha, phir bhi chala: ADL</span>
+cout &lt;&lt; a &lt;&lt; b &lt;&lt; "\n";</code></pre>
+<pre class="out">yx</pre>
+  <p><code>string</code> <code>std</code> ka hai, toh <code>swap</code> ko <code>std::swap</code> mil gaya. Ye wahi cheez hai jisse <code>cout &lt;&lt; x</code> (operator) kaam karta aur <a href="#fr-rules">hidden friend</a> milte hain. Poochhe toh ek line mein bolo.</p>
+
+  <div class="callout say"><span class="tag">Interview mein</span>
+    <p>"A namespace groups names so that libraries do not collide; <code>std</code> is the standard library's namespace. <code>using namespace std;</code> brings every standard name into the current scope, which can clash with my own names such as <code>count</code> or <code>max</code>, and in a header it forces that on every file that includes it, so I avoid it there and write <code>std::</code> or <code>using std::cout;</code>. The <code>::</code> operator names the scope: <code>ns::name</code>, <code>Class::member</code>, and a leading <code>::x</code> for the global. An unnamed namespace gives names internal linkage, like file-level <code>static</code>, and also works for types."</p>
+  </div>
+  <details class="qa"><summary>1. <code>using namespace std;</code> mein dikkat kya?</summary><div>
+    Saare std naam scope mein aate, apne naam se takrao (ambiguity). Header mein to sabko force hota.</div></details>
+  <details class="qa"><summary>2. Behtar alternative?</summary><div>
+    <code>std::cout</code> likhna, ya sirf ek naam: <code>using std::cout;</code>.</div></details>
+  <details class="qa"><summary>3. <code>::x</code> ka matlab?</summary><div>
+    Global scope ka x (jab local ne chhupa diya ho).</div></details>
+  <details class="qa"><summary>4. Anonymous namespace kya karta hai, static se kaise behtar?</summary><div>
+    Internal linkage (sirf us file mein), aur types pe bhi chalta hai.</div></details>
+  <details class="qa"><summary>5. Apni cheez <code>std</code> mein daal sakte?</summary><div>
+    Nahi: undefined behaviour (kuch template specializations ko chhod ke).</div></details>
+
+  <div class="footer-nav">
+    <a href="smart-pointers.html">← Smart Pointers</a>
+    <a href="playlist.html">Playlist →</a>
+  </div>
+</main>
+</body>
+</html>

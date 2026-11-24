@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1: Project ko scratch se samajhna</title>
+<link rel="stylesheet" href="posix_notes.css">
+</head>
+<body>
+<main>
+<nav class="nav"><a href="posix_notes.html">Hub</a><span class="cur">Phase 1</span><a href="phase2.html">Phase 2</a><a href="phase3.html">Phase 3</a><a href="phase4.html">Phase 4</a><span class="off">Phase 5</span><span class="off">Phase 6</span></nav>
+  <h1>Phase 1: Project ko scratch se samajhna</h1>
+  <p class="sub">POSIX shell (C++). Hinglish notes. Phase 1 ka kaam: bada picture, fork/exec ki basic samajh, aur 1-2 min ka pitch.</p>
+
+  <div class="goal"><b>Is phase ke baad tum ye kar paoge:</b> apne project ko bina code dekhe 1-2 minute mein samjha sako, aur ye bata sako ki jab user ek command type karta hai to shell andar se kya karta hai. <br><b>Plan:</b> kya hai &rarr; kyun &rarr; kya-kya implement hai &rarr; components &rarr; Enter dabane par flow &rarr; built-in vs external &rarr; fork + exec &rarr; foreground vs background &rarr; doubts &rarr; pitch.</div>
+
+  <section id="s1">
+    <h2>1. Shell kya hai, aur hum kyun banate hain?</h2>
+    <p>Kernel (OS) sirf <b>system calls</b> samajhta hai: "process banao", "file kholo". Insaan seedha system calls nahi bol sakta. Shell ek <b>translator</b> hai: jo hum type karte hain use system calls mein badal deta hai. Shell khud ek normal program hai jo ek <b>infinite loop</b> mein chalta hai:</p>
+<pre>loop:
+   prompt dikhao
+   ek line padho
+   samjho kya chalana hai
+   chalao
+   (wapas upar)</pre>
+    <p>Ye <code>main.cpp</code> ka <code>while (1)</code> hai. Isse <b>REPL</b> kehte hain: Read, Evaluate, Print, Loop.</p>
+    <div class="tip"><b>POSIX kya hai?</b> POSIX ek <b>standard</b> hai (Unix-type systems kaise behave karein). Ye kisi shell ka naam nahi. Isliye project ko bolo "<b>POSIX-style shell</b>", "POSIX shell" ya "fully POSIX compliant" nahi (README mein ye overclaim hai, interview mein mat bolna).</div>
+    <p><b>Hum ye kyun banate hain?</b> Ye Operating Systems course ka assignment tha. Shell banane se <code>fork</code>, <code>exec</code>, <code>pipe</code>, signals jaise cheezein sach mein samajh aati hain, kyunki shell inhi sab ka asli use hai.</p>
+  </section>
+
+  <section id="s2">
+    <h2>2. Mere shell mein kya implement hai (aur kya nahi)</h2>
+    <p>Maine <code>.cpp</code> files padhke verify kiya hai, README se nahi.</p>
+    <table>
+      <tr><th>Feature</th><th>Status</th></tr>
+      <tr><td>Foreground commands (<code>cat file.txt</code>)</td><td>Haan</td></tr>
+      <tr><td>Background commands (<code>sleep 5 &amp;</code>)</td><td>Haan</td></tr>
+      <tr><td><code>;</code> se commands chain karna</td><td>Haan</td></tr>
+      <tr><td>Pipelines, N-stage (<code>ls | grep txt | wc</code>)</td><td>Haan</td></tr>
+      <tr><td>Redirection <code>&lt;</code> <code>&gt;</code> <code>&gt;&gt;</code></td><td>Haan (spaces ke saath likhna padta hai)</td></tr>
+      <tr><td>Built-ins: <code>cd pwd echo history</code></td><td>Haan</td></tr>
+      <tr><td>Apne banaye commands: <code>ls -a -l</code>, <code>search</code>, <code>pinfo</code></td><td>Haan (<code>pinfo</code> sirf Linux pe, <code>/proc</code> se)</td></tr>
+      <tr><td>Ctrl+C aur Ctrl+Z handling</td><td>Haan</td></tr>
+      <tr><td>History (20 commands, file mein save)</td><td>Haan</td></tr>
+    </table>
+    <div class="warn"><b>Honest limitations</b> (code se verified): quotes (<code>"..."</code>) parse nahi hote; builtins pipeline ke andar nahi chalte; <code>fg</code>/<code>bg</code>/<code>jobs</code> commands nahi hain; arrow-key history aur autocomplete nahi hain. Interview mein ye jaan-boojhkar mat chhupao, poochhe to seedha bol do.</div>
+  </section>
+
+  <section id="s3">
+    <h2>3. Major components (kaun si file kya karti hai)</h2>
+    <table>
+      <tr><th>Component</th><th>File</th><th>Kaam</th></tr>
+      <tr><td>REPL + lexer/parser</td><td><code>main.cpp</code></td><td>Prompt, input, <code>;</code> pe split, tokenize, <code>| &lt; &gt; &gt;&gt;</code> parse, SIGINT handler</td></tr>
+      <tr><td>ProcessExecutor</td><td><code>ProcessExecutor.cpp</code></td><td><code>fork</code>/<code>execvp</code>/<code>waitpid</code>: foreground, background, N-stage pipeline</td></tr>
+      <tr><td>JobController</td><td><code>JobController.cpp</code></td><td>Background jobs ko track karna, zombies reap karna</td></tr>
+      <tr><td>BuiltinEngine</td><td><code>BuiltinEngine.cpp</code></td><td><code>cd pwd echo history</code> + ls / search / pinfo ko dispatch</td></tr>
+      <tr><td>HistoryManager</td><td><code>HistoryManager.cpp</code></td><td>20 commands ka deque, <code>~/.historyState.txt</code> mein save</td></tr>
+      <tr><td>Commands/</td><td><code>LSCommand, SearchCommand, PinfoCommand</code></td><td>Native <code>ls -a -l</code>, recursive search, <code>/proc</code> se process info</td></tr>
+    </table>
+    <p>Ye sirf naam aur kaam hai. Har component ki detail Phase 3 mein aayegi.</p>
+  </section>
+
+  <section id="s4">
+    <h2>4. Enter dabane par kya hota hai (bada picture)</h2>
+    <p>Example: <code>sleep 5 &amp;</code> type kiya. Ye sab <code>main.cpp</code> ke loop mein hota hai. Abhi sirf <b>bada picture</b> (table + diagram), functions ki detail Phase 4 mein.</p>
+    <table>
+      <tr><th>Step</th><th>Kya hota hai</th><th>Code</th></tr>
+      <tr><td>1</td><td>Zombie check: koi purana background job khatam hua?</td><td><code>jobController.sweepCompletedJobs()</code></td></tr>
+      <tr><td>2</td><td>Prompt print hota hai</td><td><code>cout &lt;&lt; prompt</code></td></tr>
+      <tr><td>3</td><td>Poori line padhi jaati hai</td><td><code>getline(cin, rawInput)</code></td></tr>
+      <tr><td>4</td><td><code>;</code> pe todkar alag commands bante hain</td><td><code>splitCommands</code></td></tr>
+      <tr><td>5</td><td>Har command ko words (tokens) mein todo: <code>["sleep","5","&amp;"]</code></td><td><code>tokenize</code></td></tr>
+      <tr><td>6</td><td>Line mein <code>|</code>, <code>&lt;</code> ya <code>&gt;</code> hai? To <b>pipeline path</b></td><td><code>parsePipeline</code> &rarr; <code>execute_pipeline</code></td></tr>
+      <tr><td>7</td><td>Nahi hai, to dekho <code>&amp;</code> last mein hai? Haan: <b>sirf flag set karo</b> (<code>isBackground = true</code>) aur <code>&amp;</code> token hata do. Abhi kuch chalta nahi.</td><td><code>tokens.back() == "&amp;"</code></td></tr>
+      <tr><td>8</td><td>Builtin hai? To shell khud chalaye</td><td><code>builtin.execute(tokens)</code></td></tr>
+      <tr><td>9</td><td>Builtin nahi hua, tab <b>flag dekho</b>: background ho to <code>execute_background</code>, warna <code>execute_foreground</code></td><td><code>ProcessExecutor</code></td></tr>
+      <tr><td>10</td><td>Wapas loop ke upar</td><td></td></tr>
+    </table>
+    <p>Yaani <b>teen raaste</b> hain:</p>
+    <ol>
+      <li><b>Builtin</b>: shell khud karta hai.</li>
+      <li><b>Simple external</b>: fork + exec (foreground ya background).</li>
+      <li><b>Pipeline / redirection</b>: multiple forks + pipes.</li>
+    </ol>
+    <figure>
+      <svg viewBox="0 0 760 720" role="img" aria-label="Flowchart of the shell loop: sweep jobs, prompt, read, split, tokenize, then three paths: pipeline, builtin, external foreground or background">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker>
+        </defs>
+        <!-- main column -->
+        <rect class="box b-main" x="110" y="14" width="280" height="44" rx="8"/>
+        <text x="250" y="33" text-anchor="middle" class="title">Loop ke upar</text>
+        <text x="250" y="49" text-anchor="middle" class="mono">sweepCompletedJobs → prompt → getline</text>
+
+        <rect class="box" x="110" y="84" width="280" height="40" rx="8"/>
+        <text x="250" y="108" text-anchor="middle" class="mono">splitCommands  (';' pe todo)</text>
+
+        <rect class="box" x="110" y="150" width="280" height="40" rx="8"/>
+        <text x="250" y="174" text-anchor="middle" class="mono">tokenize  (spaces pe words)</text>
+
+        <path class="box b-warn" d="M250,216 L340,254 L250,292 L160,254 Z"/>
+        <text x="250" y="251" text-anchor="middle" class="mono">| &lt; &gt; &gt;&gt;</text>
+        <text x="250" y="266" text-anchor="middle" class="small">line mein hai?</text>
+
+        <rect class="box" x="110" y="322" width="280" height="44" rx="8"/>
+        <text x="250" y="341" text-anchor="middle" class="mono">last token '&amp;' hai?</text>
+        <text x="250" y="357" text-anchor="middle" class="small">haan: isBackground = true ('&amp;' hata do) / nahi: false</text>
+
+        <path class="box b-good" d="M250,392 L340,428 L250,464 L160,428 Z"/>
+        <text x="250" y="425" text-anchor="middle" class="mono">builtin.execute</text>
+        <text x="250" y="440" text-anchor="middle" class="small">builtin hai?</text>
+
+        <path class="box b-main" d="M250,492 L340,528 L250,564 L160,528 Z"/>
+        <text x="250" y="523" text-anchor="middle" class="mono">isBackground ?</text>
+        <text x="250" y="540" text-anchor="middle" class="small">(sirf builtin nahi hua tab)</text>
+
+        <rect class="box b-main" x="110" y="598" width="280" height="50" rx="8"/>
+        <text x="250" y="618" text-anchor="middle" class="mono">execute_foreground</text>
+        <text x="250" y="635" text-anchor="middle" class="small">fork + execvp + waitpid (parent rukta hai)</text>
+
+        <!-- main-column arrows -->
+        <path class="ln" d="M250,58 L250,84" marker-end="url(#ah)"/>
+        <path class="ln" d="M250,124 L250,150" marker-end="url(#ah)"/>
+        <path class="ln" d="M250,190 L250,216" marker-end="url(#ah)"/>
+        <path class="ln" d="M250,292 L250,322" marker-end="url(#ah)"/>
+        <text x="258" y="310" class="small">nahi</text>
+        <path class="ln" d="M250,366 L250,392" marker-end="url(#ah)"/>
+        <path class="ln" d="M250,464 L250,492" marker-end="url(#ah)"/>
+        <text x="258" y="480" class="small">nahi</text>
+        <path class="ln" d="M250,564 L250,598" marker-end="url(#ah)"/>
+        <text x="258" y="582" class="small">false</text>
+
+        <!-- right column boxes -->
+        <rect class="box b-warn" x="470" y="220" width="220" height="68" rx="8"/>
+        <text x="580" y="243" text-anchor="middle" class="title">PIPELINE path</text>
+        <text x="580" y="262" text-anchor="middle" class="mono">parsePipeline →</text>
+        <text x="580" y="278" text-anchor="middle" class="mono">execute_pipeline</text>
+        <path class="ln-warn" d="M340,254 L470,254" marker-end="url(#ah)"/>
+        <text x="392" y="246" class="small">haan</text>
+
+        <rect class="box b-good" x="470" y="394" width="220" height="68" rx="8"/>
+        <text x="580" y="417" text-anchor="middle" class="title">BUILTIN path</text>
+        <text x="580" y="435" text-anchor="middle" class="small">shell khud chalata hai, bina fork</text>
+        <text x="580" y="452" text-anchor="middle" class="small">flag dekha hi nahi jaata ('&amp;' ignore)</text>
+        <path class="ln" d="M340,428 L470,428" marker-end="url(#ah)"/>
+        <text x="392" y="420" class="small">haan</text>
+
+        <rect class="box b-main" x="470" y="494" width="220" height="68" rx="8"/>
+        <text x="580" y="517" text-anchor="middle" class="title">BACKGROUND path</text>
+        <text x="580" y="536" text-anchor="middle" class="mono">execute_background</text>
+        <text x="580" y="553" text-anchor="middle" class="small">fork + execvp, wait NAHI, addJob</text>
+        <path class="ln" d="M340,528 L470,528" marker-end="url(#ah)"/>
+        <text x="392" y="520" class="small">true</text>
+
+        <!-- loop-back bus -->
+        <path class="ln" d="M690,254 L730,254 L730,684 L40,684 L40,36 L110,36" marker-end="url(#ah)"/>
+        <path class="ln" d="M690,428 L730,428"/>
+        <path class="ln" d="M690,528 L730,528"/>
+        <path class="ln" d="M250,648 L250,684"/>
+        <text x="385" y="702" text-anchor="middle" class="small">sab raaste khatam hone ke baad wapas loop ke upar</text>
+      </svg>
+      <figcaption>Code ke asli order mein: pehle <code>&amp;</code> se <code>isBackground</code> flag set hota hai, phir builtin check. <b>Builtin hua to flag dekha hi nahi jaata</b> (isliye <code>&amp;</code> ignore). Builtin nahi hua tab hi flag dekh ke background ya foreground chalta hai.</figcaption>
+    </figure>
+    <table>
+      <tr><th>Builtin?</th><th>isBackground</th><th>Kya chalta hai</th></tr>
+      <tr><td><b>Haan</b></td><td>kuch bhi (dekha hi nahi jaata)</td><td>Shell khud chalata hai, bina fork. <code>&amp;</code> ignore, foreground jaisa</td></tr>
+      <tr><td>Nahi</td><td>false</td><td><code>execute_foreground</code> (fork + exec, parent wait karta hai)</td></tr>
+      <tr><td>Nahi</td><td>true</td><td><code>execute_background</code> (fork + exec, parent wait nahi karta)</td></tr>
+    </table>
+    <p class="sub">Flag pehle set hota hai, par builtin ke raaste mein koi use nahi karta. Isiliye builtin ke saath <code>&amp;</code> ya bina <code>&amp;</code> dono same chalte hain (<code>main.cpp</code>: flag lines 308-310, builtin 320, flag ka use 324-328).</p>
+    <div class="tip"><b>Step 7 aur step 9 ka fark:</b> <code>&amp;</code> ka <b>check</b> (flag set karna, token hatana) builtin se <b>pehle</b> hota hai (<code>main.cpp</code> lines 308-310). Lekin flag ke hisaab se <b>kaunsa executor chalega</b> ye builtin ke <b>baad</b> decide hota hai (lines 323-328). Side-effect (maine chalake dekha): builtin ko <code>&amp;</code> dikhta hi nahi, isliye <code>pwd &amp;</code> normal builtin ki tarah chalta hai aur koi background job nahi banta; <code>cd / &amp;</code> bhi <code>cd /</code> hi karta hai.</div>
+    <div class="tip"><b>Dhyan do:</b> pipeline ka check (step 6) background check (step 7) se <b>pehle</b> hota hai. Isliye <code>a | b &amp;</code> mein <code>&amp;</code> galti se <code>b</code> ka argument ban jaata hai. Ye known limitation hai.</div>
+  </section>
+
+  <section id="s5">
+    <h2>5. Built-in vs external commands</h2>
+    <table>
+      <tr><th>Type</th><th>Mere shell mein examples</th><th>Kaise chalta hai</th></tr>
+      <tr><td>External</td><td><code>cat, grep, sleep</code></td><td>fork + execvp (alag program hai)</td></tr>
+      <tr><td>Built-in</td><td><code>cd, pwd, echo, history</code>, aur <code>ls, search, pinfo</code> bhi</td><td>Shell ke apne process ke andar, fork nahi</td></tr>
+    </table>
+    <h3><code>cd</code> built-in kyun hona padta hai? (Manager / Intern analogy)</h3>
+    <ul>
+      <li>Shell = <b>manager</b>. Child = <b>intern</b>. Current directory = <b>wo floor jahan banda baitha hai</b>.</li>
+      <li>"Ye file print karo": intern ko de do, koi dikkat nahi, manager ko hilne ki zarurat nahi.</li>
+      <li>"Hamara office dusre floor pe shift karo": agar ye kaam intern ko diya, to intern dusre floor chala jaayega, phir chala jaayega (process khatam). Manager <b>abhi bhi purane floor pe</b> hai. Kuch badla hi nahi.</li>
+    </ul>
+    <table>
+      <tr><th>Analogy</th><th>Asli cheez</th></tr>
+      <tr><td>Manager</td><td>Shell process</td></tr>
+      <tr><td>Intern</td><td>Child process (<code>fork</code> se bana)</td></tr>
+      <tr><td>Floor</td><td>Current working directory</td></tr>
+      <tr><td>Floor badalna</td><td><code>chdir()</code> system call</td></tr>
+    </table>
+    <div class="rule">Current directory har process ki apni personal property hai. Child apni directory badle to parent ki nahi badalti. Isliye jo cheez shell ki apni state badalti hai (jaise <code>cd</code>), wo shell ke andar hi chalni chahiye.</div>
+    <p>Mere code mein: <code>BuiltinEngine::execute_cd</code> shell process mein <code>chdir()</code> karta hai, isliye prompt sach mein badal jaata hai.</p>
+    <div class="warn"><b>Gotcha: pipelines mein builtins nahi chalte.</b> Pipeline (<code>ls | grep txt</code>) ke andar mera <code>LSCommand</code> use <b>nahi</b> hota. Wahan <code>ls</code> asli <code>/bin/ls</code> hai (<code>execvp</code> se).</div>
+    <h3>Commands ka chhota trace</h3>
+    <table>
+      <tr><th>Command</th><th>Mere code mein kya hota hai</th></tr>
+      <tr><td><code>pwd</code>, <code>cd</code></td><td>Built-in. <code>getcwd()</code> / <code>chdir()</code> shell mein. Fork nahi.</td></tr>
+      <tr><td><code>ls</code></td><td>Built-in (<code>LSCommand</code>, <code>opendir</code>/<code>readdir</code>). Fork nahi.</td></tr>
+      <tr><td><code>cat file.txt</code></td><td>External. fork, child <code>execvp("cat")</code>, parent wait karta hai.</td></tr>
+      <tr><td><code>sleep 5 &amp;</code></td><td>External, background. fork + exec, parent wait <b>nahi</b> karta, job id print karke prompt wapas.</td></tr>
+      <tr><td><code>ls | grep txt</code></td><td>Pipeline: do children, beech mein ek pipe (detail Phase 4 mein).</td></tr>
+    </table>
+  </section>
+
+  <section id="s6">
+    <h2>6. External command ka safar: <code>fork</code> &rarr; <code>exec</code></h2>
+    <p>Shell <code>ls</code> ko apne andar chalata to <code>ls</code> ke saath shell bhi khatam ho jaata. Isliye shell <b>nayi process banata hai</b> (<code>fork</code>), us nayi process ko <code>cat</code> bana deta hai (<code>exec</code>), aur khud zinda rehta hai.</p>
+
+    <h3>6a. <code>fork()</code>: photocopy machine</h3>
+    <p>Maan lo tum ek kitaab <b>line 5 tak padh</b> chuke ho. <code>fork()</code> ek <b>photocopy</b> bana deta hai: ek duplicate padhne wala, jo <b>bilkul usi line 5 par</b> khada hai, usi kitaab aur usi yaadasht ke saath. Ab dono <b>line 6 se aage</b> apni-apni kitaab padhte hain.</p>
+    <ul>
+      <li><b>Parent</b> = original. <b>Child</b> = photocopy.</li>
+      <li><code>fork()</code> ke baad <b>dono ek saath chalte hain</b>, aur dono wahi code <code>fork()</code> ki agli line se chalate hain.</li>
+    </ul>
+    <p>Asli program ka output:</p>
+<pre>int x = 10;
+printf("1) fork se PEHLE ...");
+
+pid_t p = fork();          // &lt;-- yahan 2 hisse ho jaate hain
+
+if (p == 0)      { x = 99; printf("2) Main CHILD hoon ... p=%d x=%d", p, x); }
+else if (p &gt; 0)  {         printf("3) Main PARENT hoon ... p=%d x=%d", p, x); }
+else             { perror("fork"); }</pre>
+<pre>1) fork se PEHLE: main hi hoon, mera pid=16590
+2) Main CHILD hoon.  fork ne mujhe 0 diya.     mera pid=16597, mere parent ka pid=16590, x=99
+3) Main PARENT hoon. fork ne mujhe 16597 diya. mera pid=16590, x=10</pre>
+    <figure>
+      <svg viewBox="0 0 760 240" role="img" aria-label="One original process calls fork and becomes a parent with p equal to the child pid and a child with p equal to zero">
+        <defs><marker id="ahf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+        <rect class="box b-main" x="20" y="80" width="190" height="80" rx="8"/>
+        <text x="115" y="108" text-anchor="middle" class="title">ORIGINAL</text>
+        <text x="115" y="128" text-anchor="middle" class="mono">pid = 16590</text>
+        <text x="115" y="146" text-anchor="middle" class="small">fork() call kar raha hai</text>
+        <rect class="box b-good" x="430" y="20" width="310" height="86" rx="8"/>
+        <text x="585" y="44" text-anchor="middle" class="title">PARENT</text>
+        <text x="585" y="64" text-anchor="middle" class="mono">pid = 16590</text>
+        <text x="585" y="82" text-anchor="middle" class="mono">p = 16597  (child ka pid)</text>
+        <text x="585" y="98" text-anchor="middle" class="mono">x = 10</text>
+        <rect class="box b-warn" x="430" y="134" width="310" height="86" rx="8"/>
+        <text x="585" y="158" text-anchor="middle" class="title">CHILD (photocopy)</text>
+        <text x="585" y="178" text-anchor="middle" class="mono">pid = 16597</text>
+        <text x="585" y="196" text-anchor="middle" class="mono">p = 0</text>
+        <text x="585" y="212" text-anchor="middle" class="mono">x = 99  (apni alag copy)</text>
+        <path class="ln" d="M210,105 L430,63" marker-end="url(#ahf)"/>
+        <path class="ln-warn" d="M210,135 L430,177" marker-end="url(#ahf)"/>
+        <text x="320" y="118" text-anchor="middle" class="mono">fork()</text>
+      </svg>
+    </figure>
+    <p><b>Teen cheezein is output se:</b></p>
+    <ol>
+      <li><b>Line 1 sirf ek baar, 2 aur 3 dono kyun?</b> Line 1 <code>fork()</code> se <b>pehle</b> thi, tab sirf ek process tha. Baad mein do process hain, dono <code>if/else</code> tak pahunchte hain: ek <code>if (p == 0)</code> wala hissa chalata hai, dusra <code>else if (p &gt; 0)</code> wala.</li>
+      <li><b>Kaun parent, kaun child?</b> <code>fork()</code> ki <b>return value</b> se:
+        <table>
+          <tr><th>Kaun</th><th><code>fork()</code> ne kya return kiya</th></tr>
+          <tr><td><b>Child</b></td><td><code>0</code></td></tr>
+          <tr><td><b>Parent</b></td><td><b>child ka pid</b> (positive number)</td></tr>
+          <tr><td>Error</td><td><code>-1</code> (koi child nahi bana)</td></tr>
+        </table>
+      </li>
+      <li><b><code>x</code> alag kyun (99 vs 10)?</b> Child ko <b>apni khud ki copy</b> milti hai sab variables ki. Child ne <code>x = 99</code> kiya to sirf uski copy badli.</li>
+    </ol>
+    <p><b>Mere project mein</b> <code>fork()</code> teen jagah hai (<code>ProcessExecutor.cpp</code>), teeno mein wahi pattern:</p>
+    <table>
+      <tr><th>Function</th><th>Kab</th><th>Kitne child</th></tr>
+      <tr><td><code>execute_foreground</code></td><td><code>cat file.txt</code></td><td>1</td></tr>
+      <tr><td><code>execute_background</code></td><td><code>sleep 5 &amp;</code></td><td>1</td></tr>
+      <tr><td><code>execute_pipeline</code></td><td><code>ls | grep txt</code></td><td>har stage ke liye ek (loop mein)</td></tr>
+    </table>
+<pre>pid_t pid = fork();
+if (pid == 0) {
+    // CHILD: command chalane ki taiyari
+} else if (pid &gt; 0) {
+    // PARENT (shell): child ko sambhalta hai
+} else {
+    perror("fork failed");   // fork fail hua, koi child nahi bana
+}</pre>
+    <div class="rule">Shell mein child tab banta hai jab user <b>external</b> command deta hai. Builtins mein <code>fork()</code> hota hi nahi.</div>
+
+    <h3>6b. <code>exec</code>: dimaag badal do, body wahi rahe</h3>
+    <p><code>fork()</code> ke baad child <b>shell ki hi copy</b> hai. Par humein <code>cat</code> chalana hai. Analogy: ek aadmi (process) ka <b>dimaag</b> (program) nikaal ke <code>cat</code> ka dimaag laga do. <b>Naam aur ID (pid) wahi</b> rehti hai, par ab wo <code>cat</code> ki tarah kaam karta hai.</p>
+<pre>CHILD: exec se PEHLE mera pid=17952, main abhi shell-demo program hoon
+CHILD: exec ke BAAD  mera pid=17952, ab main /bin/sh program hoon    &larr; pid SAME, program badal gaya
+PARENT: child (pid=17952) khatam, mera kuch nahi badla               &larr; parent pe koi asar nahi</pre>
+    <p><b><code>execvp("cat", args)</code> ki 3 baatein:</b></p>
+    <table>
+      <tr><th>Baat</th><th>Matlab</th></tr>
+      <tr><td><b>pid nahi badalta</b></td><td>Naya process nahi banta, sirf program badalta hai</td></tr>
+      <tr><td><b>Success pe return nahi karta</b></td><td>Purana code khatam, uske neeche ki lines kabhi nahi chalti</td></tr>
+      <tr><td><b>Fail pe <code>-1</code> return karta hai</b></td><td>Tab hi neeche ki line chalti hai</td></tr>
+    </table>
+    <p>Mere code mein <code>execvp</code> ki return value ko <code>-1</code> se compare nahi kiya gaya. Bas ye maana gaya ki <b>agar agli line tak pahunche, to exec fail hua</b> (kyunki success pe wo line exist hi nahi karti). Isiliye <code>execvp</code> ke <b>turant baad</b> <code>perror(...)</code> aur <code>exit(...)</code> hai. Wo lines <b>sirf tab</b> chalti hain jab <code>exec</code> fail ho (galat command). Demo:</p>
+<pre>nosuchcommand: No such file or directory      &larr; perror ne chalaya
+CHILD: exec fail hua, ye line tabhi chali      &larr; exec ke neeche wali line</pre>
+    <p><code>exit</code> zaroori kyun? Agar fail hone par child <code>exit</code> na kare, to wo bhi shell ka loop chalane lagega, yaani <b>2 shells</b> ban jayenge.</p>
+    <p><b>Naam ka matlab:</b> <code>v</code> = arguments <b>vector/array</b> mein, <code>p</code> = command <b>PATH</b> mein dhoondta hai (isiliye <code>"cat"</code> likhna kaafi hai).</p>
+    <p><b>Fork aur exec alag kyun?</b> <code>fork</code> sirf naya process banata hai, <code>exec</code> sirf program badalta hai. Alag hone se <b>beech mein</b> child apni setup kar sakta hai (pipe, redirection, signals, Phase 4 mein) aur parent shell zinda rehta hai.</p>
+
+    <h3>6c. <code>cat file.txt</code> ka poora trace</h3>
+    <figure>
+      <svg viewBox="0 0 760 360" role="img" aria-label="Trace of cat file.txt: parent tokenizes and forks, child becomes cat via execvp and prints, parent waits then shows prompt">
+        <defs><marker id="ahe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+        <text x="185" y="20" text-anchor="middle" class="title">PARENT (shell)</text>
+        <text x="575" y="20" text-anchor="middle" class="title">CHILD</text>
+
+        <rect class="box b-main" x="50" y="36" width="270" height="44" rx="8"/>
+        <text x="185" y="62" text-anchor="middle" class="mono">tokens = ["cat", "file.txt"]</text>
+
+        <rect class="box b-main" x="50" y="108" width="270" height="44" rx="8"/>
+        <text x="185" y="134" text-anchor="middle" class="mono">fork()</text>
+        <rect class="box b-warn" x="440" y="108" width="270" height="44" rx="8"/>
+        <text x="575" y="127" text-anchor="middle" class="mono">child bana: shell ki COPY</text>
+        <text x="575" y="143" text-anchor="middle" class="small">pid 17952</text>
+
+        <rect class="bar-block" x="50" y="180" width="270" height="56" rx="8"/>
+        <text x="185" y="204" text-anchor="middle" class="mono">wait karta hai</text>
+        <text x="185" y="222" text-anchor="middle" class="small">(details Phase 4 mein)</text>
+        <rect class="box b-warn" x="440" y="180" width="270" height="56" rx="8"/>
+        <text x="575" y="204" text-anchor="middle" class="mono">execvp("cat", ...)</text>
+        <text x="575" y="222" text-anchor="middle" class="small">ab ye cat program hai, pid wahi</text>
+
+        <rect class="box b-warn" x="440" y="264" width="270" height="44" rx="8"/>
+        <text x="575" y="283" text-anchor="middle" class="mono">cat file.txt print karta hai</text>
+        <text x="575" y="299" text-anchor="middle" class="small">phir exit</text>
+
+        <rect class="box b-good" x="50" y="316" width="270" height="36" rx="8"/>
+        <text x="185" y="339" text-anchor="middle" class="mono">prompt wapas dikhata hai</text>
+
+        <path class="ln" d="M185,80 L185,108" marker-end="url(#ahe)"/>
+        <path class="ln-warn" d="M320,130 L440,130" marker-end="url(#ahe)"/>
+        <path class="ln" d="M185,152 L185,180" marker-end="url(#ahe)"/>
+        <path class="ln-warn" d="M575,152 L575,180" marker-end="url(#ahe)"/>
+        <path class="ln-warn" d="M575,236 L575,264" marker-end="url(#ahe)"/>
+        <path class="ln" d="M185,236 L185,316" marker-end="url(#ahe)" stroke-dasharray="4 3"/>
+        <path class="ln" d="M440,300 L330,330" marker-end="url(#ahe)"/>
+        <text x="385" y="334" text-anchor="middle" class="small">child khatam</text>
+      </svg>
+    </figure>
+<pre>pid_t pid = fork();
+if (pid == 0) {
+    signal(SIGINT,  SIG_DFL);      // (signals wali lines abhi ignore karo, Phase 4 mein)
+    signal(SIGTSTP, SIG_DFL);
+    execvp(c_args[0], c_args.data());   // c_args[0] = "cat"
+    perror(c_args[0]);                  // sirf exec fail pe
+    exit(EXIT_FAILURE);
+}</pre>
+    <p>Ye <code>execute_foreground</code> ka child wala hissa hai.</p>
+
+    <h3>6d. Foreground vs background: bada difference</h3>
+    <p>Dono mein <code>fork</code> + <code>exec</code> same hai. Fark sirf ye hai ki <b>parent kya karta hai</b> fork ke baad.</p>
+    <figure>
+      <svg viewBox="0 0 760 280" role="img" aria-label="Foreground: parent forks, then blocks in waitpid until the child exits, then shows the prompt">
+        <defs><marker id="ahx1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+        <text x="380" y="18" text-anchor="middle" class="title">A) sleep 5  (foreground): parent RUKTA hai</text>
+        <text x="140" y="44" text-anchor="middle" class="small">PARENT (shell)</text>
+        <text x="620" y="44" text-anchor="middle" class="small">CHILD</text>
+        <path class="ln" d="M140,54 L140,96"/>
+        <text x="160" y="84" class="mono">fork()</text>
+        <path class="ln" d="M140,96 L608,122" marker-end="url(#ahx1)"/>
+        <rect class="bar-block" x="128" y="96" width="24" height="120" rx="4"/>
+        <text x="166" y="150" class="mono">waitpid()  →  parent BLOCKED</text>
+        <text x="166" y="168" class="small">prompt nahi dikhta jab tak child khatam na ho</text>
+        <rect class="bar-run" x="608" y="122" width="24" height="94" rx="4"/>
+        <text x="598" y="150" text-anchor="end" class="mono">execvp(sleep)</text>
+        <text x="598" y="168" text-anchor="end" class="small">5 sec chalta hai</text>
+        <path class="ln-warn" d="M608,216 L152,226" marker-end="url(#ahx1)"/>
+        <text x="380" y="206" text-anchor="middle" class="small">child exit  →  parent jaag jaata hai</text>
+        <path class="ln" d="M140,216 L140,250"/>
+        <text x="160" y="262" class="mono">prompt wapas</text>
+      </svg>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 760 330" role="img" aria-label="Background: parent forks, registers the job and shows the prompt immediately; the next loop reaps the zombie with waitpid WNOHANG">
+        <defs><marker id="ahx2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+        <text x="380" y="18" text-anchor="middle" class="title">B) sleep 5 &amp;  (background): parent NAHI rukta</text>
+        <text x="140" y="44" text-anchor="middle" class="small">PARENT (shell)</text>
+        <text x="620" y="44" text-anchor="middle" class="small">CHILD</text>
+        <path class="ln" d="M140,54 L140,290"/>
+        <text x="160" y="84" class="mono">fork()</text>
+        <path class="ln" d="M140,96 L608,122" marker-end="url(#ahx2)"/>
+        <text x="160" y="132" class="mono">addJob()  →  prints "[ 1 ] pid"</text>
+        <text x="160" y="156" class="mono">prompt TURANT wapas</text>
+        <text x="160" y="173" class="small">user ab dusre commands chala sakta hai</text>
+        <rect class="bar-run" x="608" y="122" width="24" height="126" rx="4"/>
+        <text x="598" y="150" text-anchor="end" class="mono">execvp(sleep)</text>
+        <text x="598" y="168" text-anchor="end" class="small">parent ke saath-saath chalta hai</text>
+        <text x="598" y="236" text-anchor="end" class="small">exit  →  ZOMBIE (jab tak reap na ho)</text>
+        <path class="ln-warn" d="M140,286 L596,252" marker-end="url(#ahx2)"/>
+        <text x="380" y="314" text-anchor="middle" class="mono">agla loop top: sweepCompletedJobs()  →  waitpid(-1, WNOHANG)</text>
+        <text x="380" y="328" text-anchor="middle" class="small">reap ho jaata hai aur "[ 1 ] done sleep 5" print hota hai</text>
+      </svg>
+    </figure>
+    <div class="rule">Foreground: parent child ke khatam hone tak <b>ruka rehta hai</b>. Background: parent <b>ruke bina</b> prompt par aa jaata hai, aur child baad mein <b>reap</b> hota hai (iski detail Phase 3 mein).</div>
+    <p class="sub">Yahan "wait" aur "reap" sirf naam se bole hain. Zombie aur wait/waitpid ki detail <b>parked</b> hai (Phase 3-4), par un sections ko <a href="phase3.html">Phase 3</a> aur <a href="phase4.html">Phase 4</a> pages mein pehle se rakh diya hai.</p>
+  </section>
+
+  <section id="s7">
+    <h2>7. Doubts jo aaye the (aur unke jawab)</h2>
+
+    <h3>Q1. "fork ke baad child ka pid 0 hona chahiye na?"</h3>
+    <p>Do alag cheezein mix ho gayi thi:</p>
+    <table>
+      <tr><th>Cheez</th><th>Kya hai</th><th>Child ke liye value</th></tr>
+      <tr><td><b>pid</b> (<code>getpid()</code>)</td><td>Process ka asli ID number, jaise employee ID</td><td>Koi asli number, jaise <b>17952</b></td></tr>
+      <tr><td><b><code>fork()</code> ki return value</b> (<code>p</code>)</td><td>Ek <b>sandesh</b> jo <code>fork()</code> har process ko deta hai</td><td><b>0</b></td></tr>
+    </table>
+    <p>Child ka asli pid <b>0 nahi</b> hota (pid 0 kisi normal process ka hota hi nahi). <code>fork()</code> child ko <b>0</b> sirf isliye deta hai taaki wo code mein pehchaan sake "main child hoon" (<code>if (p == 0)</code>).</p>
+    <p>Analogy: naya employee join hua. Uska <b>employee ID 17952</b> hai (pid). HR ne use chit di: <b>"0 = tum naye ho"</b> (return value). Purane employee (parent) ko chit mili: <b>"tumhara naya bachcha 17952 hai"</b>.</p>
+    <table>
+      <tr><th>Moment</th><th>Process</th><th>pid</th><th><code>fork()</code> ki return value</th></tr>
+      <tr><td>fork ke baad, parent</td><td>Purana (original)</td><td>16590 (wahi, badla nahi)</td><td><b>16597</b> (child ka pid)</td></tr>
+      <tr><td>fork ke baad, child</td><td>Naya</td><td>16597 (naya, alag)</td><td><b>0</b></td></tr>
+    </table>
+    <p>Parent ko jo value milti hai wo <b>specifically child ka pid</b> hai, taaki parent ko pata ho kis child ka wait karna hai (Phase 4 mein kaam aayega).</p>
+
+    <h3>Q2. "fork ke baad naya child process banta hai na?"</h3>
+    <p>Haan, bilkul sahi. Aur exec?</p>
+    <table>
+      <tr><th>Call</th><th>Naya process banta hai?</th><th>pid</th></tr>
+      <tr><td><code>fork()</code></td><td><b>Haan</b></td><td>Naya pid</td></tr>
+      <tr><td><code>execvp()</code></td><td><b>Nahi</b></td><td><b>Wahi</b> pid</td></tr>
+    </table>
+<pre>fork():  parent (16590) --&gt; parent (16590) + NAYA child (17952)   &larr; naya process yahan bana
+exec():  child (17952)  --&gt; child (17952), ab cat program        &larr; bas program badla, pid wahi</pre>
+
+    <h3>Q3. "perror wali line tab chalti hai jab child exit nahi hua?"</h3>
+    <p>Condition "child exit hua ya nahi" nahi hai. Condition ye hai: <b><code>execvp</code> fail hua ya nahi</b>.</p>
+    <ul>
+      <li><b>exec safal</b> &rarr; purana code mit gaya, <code>perror</code> wali line ab exist hi nahi karti.</li>
+      <li><b>exec fail</b> &rarr; <code>execvp</code> <code>-1</code> return karta hai, purana code zinda hai, to agli line <code>perror(...)</code> chalti hai, phir <code>exit</code>.</li>
+    </ul>
+    <div class="rule"><code>execvp</code> ke neeche ki line tabhi chalti hai jab <code>exec</code> fail ho. <code>exit</code> wahan perror ke <b>baad</b> aata hai, uski wajah se error nahi chalta.</div>
+
+    <h3>Q4. "Builtin ke saath <code>&amp;</code> ignore ho jaata hai, aur wo foreground jaisa chalta hai?"</h3>
+    <p><b>Haan.</b> <code>&amp;</code> builtin se pehle hat jaata hai, to builtin ko dikhta hi nahi. Maine chalake dekha: <code>pwd &amp;</code> seedha path print karta hai (koi job id nahi), aur <code>cd / &amp;</code> ne directory sach mein badal di.</p>
+    <p><b>"Foreground jaisa" ka nuance:</b> ye <code>execute_foreground</code> function nahi hai. Builtin mein <b>koi child banta hi nahi</b> (fork nahi). Wo shell ke apne process ke andar chalta hai, aur jab tak khatam na ho shell ruka rehta hai.</p>
+    <table>
+      <tr><th></th><th>Builtin (<code>pwd &amp;</code>)</th><th>Foreground external (<code>sleep 5</code>)</th></tr>
+      <tr><td>Child banta hai?</td><td><b>Nahi</b></td><td>Haan (<code>fork</code>)</td></tr>
+      <tr><td>Shell kya karta hai</td><td>Khud kaam karta hai, tab tak ruka</td><td><code>waitpid</code> mein ruka</td></tr>
+    </table>
+    <p><b>Aisa kyun:</b> background ka matlab hai alag process mein chalana. Builtin ko alag process mein chalate to <code>cd</code> jaisa builtin bekaar ho jaata (manager/intern wali baat). Isliye <code>&amp;</code> chupchaap ignore hota hai.</p>
+    <p><b>Surprising side-effect:</b> <code>ls</code>, <code>search</code>, <code>pinfo</code> mere shell mein <b>builtin</b> hain, to <code>ls &amp;</code> bhi background mein nahi jaata, shell block karke chalta hai (asli bash mein <code>ls</code> external hai, wahan <code>ls &amp;</code> sach mein background jaata).</p>
+    <div class="rule">Interview mein: "Mere shell mein builtins <code>&amp;</code> ke saath bhi foreground behave karte hain, kyunki wo shell ke process mein chalte hain. Improve karne ke liye unhe fork karna padta."</div>
+
+    <h3>Q5. "wait/waitpid samajh nahi aaya, aur child kahan banta hai?"</h3>
+    <p>Meri galti thi: wait/waitpid, fork se pehle sikha diya tha. Ab order sahi hai: pehle <b>fork</b> (6a), phir <b>exec</b> (6b), phir poora trace (6c). Wait/waitpid <b>Phase 4</b> mein <code>execute_foreground</code> ke code ke saath aayega. Kahan banta hai: <code>ProcessExecutor.cpp</code> ke teen functions mein (6a ki table).</p>
+  </section>
+
+  <section id="s8">
+    <h2>8. 1-2 minute ka pitch (updated)</h2>
+    <h3>Tumhara pehla version</h3>
+    <blockquote>"POSIX is a shell that i have built using system calls. We had this as our assignment in Operating Systems course in sem 1, but i got interested and decided to build it again in june 2026. Shell is a REPL infinite loop(i.e. read evaluate print loop). The shell takes an input line, splits into multiple command on ";" and then the shell processes all the commands one by one. The shell tokenizes the single command into multiple commands on " " and then we check if the command involves pipeling or not, is it a background command or not ? is it a builtin command or not ? based on all this info the shell exectues a command. I am using fork and execvp to execute the commands in a child process"</blockquote>
+    <p><b>Achha tha:</b> honest story (course assignment, phir June 2026 mein khud dobara banaya), REPL ka naam, flow ka sahi order, fork + execvp.</p>
+    <table>
+      <tr><th>Tumne kaha</th><th>Sudhaar</th></tr>
+      <tr><td>"POSIX is a shell"</td><td>POSIX ek <b>standard</b> hai. Bolo: "<b>POSIX-style shell</b>"</td></tr>
+      <tr><td>"tokenizes into multiple <b>commands</b> on ' '"</td><td>Spaces pe <b>tokens (words)</b> bante hain. Commands to <code>;</code> pe bante hain</td></tr>
+      <tr><td>"using system calls"</td><td>Adhoora. Naam lo: <code>fork</code>, <code>execvp</code>, <code>waitpid</code>, <code>pipe</code>, <code>dup2</code></td></tr>
+      <tr><td>(missing)</td><td>Fork kyun, parent kya karta hai, builtin kyun alag, features ke naam</td></tr>
+    </table>
+    <h3>Updated version (~1.5 min, apne words mein bolna)</h3>
+    <blockquote>
+      <p>"Maine C++ mein ek <b>POSIX-style shell</b> banaya hai, system calls use karke. Ye hamare Operating Systems course (sem 1) ka assignment tha, par mujhe interesting laga, to June 2026 mein maine ise <b>scratch se dobara banaya</b> taaki sab khud samajh sakun.</p>
+      <p>Shell ek <b>REPL loop</b> hai: prompt dikhata hai, ek line padhta hai, usse chalata hai, phir wapas aata hai. Line ko pehle <code>;</code> pe alag commands mein todta hai, phir har command ko spaces pe <b>tokens</b> mein.</p>
+      <p>Phir shell dekhta hai: pipeline hai? background (<code>&amp;</code>) hai? builtin hai? Builtin jaise <code>cd</code> shell <b>khud</b> chalata hai, kyunki <code>cd</code> shell ki apni directory badalta hai, aur child mein chalta to parent pe asar nahi hota.</p>
+      <p>External commands ke liye shell <b><code>fork()</code></b> se child banata hai, child <b><code>execvp</code></b> se khud ko wo program bana leta hai. Parent foreground mein <b>wait</b> karta hai; background mein wait nahi karta, aur baad mein zombie reap karta hai.</p>
+      <p>Iske alawa pipelines, I/O redirection, Ctrl+C / Ctrl+Z handling aur persistent history bhi hai."</p>
+    </blockquote>
+    <p class="sub">Ye guide hai, rata nahi. Pitch Phase 6 mein final hoga.</p>
+  </section>
+
+  <section id="s9">
+    <h2>9. Phase 1 recap</h2>
+    <h3>Ab tumhe ye aana chahiye</h3>
+    <ul>
+      <li>Shell = translator + REPL loop. POSIX = standard, shell ka naam nahi.</li>
+      <li>Mere shell mein kya hai aur kya nahi (honestly).</li>
+      <li>Components ke naam aur ek-line kaam.</li>
+      <li>Enter dabane par: split &rarr; tokenize &rarr; pipeline? &rarr; background? &rarr; builtin? &rarr; execute.</li>
+      <li><code>cd</code> built-in kyun (manager/intern).</li>
+      <li><code>fork</code> naya process banata hai, <code>exec</code> program badalta hai; pid vs fork ki return value.</li>
+      <li>Foreground: parent ruka rehta hai. Background: nahi.</li>
+    </ul>
+    <h3>Self-check (jawab khud bol ke dekho, phir kholo)</h3>
+    <details><summary>1. Shell external command ko seedha apne andar kyun nahi chalata?</summary><p>Kyunki command khatam hone ke saath shell bhi khatam ho jaata. Isliye <code>fork</code> se child banake usme chalata hai.</p></details>
+    <details><summary>2. <code>cd</code> child mein chalta to kya galat hota?</summary><p>Child ki directory badalti, shell ki nahi. Prompt wahi rehta.</p></details>
+    <details><summary>3. <code>fork()</code> ke baad kitne process aur kaun kya return paata hai?</summary><p>Do. Parent ko child ka pid milta hai, child ko 0.</p></details>
+    <details><summary>4. <code>exec</code> ke baad pid kyun same rehta hai?</summary><p>Kyunki exec naya process nahi banata, usi process ka program badalta hai.</p></details>
+    <details><summary>5. <code>execvp</code> ke neeche wali <code>perror</code> line kab chalti hai?</summary><p>Sirf tab jab <code>execvp</code> fail ho (return -1).</p></details>
+    <details><summary>6. <code>sleep 5</code> aur <code>sleep 5 &amp;</code> mein parent ka kya fark hai?</summary><p>Foreground mein parent child ke khatam hone tak wait karta hai. Background mein nahi, wo seedha prompt par aata hai.</p></details>
+    <h3>Parked (aage aayega)</h3>
+    <ul>
+      <li>Zombie aur JobController &rarr; <b>Phase 3</b> (<a href="phase3.html">page mein pehle se hai</a>)</li>
+      <li><code>wait</code> vs <code>waitpid</code>, flags, <code>WUNTRACED</code> &rarr; <b>Phase 4</b> (<a href="phase4.html">page mein pehle se hai</a>)</li>
+      <li>Pipes, <code>dup2</code>, signals &rarr; <b>Phase 3-4</b></li>
+    </ul>
+  </section>
+
+
+  <section id="s10">
+    <h2>10. Quick revision (interview se pehle, 5 minute)</h2>
+    <p class="sub">Sirf Phase 1 ki cheezein. Pipes, signals, zombie aur wait/waitpid ki revision unke phases ke baad judegi.</p>
+
+    <h3>Ek line mein project</h3>
+    <div class="rule">C++ mein bana POSIX-style shell: prompt &rarr; line padho &rarr; samjho &rarr; chalao &rarr; wapas prompt. OS course ka assignment tha, June 2026 mein scratch se dobara banaya.</div>
+
+    <h3>Flow (Enter dabane par)</h3>
+    <ol>
+      <li><code>;</code> pe todo (<code>splitCommands</code>)</li>
+      <li>Spaces pe tokens (<code>tokenize</code>)</li>
+      <li><code>| &lt; &gt;</code> hai? &rarr; pipeline path</li>
+      <li>Last token <code>&amp;</code>? &rarr; <code>isBackground</code> flag set, <code>&amp;</code> hatao</li>
+      <li>Builtin hai? &rarr; shell khud chalata hai (flag dekha hi nahi jaata)</li>
+      <li>Nahi, to flag dekho: true &rarr; <code>execute_background</code>, false &rarr; <code>execute_foreground</code></li>
+      <li>Wapas loop ke upar</li>
+    </ol>
+
+    <h3>Yaad rakhne wali facts</h3>
+    <table>
+      <tr><th>Topic</th><th>Ek line</th></tr>
+      <tr><td>Shell</td><td>Translator: jo type karo use system calls mein badalta hai. Ek REPL loop.</td></tr>
+      <tr><td>POSIX</td><td>Ek <b>standard</b> hai, shell ka naam nahi. Bolo "POSIX-style shell".</td></tr>
+      <tr><td>Fork kyun</td><td>Shell khud zinda rehna chahiye, command ke saath khatam nahi.</td></tr>
+      <tr><td><code>fork()</code></td><td>Naya process banata hai (photocopy). Parent ko <b>child ka pid</b>, child ko <b>0</b> milta hai. Error pe <code>-1</code>.</td></tr>
+      <tr><td>pid vs fork ki return value</td><td>pid = asli ID. Return value = sandesh (0 = "tum child ho"). Child ka pid 0 <b>nahi</b> hota.</td></tr>
+      <tr><td><code>execvp()</code></td><td>Usi process ka program badalta hai. <b>Naya process nahi</b>, pid <b>same</b>.</td></tr>
+      <tr><td><code>execvp()</code> return value</td><td><b>Success pe kabhi return nahi karta</b> (process ka code hi badal jaata hai). <b>Fail pe <code>-1</code> return karta hai</b> aur <code>errno</code> set karta hai (jaise "No such file or directory"). <code>perror(c_args[0])</code> wahi errno print karta hai.</td></tr>
+      <tr><td>exec ke neeche ki line</td><td>Sirf tab chalti hai jab <code>exec</code> <b>fail</b> ho (return -1). Isliye wahan <code>perror</code> + <code>exit</code>.</td></tr>
+      <tr><td>Fork aur exec alag kyun</td><td>Beech mein child apni setup kar sake (pipe, redirection, signals), parent zinda rahe.</td></tr>
+      <tr><td><code>cd</code> builtin kyun</td><td>Directory process ki apni property hai. Child badle to shell ki nahi badalti (manager/intern).</td></tr>
+      <tr><td>Foreground</td><td>Parent child ke khatam hone tak ruka rehta hai.</td></tr>
+      <tr><td>Background (<code>&amp;</code>)</td><td>Parent ruke bina prompt par aata hai, child baad mein reap hota hai.</td></tr>
+      <tr><td>Builtin + <code>&amp;</code></td><td><code>&amp;</code> ignore. Builtin shell ke andar, bina fork, foreground jaisa. <code>ls &amp;</code> bhi background nahi jaata (<code>ls</code> builtin hai).</td></tr>
+      <tr><td>Pipeline mein builtins</td><td>Nahi chalte. <code>ls | grep</code> mein asli <code>/bin/ls</code> chalta hai.</td></tr>
+      <tr><td>Check ka order</td><td>Pipeline check <code>&amp;</code> se pehle, isliye <code>a | b &amp;</code> mein <code>&amp;</code> galti se <code>b</code> ka argument ban jaata hai.</td></tr>
+    </table>
+
+    <h3>Likely sawaal aur ek-line jawab</h3>
+    <table>
+      <tr><th>Sawaal</th><th>Jawab</th></tr>
+      <tr><td>Shell command ko seedha apne andar kyun nahi chalata?</td><td>Command khatam hote hi shell bhi khatam ho jaata. Isliye <code>fork</code> se child mein chalata hai.</td></tr>
+      <tr><td><code>cd</code> external hota to kya problem?</td><td>Child ki directory badalti, shell ki nahi. Prompt wahi rehta.</td></tr>
+      <tr><td><code>fork()</code> kya return karta hai?</td><td>Parent ko child ka pid, child ko 0, error pe -1.</td></tr>
+      <tr><td><code>exec</code> ke baad pid same kyun?</td><td>Exec naya process nahi banata, usi process ka program badalta hai.</td></tr>
+      <tr><td><code>execvp</code> fail ho to?</td><td>-1 return karta hai, <code>perror</code> print karke child <code>exit</code> karta hai (warna 2 shells ban jaate).</td></tr>
+      <tr><td>Foreground aur background mein fark?</td><td>Fork + exec dono mein same. Fark sirf ye ki parent wait karta hai ya nahi.</td></tr>
+      <tr><td>Builtin ke saath <code>&amp;</code> lagao to?</td><td>Ignore ho jaata hai, kyunki flag sirf tab dekha jaata hai jab builtin nahi hota.</td></tr>
+    </table>
+
+    <h3>Honest limitations (poochhe to seedha bolo)</h3>
+    <ul>
+      <li>"Fully POSIX compliant" nahi hai (README ka overclaim, mat bolna).</li>
+      <li>Quotes parse nahi hote. Builtins pipeline ke andar nahi chalte.</li>
+      <li><code>pinfo</code> <code>/proc</code> padhta hai, sirf Linux pe chalta hai.</li>
+      <li><code>fg</code>/<code>bg</code>/<code>jobs</code>, arrow-key history, autocomplete nahi hain.</li>
+      <li>Builtins background mein nahi chalte (<code>&amp;</code> ignore).</li>
+    </ul>
+
+    <h3>Ye mat bolna</h3>
+    <ul>
+      <li>"POSIX is a shell" &rarr; "POSIX-style shell".</li>
+      <li>"Tokenizes into commands" &rarr; <code>;</code> pe commands, spaces pe <b>tokens</b>.</li>
+      <li>"Fully POSIX compliant".</li>
+    </ul>
+  </section>
+
+  <section id="s11">
+    <h2>11. English speech (1 to 2 minute)</h2>
+    <p class="sub">Roughly 250 words, about 1.5 to 2 minutes at a normal pace. Learn the flow, not the exact words. Pause at each paragraph.</p>
+
+    <h3>Full version (~1.5 to 2 min)</h3>
+    <blockquote>
+      <p>"I built a POSIX-style shell in C++, using system calls. It started as an assignment in my Operating Systems course in the first semester, but I found it interesting, so in June 2026 I rebuilt it from scratch to understand every part properly.</p>
+      <p>The shell is a REPL: it prints a prompt, reads a line, executes it, and goes back to the prompt. It first splits the line on semicolons into separate commands, and then splits each command on spaces into tokens.</p>
+      <p>After that it makes a few decisions. Does the command contain a pipe or a redirection? Does it end with an ampersand, which means it should run in the background? And is it a built-in? Built-ins like <code>cd</code> run inside the shell process itself, because <code>cd</code> changes the shell's own current directory. If I ran it in a child process, the child would change its directory and exit, and the shell would stay where it was.</p>
+      <p>For external commands, like <code>cat</code> or <code>sleep</code>, the shell calls <code>fork</code> to create a child process, and the child calls <code>execvp</code> to replace itself with the actual program. The parent shell stays alive. For a foreground command, the parent waits for the child to finish. For a background command, it does not wait: it returns to the prompt immediately, and a job controller cleans up the finished child later.</p>
+      <p>Besides this, the shell supports pipelines, input and output redirection, Ctrl+C and Ctrl+Z handling, and a persistent command history."</p>
+    </blockquote>
+
+    <h3>Short version (~30 seconds)</h3>
+    <blockquote>"I built a POSIX-style shell in C++ using system calls, first as an Operating Systems assignment and then again from scratch in June 2026. It reads a line, splits it into commands and tokens, and decides whether it is a pipeline, a background job or a built-in. Built-ins like <code>cd</code> run inside the shell itself, while other commands run in a child process created with <code>fork</code> and <code>execvp</code>. The parent waits for foreground commands and returns immediately for background ones."</blockquote>
+
+    <h3>Likely follow-up you can pull from this</h3>
+    <ul>
+      <li><b>"Why fork?"</b> Because the shell must keep running after the command finishes.</li>
+      <li><b>"Why is <code>cd</code> a built-in?"</b> Current directory belongs to the process, so a child cannot change the shell's directory.</li>
+      <li><b>"What does fork return?"</b> Child's pid in the parent, 0 in the child, -1 on error.</li>
+      <li><b>"What did you do differently the second time?"</b> <span style="color:var(--warn)">[tumhara apna jawab: Phase 6 mein final karenge, apne words mein]</span></li>
+    </ul>
+    <div class="tip"><b>Dhyan:</b> "POSIX-style" bolna, "fully POSIX compliant" nahi. Speech mein pipelines, signals aur history sirf naam se bole hain, kyunki unki detail abhi padhi nahi. Phase 6 mein final speech unke saath upgrade hogi.</div>
+  </section>
+</main>
+</body>
+</html>

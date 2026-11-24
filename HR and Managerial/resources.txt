@@ -1,0 +1,15 @@
+https://in.mathworks.com/company/jobs/opportunities/8788?source=23731&s_eid=Rcv_23731
+
+https://in.mathworks.com/
+
+https://in.mathworks.com/company.html
+
+i have added the links that were given to us for preparing hr and managerial round and mathworks like to check the knowledge about company and you can actually see the seniors review as well
+
+now what i want you to do is that i want you to go through all the resources i listed and you can actually scrap the web as well platforms like : leetcode, oa helper, reddit, linkedin, etc etc scrap as much as you want and refer the seniors experience and then i want you to create material for both HR rounds and managerial round
+
+and i want tips on how to use mathworks info in my answers and how to relate my skills, my resume, my answers with mathworks
+
+i have uploaded the JD, my resume, additional_info.txt and you also have the seniors experience as well, other_experiences.txt
+
+you can create html files as output

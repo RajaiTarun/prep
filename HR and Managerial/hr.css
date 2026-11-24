@@ -1,0 +1,19 @@
+/* Extras for the HR + Managerial pages (base look comes from notes.css) */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+.chip { font: 500 11.5px/1 var(--mono); padding: 4px 7px; border-radius: 6px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.chip.src { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.chip.you { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.card h3 { margin: 0 0 6px; font-size: 16px; }
+.card p { margin: 0 0 8px; font-size: 14.5px; }
+.card a.go { font-weight: 600; font-size: 14px; }
+.fill { background: var(--warn-soft); color: var(--warn); border-radius: 4px; padding: 0 4px; font-weight: 500; }
+.script { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; padding: 12px 16px; margin: 10px 0 16px; }
+.script p { margin: 0 0 8px; }
+.script > :last-child { margin-bottom: 0; }
+.mini { font-size: 14px; color: var(--muted); }
+table.dense td, table.dense th { font-size: 14px; vertical-align: top; }
+ul.tight li { margin: 3px 0; }
+.q-body h4 { margin: 10px 0 4px; font: 600 12px/1 var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.q-body p, .q-body ul { margin: 0 0 8px; }

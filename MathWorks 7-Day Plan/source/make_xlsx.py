@@ -14,9 +14,9 @@ def finish(ws, widths):
     ws.freeze_panes = "A2"
 wb = Workbook()
 ws = wb.active; ws.title = "Week Overview"
-ws.append(["Day", "Date", "Type", "Theme", "Why this day", "Blocks", "9:30 PM Talk-aloud", "Done %"])
+ws.append(["Day", "Date", "Type", "Theme", "Why this day", "Blocks", "Non-tech slot (N, 8:30 AM)", "Done %"])
 for i, x in enumerate(d["days"], 2):
-    ws.append([f"Day {x['n']}", x["date"], x["kind"], x["title"], x["why"], " | ".join(f"{b['time']}: {b['name']}" for b in x["blocks"]), x["talk"],
+    ws.append([f"Day {x['n']}", x["date"], x["kind"], x["title"], x["why"], " | ".join(f"{b['L']} {b['time']}: {b['name']}" for b in x["blocks"]), " / ".join(it["x"] for b in x["blocks"] if b["k"] == "nt" for it in b["items"]),
                f"=COUNTIFS('Timetable Checklist'!A:A,A{i},'Timetable Checklist'!H:H,TRUE)/COUNTIF('Timetable Checklist'!A:A,A{i})"])
     ws.cell(row=i, column=8).number_format = "0%"
 finish(ws, [8, 12, 10, 26, 45, 60, 45, 9])
@@ -24,12 +24,11 @@ ws = wb.create_sheet("Timetable Checklist")
 ws.append(["Day", "Date", "Theme", "Block", "Time", "Task", "Exam-day?", "Done"])
 for x in d["days"]:
     for bi, b in enumerate(x["blocks"]):
-        blk = "Block " + "ABC"[bi] + ": " + b["name"]
+        blk = b["L"] + ": " + b["name"]
         for it in b["items"]:
             q = f"  [Quiz: {len(d['quiz'][it['quiz']])} Qs]" if it.get("quiz") else ""
             ws.append([f"Day {x['n']}", x["date"], x["title"], blk, b["time"], ("★ " if it["c"] else "") + it["x"] + (f" [{it['tag']}]" if it.get("tag") else "") + q, "Core (★)" if it["c"] else "Extra", False])
         if b.get("game"): ws.append([f"Day {x['n']}", x["date"], x["title"], blk, b["time"], "Game: " + b["game"], "Extra", False])
-    ws.append([f"Day {x['n']}", x["date"], x["title"], "Night: Talk-aloud", "9:30 - 9:55 PM", "★ " + x["talk"] + " Record it and listen once. Never skip, even on exam days.", "Core (★)", False])
 finish(ws, [7, 11, 22, 30, 15, 70, 11, 8])
 ws = wb.create_sheet("Quizzes")
 ws.append(["Day", "Block", "Topic", "#", "Type", "Question", "Code", "Options / follow-ups", "Answer (cover it first!)", "Why", "Got it right"])
@@ -46,7 +45,7 @@ for x in d["days"]:
                     opts = "\n".join(f"{j}. {s['q']}" for j, s in enumerate(q["steps"], 1)); ans = "\n".join(f"{j}. {s['a']}" for j, s in enumerate(q["steps"], 1)); why = "Answer each follow-up out loud before reading the model answer."
                 else:
                     opts = ""; ans = ("Bug: " if q["t"] == "bug" else "Output: ") + q["ans"]; why = q["why"]
-                row = [f"Day {x['n']}", "Block " + "ABC"[bi] + ": " + b["name"], d["titles"][k], i, names[q["t"]], q["q"], q.get("code") or "", opts, ans, why, False]
+                row = [f"Day {x['n']}", b["L"] + ": " + b["name"], d["titles"][k], i, names[q["t"]], q["q"], q.get("code") or "", opts, ans, why, False]
                 ws.append(row)
                 for c in ws[ws.max_row]:
                     if isinstance(c.value, str) and c.value.startswith("="): c.data_type = "s"

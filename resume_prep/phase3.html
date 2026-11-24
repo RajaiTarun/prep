@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 3: Components</title>
+<link rel="stylesheet" href="posix_notes.css">
+</head>
+<body>
+<main>
+<nav class="nav"><a href="posix_notes.html">Hub</a><a href="phase1.html">Phase 1</a><a href="phase2.html">Phase 2</a><span class="cur">Phase 3</span><a href="phase4.html">Phase 4</a><span class="off">Phase 5</span><span class="off">Phase 6</span></nav>
+  <h1>Phase 3: Components</h1>
+  <p class="sub">Component-by-component. Abhi sirf zombie (JobController) pehle se padha hua hai.</p>
+
+  <div class="warn"><b>Status: Phase 3 abhi shuru nahi hua.</b> Neeche ka zombie section Phase 1 ke dauran pehle hi padh liya tha. Phase 3 mein ye JobController component ke andar dobara aayega, tab detail aur code ke saath.</div>
+  <section id="zombie">
+    <h2>Zombie process: kya hai aur mere project mein kaise kaam karta hai <span class="tag">pehle se padha hua</span></h2>
+
+    <h3>Pehle analogy</h3>
+    <p>Ek <b>employee</b> (child) ne kaam khatam kiya aur office chhod diya. Lekin HR ke <b>register</b> (OS ka process table) mein uski entry abhi baaki hai: "naam, aur kaam kaise khatam hua". Kyunki uske <b>manager</b> (parent) ne abhi tak register dekha hi nahi. Jab tak manager ek baar poochta nahi, entry wahin padi rehti hai.</p>
+    <p>Wo entry hi <b>zombie</b> hai: banda jaa chuka hai, par register mein naam abhi bhi hai.</p>
+
+    <h3>Technical language mein</h3>
+    <ol>
+      <li>Child <code>exit</code> karta hai. OS uski memory, open files sab free kar deta hai.</li>
+      <li>Lekin OS process table mein ek <b>chhoti entry</b> rakh leta hai: <b>PID + exit status</b>. Kyun? Taaki parent baad mein pooch sake "mera child kaise khatam hua, kya exit code tha?"</li>
+      <li>Parent <code>wait()</code> / <code>waitpid()</code> call karta hai, to wo entry hat jaati hai. Isse <b>reaping</b> kehte hain.</li>
+      <li>Child ke exit aur parent ke <code>waitpid()</code> ke <b>beech ka time</b>: child ki state <b>Z (zombie / defunct)</b> hoti hai.</li>
+    </ol>
+    <figure>
+      <svg viewBox="0 0 760 150" role="img" aria-label="Child lifecycle: running, exit makes it a zombie, parent waitpid removes it">
+        <defs><marker id="ahz" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrowhead"/></marker></defs>
+        <rect class="box b-main" x="20" y="40" width="150" height="56" rx="8"/>
+        <text x="95" y="63" text-anchor="middle" class="title">RUNNING</text>
+        <text x="95" y="82" text-anchor="middle" class="small">sleep 5 chal raha hai</text>
+        <rect class="box b-warn" x="305" y="40" width="150" height="56" rx="8"/>
+        <text x="380" y="63" text-anchor="middle" class="title">ZOMBIE (Z)</text>
+        <text x="380" y="82" text-anchor="middle" class="small">mar chuka, entry baaki</text>
+        <rect class="box b-good" x="590" y="40" width="150" height="56" rx="8"/>
+        <text x="665" y="63" text-anchor="middle" class="title">GONE</text>
+        <text x="665" y="82" text-anchor="middle" class="small">entry hat gayi</text>
+        <path class="ln" d="M170,68 L305,68" marker-end="url(#ahz)"/>
+        <text x="237" y="58" text-anchor="middle" class="mono">exit</text>
+        <path class="ln-warn" d="M455,68 L590,68" marker-end="url(#ahz)"/>
+        <text x="522" y="58" text-anchor="middle" class="mono">parent: waitpid()</text>
+        <text x="380" y="130" text-anchor="middle" class="small">zombie ko kill nahi kar sakte (wo pehle se mara hua hai). Sirf parent ka waitpid() hata sakta hai.</text>
+      </svg>
+    </figure>
+    <div class="rule">Zombie = child mar chuka hai, par parent ne abhi tak <code>wait()</code> nahi kiya.</div>
+    <p><b>Problem kya hai?</b> Ek-do zombies harmless hain. Lekin agar parent kabhi wait na kare (lambe chalne wala shell), to process table ke slots bharte jaate hain, aur ek time pe <code>fork()</code> fail ho jaata hai.</p>
+
+    <h3>Mere project mein kaise kaam karta hai</h3>
+    <table>
+      <tr><th>Path</th><th>Zombie banta hai?</th><th>Kyun</th></tr>
+      <tr><td>Foreground (<code>execute_foreground</code>)</td><td>Nahi</td><td>Parent turant <code>waitpid(pid)</code> pe baitha hai. Child exit hote hi reap ho jaata hai.</td></tr>
+      <tr><td>Pipeline (<code>execute_pipeline</code>)</td><td>Nahi</td><td>Loop mein har <code>child_pids[i]</code> ke liye <code>waitpid</code>.</td></tr>
+      <tr><td>Background (<code>execute_background</code>)</td><td><b>Haan, banta hai</b></td><td>Parent jaan-boojhkar wait <b>nahi</b> karta (wahi to background hai). To child exit karke zombie ban jaata hai.</td></tr>
+    </table>
+    <p>Isiliye <code>JobController</code> hai. Ye background zombies ko saaf karta hai.</p>
+
+    <h3><code>sweepCompletedJobs()</code>: ye function ek-ek line mein</h3>
+<pre>while ((reapedPid = waitpid(-1, &amp;status, WNOHANG)) &gt; 0) {
+    // activeJobs mein ye pid dhoondo
+    // print: "[ id ] done  command"
+    // activeJobs se erase karo
+}</pre>
+    <table>
+      <tr><th>Cheez</th><th>Matlab</th></tr>
+      <tr><td><code>waitpid(-1, ...)</code></td><td><code>-1</code> = <b>koi bhi</b> child (kisi specific pid ka nahi)</td></tr>
+      <tr><td><code>WNOHANG</code></td><td><b>Ruko mat</b>. Koi child khatam nahi hua to turant return</td></tr>
+      <tr><td>Return &gt; 0</td><td>Ek child reap hua (ye uska pid hai). Loop dobara chalta hai</td></tr>
+      <tr><td>Return 0</td><td>Children hain, par abhi koi khatam nahi hua. Loop ruk jaata hai</td></tr>
+      <tr><td>Return -1</td><td>Koi child hai hi nahi. Loop ruk jaata hai</td></tr>
+    </table>
+    <p><b><code>WNOHANG</code> kyun zaroori hai?</b> Iske bina <code>waitpid</code> block karta. Agar background job abhi chal raha hai, to shell loop ke upar hi atak jaata, aur background ka matlab hi khatam ho jaata. <code>while</code> loop isliye hai ki ek saath <b>kai</b> finished jobs ek baar mein reap ho jaayein.</p>
+
+    <h3>Maine ye asli mein chalake verify kiya</h3>
+    <p>Mere shell mein <code>sleep 1 &amp;</code> chalaya aur shell ko prompt pe chhod diya (kuch type nahi kiya). 1-2 second baad <code>ps</code>:</p>
+<pre>PID    PPID   STAT  COMMAND
+14087  14084  ZN    &lt;defunct&gt;        ← sleep ka zombie, parent = shell (14084)</pre>
+    <p>Phir Enter dabaya: zombie <b>gayab</b> ho gaya aur screen par <code>[ 1 ] done sleep 1</code> aaya.</p>
+
+    <div class="warn"><b>Honest limitation:</b> <code>sweepCompletedJobs()</code> sirf <b>loop ke top par</b> chalta hai, yaani jab tum Enter dabate ho. Shell <code>getline</code> mein baitha ho to finished background job <b>zombie hi rehta hai</b> aur "done" message bhi tabhi aata hai jab agla command ka loop chale. Mere code mein <code>SIGCHLD</code> handler nahi hai. Production shell (bash) <code>SIGCHLD</code> pe turant reap karta hai. Ye interview mein trade-off ki tarah bol sakte ho: "simple polling approach, signal-safety ke jhanjhat se bachne ke liye".</div>
+
+    <h3>Zombie vs Orphan (interview mein dono saath poochte hain)</h3>
+    <table>
+      <tr><th></th><th>Zombie</th><th>Orphan</th></tr>
+      <tr><td>Kaun pehle mara?</td><td><b>Child</b> mara, parent zinda</td><td><b>Parent</b> mara, child zinda</td></tr>
+      <tr><td>Problem</td><td>Parent ne <code>wait()</code> nahi kiya, entry atki hai</td><td>Child ka parent nahi bacha</td></tr>
+      <tr><td>Kaun sambhalta hai</td><td>Parent ka <code>waitpid()</code></td><td><code>init</code> (pid 1) child ko adopt karke reap kar deta hai</td></tr>
+    </table>
+
+    <h3>Interview-ready jawab (30 sec)</h3>
+    <blockquote>"Jab child exit karta hai to OS uski entry process table mein rakhta hai taaki parent exit status le sake. Jab tak parent <code>waitpid</code> nahi karta, wo child zombie rehta hai. Mere shell mein foreground aur pipeline mein parent turant wait karta hai, to zombie nahi bante. Background jobs mein parent wait nahi karta, isliye <code>JobController::sweepCompletedJobs()</code> har loop ke start mein <code>waitpid(-1, WNOHANG)</code> chalata hai. WNOHANG se shell block nahi hota, aur finished jobs reap ho jaate hain."</blockquote>
+
+    <h3>Check karo</h3>
+    <p>Agar user <code>sleep 1 &amp;</code> chalake 10 minute tak kuch type na kare, to is beech us child ki state kya hogi aur kyun?</p>
+  </section>
+</main>
+</body>
+</html>

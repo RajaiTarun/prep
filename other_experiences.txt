@@ -1,0 +1,51 @@
+links : https://codinzhub.com/blog/guides/mathworks/engineering-development-group
+
+https://github.com/liquidslr/leetcode-company-wise-problems/tree/main/MathWorks
+
+https://grindmap.xevrion.dev/company/mathworks/
+
+experience 1 : 
+
+I recently interviewed for the Software Engineer/EDG role at MathWorks. The process had an online assessment followed by technical and HR/managerial rounds.
+
+The online test covered DSA, aptitude, OOP, OS, DBMS, and programming concepts, along with coding questions.
+
+The technical interviews focused mainly on DSA, C/C++, core CS fundamentals, and projects mentioned on my resume. I was asked to explain my approach and optimize my solutions rather than just give the final answer.
+
+The HR/managerial round was mostly about my projects, teamwork, strengths, weaknesses, and why I wanted to join MathWorks.
+
+Overall, the interview was challenging but fair. I would recommend being strong in DSA, CS fundamentals, and knowing your resume/projects thoroughly.
+
+experience 2 : 
+
+Round 3: Technical Interview
+
+The third round was the technical interview.
+
+First, they asked me 4 coding questions. They were around easy to medium level.
+
+After that, they asked me to write code for some OOPs concepts like virtual functions and the diamond problem.
+
+They also asked some questions from OOPs and OS.
+
+Round 4: Managerial Round
+
+The fourth round was the managerial round.
+
+Here, they mainly asked situational questions, such as:
+How will you lead a team?
+How will you handle a tight deadline?
+How will you handle a problem within your team?
+How will you manage different tasks?
+
+The main thing is to explain how you would handle the situation logically and calmly.
+
+Round 5: HR Round
+
+The final round was the HR round.
+
+They asked mainly behavioural questions like:
+Why MathWorks?
+What are your strengths?
+What are your weaknesses?
+Other general HR questions.

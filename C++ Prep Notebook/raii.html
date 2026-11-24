@@ -19,6 +19,8 @@
     <a href="gfg.html">GFG Questions</a>
     <a href="raii.html" aria-current="page">RAII</a>
     <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="topics.html">Topics</a>
+    <a href="gaps.html">Gaps (A)</a>
     <a href="playlist.html">Playlist</a>
     <a href="revision.html">Revision</a>
   </nav>
@@ -27,45 +29,61 @@
 <main class="page">
   <p class="eyebrow">Resource Acquisition Is Initialization</p>
   <h1>RAII</h1>
-  <p class="lede">Video lecture ke notes + interview depth. C++ ka sabse important idea, aur isi wajah se C++ ko garbage collector ki zaroorat nahi padti.</p>
+  <p class="lede">Interview level, simple flow mein: problem → idea → stack unwinding → standard library → traps → GC se comparison. Saare outputs GCC pe run karke verify kiye.</p>
 
   <nav class="toc" aria-label="On this page">
     <p>Is page pe</p>
     <ol>
-      <li><a href="#what">RAII kya hai</a></li>
-      <li><a href="#principles">2 core principles</a></li>
-      <li><a href="#why">Kyun zaroori hai</a></li>
-      <li><a href="#example">FileHandler example</a></li>
+      <li><a href="#problem">Problem: chhodna yaad rakhna mushkil</a></li>
+      <li><a href="#idea">RAII ka idea</a></li>
+      <li><a href="#unwinding">Stack unwinding</a></li>
       <li><a href="#stdlib">Standard library mein RAII</a></li>
+      <li><a href="#traps">Traps (simple version)</a></li>
       <li><a href="#gc">RAII vs Garbage Collector</a></li>
-      <li><a href="#traps">5 traps</a></li>
       <li><a href="#who">Constructor/destructor kaun likhta hai</a></li>
-      <li><a href="#interview">Interview mein kaise bolo</a></li>
+      <li><a href="#interview">Interview mein</a></li>
       <li><a href="#check">Self-check</a></li>
     </ol>
   </nav>
 
-  <h2 id="what">1. RAII kya hai? (ek line mein)</h2>
-  <div class="callout say"><span class="tag">Core idea</span>
-    <p><strong>Resource ki lifetime ko ek object ki lifetime se baandh do.</strong> Object bana → resource mila (constructor). Object scope se bahar gaya → resource chhoda (destructor).</p>
-  </div>
-  <p>Naam confusing hai, idea simple hai. Naam ka matlab: "resource lena = object ka initialize hona". Yaad rakhne ke liye ise <strong>"Scope-Bound Resource Management"</strong> samjho.</p>
-  <p><strong>Resource kya-kya ho sakta hai?</strong> Sirf memory nahi:</p>
+  <h2 id="problem">1. Problem: resource lena aasaan, chhodna yaad rakhna mushkil</h2>
+  <p><strong>Resource</strong> = koi bhi cheez jo lo toh wapas karni padti hai:</p>
   <div class="tbl"><table>
-    <tr><th>Resource</th><th>Lena (acquire)</th><th>Chhodna (release)</th></tr>
-    <tr><td>Heap memory</td><td><code>new</code> / <code>malloc</code></td><td><code>delete</code> / <code>free</code></td></tr>
-    <tr><td>File</td><td><code>open</code> / <code>fopen</code></td><td><code>close</code> / <code>fclose</code></td></tr>
+    <tr><th>Resource</th><th>Lena</th><th>Chhodna</th></tr>
+    <tr><td>Heap memory</td><td><code>new</code></td><td><code>delete</code></td></tr>
+    <tr><td>File</td><td><code>open</code></td><td><code>close</code></td></tr>
     <tr><td>Mutex lock</td><td><code>lock()</code></td><td><code>unlock()</code></td></tr>
     <tr><td>Network / DB connection</td><td>connect</td><td>disconnect</td></tr>
   </table></div>
-  <p>Har resource ka ek "lo" aur ek "wapas karo" hota hai. RAII ka kaam: <strong>"wapas karo" kabhi bhoolne mat do.</strong></p>
+  <p>Purane C style mein sab haath se:</p>
+<pre><code><span class="k">void</span> process() {
+    <span class="k">int</span>* data = <span class="k">new int</span>[100];
+    <span class="k">if</span> (kuchGadbad) <span class="k">throw</span> runtime_error(<span class="s">"error"</span>);   <span class="c">// ← yahan se nikal gaye</span>
+    <span class="k">delete</span>[] data;                                  <span class="c">// ← ye kabhi nahi chali</span>
+}</code></pre>
+<pre class="out crash">new int[100] liya
+catch: beech mein error  → delete kabhi nahi chala = LEAK</pre>
+  <p>Function se nikalne ke <strong>bahut raaste</strong> hain: beech mein <code>return</code>, exception, koi <code>if</code>. Har raaste pe <code>delete</code> yaad rakhna practically impossible hai.</p>
 
-  <h2 id="principles">2. RAII ke 2 core principles</h2>
-  <h3>Principle 1: Resource Acquisition (constructor mein lo)</h3>
-  <p>Object banta hai → <strong>constructor</strong> zaroori resource le leta hai. Example: <code>FileHandler</code> object bana → constructor ne file khol di.</p>
-  <h3>Principle 2: Resource Release (destructor mein chhodo)</h3>
-  <p>Object <strong>scope se bahar</strong> gaya (function khatam, block <code>}</code> khatam) ya <code>delete</code> hua → <strong>destructor apne aap</strong> chalta hai aur resource chhod deta hai.</p>
+  <h2 id="idea">2. RAII ka idea</h2>
+  <div class="callout say"><span class="tag">Core idea</span>
+    <p><strong>Resource ki zindagi ko ek object ki zindagi se baandh do.</strong> Constructor mein resource <strong>lo</strong>, destructor mein <strong>chhodo</strong>.</p>
+  </div>
+<pre><code><span class="k">class</span> Buffer {
+    <span class="k">int</span>* data;
+<span class="k">public</span>:
+    Buffer(<span class="k">int</span> n) : data(<span class="k">new int</span>[n]) { }   <span class="c">// constructor: LO</span>
+    ~Buffer() { <span class="k">delete</span>[] data; }           <span class="c">// destructor: CHHODO</span>
+};
 
+<span class="k">void</span> process() {
+    Buffer b(100);
+    <span class="k">if</span> (kuchGadbad) <span class="k">throw</span> runtime_error(<span class="s">"error"</span>);
+}   <span class="c">// ← b yahan khatam → destructor chalega hi chalega</span></code></pre>
+<pre class="out">Buffer: memory LI
+~Buffer: memory CHHODI      ← exception aaya phir bhi chhodi
+catch: beech mein error</pre>
+  <p><strong>Kaam kyun karta hai?</strong> C++ ki guarantee: <strong>stack pe bane object ka destructor scope khatam hote hi (<code>}</code> pe) chalta hai</strong>, chahe normal return ho, early return ho, ya exception. Delete yaad rakhna ab tumhara kaam nahi, compiler ka hai.</p>
   <figure class="diag">
     <svg viewBox="0 0 760 230" role="img" aria-label="Constructor acquires the resource, then the function body runs. Whether the body ends normally, returns early, or throws an exception, every path goes through the destructor, which releases the resource.">
       <defs>
@@ -92,125 +110,69 @@
     </svg>
     <figcaption>Scope se bahar nikalne ke teeno raste destructor se hoke guzarte hain. Isliye cleanup kabhi miss nahi hota.</figcaption>
   </figure>
-  <p><strong>Ye kaam kyun karta hai?</strong> C++ ki ek guarantee pe: <strong>stack object ka destructor scope khatam hote hi chalega, guaranteed.</strong> Programmer ko yaad nahi rakhna padta, compiler khud call daalta hai.</p>
 
-  <h2 id="why">3. RAII kyun zaroori hai? (3 reasons)</h2>
+  <h2 id="unwinding">3. Exception mein kaise: stack unwinding</h2>
+  <p>Exception phenka gaya toh C++ function se bahar nikalte waqt <strong>har local object ka destructor chalata hai</strong>, <strong>ulte order</strong> mein (jo baad mein bana, wo pehle marega):</p>
+<pre><code><span class="k">void</span> f() { Tag a(<span class="s">"A"</span>); Tag b(<span class="s">"B"</span>); Tag c(<span class="s">"C"</span>); <span class="k">throw</span> ...; }</code></pre>
+<pre class="out">bana: A   bana: B   bana: C
+mara: C   mara: B   mara: A     ← reverse order
+catch</pre>
+  <p>Ise <strong>stack unwinding</strong> kehte hain (interview mein ye shabd zaroor bolna). <strong>Reverse kyun?</strong> Baad wala object pehle wale pe depend kar sakta hai (pehle file khuli, phir uspe writer bana). Toh pehle writer jaaye, phir file band ho.</p>
+
+  <h2 id="stdlib">4. Real life mein RAII khud likhna kam padta hai</h2>
   <div class="tbl"><table>
-    <tr><th>Reason</th><th>Matlab</th></tr>
-    <tr><td><strong>Bhoolne ka risk khatam</strong></td><td><code>close()</code> / <code>delete</code> khud call nahi karna padta, toh leak nahi hota</td></tr>
-    <tr><td><strong>Exception safety</strong></td><td>Object banne ke baad aur destroy hone se pehle exception aaya, tab bhi destructor chalega aur cleanup hoga</td></tr>
-    <tr><td><strong>Clean code</strong></td><td>Har function mein cleanup ka jhanjhat nahi. Resource management "invisible / implicit" ho jaata hai</td></tr>
+    <tr><th>Class</th><th>Constructor mein</th><th>Destructor mein</th></tr>
+    <tr><td><code>vector</code>, <code>string</code></td><td>memory li</td><td>memory chhodi</td></tr>
+    <tr><td><code>unique_ptr</code>, <code>shared_ptr</code></td><td>object ka pointer liya</td><td><code>delete</code> kiya</td></tr>
+    <tr><td><code>fstream</code></td><td>file kholi</td><td>file band ki</td></tr>
+    <tr><td><code>lock_guard</code></td><td>mutex <strong>lock</strong></td><td>mutex <strong>unlock</strong></td></tr>
   </table></div>
-  <h3>Bina RAII ka dard (C style)</h3>
-<pre><code><span class="k">void</span> save() {
-    FILE* f = fopen(<span class="c">"log.txt"</span>, <span class="c">"w"</span>);
-    <span class="k">if</span> (error1) { fclose(f); <span class="k">return</span>; }   <span class="c">// har exit pe yaad rakhna</span>
-    <span class="k">if</span> (error2) { fclose(f); <span class="k">return</span>; }   <span class="c">// ek bhi bhoola = leak</span>
-    riskyFunction();                     <span class="c">// exception aaya? fclose kabhi nahi chalega!</span>
-    fclose(f);
-}</code></pre>
-  <p>Jitne exit points, utni baar <code>fclose</code>. Aur exception ka case toh handle hi nahi ho sakta.</p>
-
-  <h2 id="example">4. Code example: apna FileHandler</h2>
-<pre><code><span class="k">class</span> FileHandler {
-    FILE* file;
-<span class="k">public</span>:
-    FileHandler(<span class="k">const char</span>* name) {               <span class="c">// ACQUIRE</span>
-        file = fopen(name, <span class="c">"w"</span>);
-        <span class="k">if</span> (!file) <span class="k">throw</span> runtime_error(<span class="c">"open failed"</span>);
-        cout &lt;&lt; <span class="c">"Constructor: file opened\n"</span>;
-    }
-    ~FileHandler() {                              <span class="c">// RELEASE</span>
-        <span class="k">if</span> (file) fclose(file);
-        cout &lt;&lt; <span class="c">"Destructor: file closed\n"</span>;
-    }
-    <span class="k">void</span> write(<span class="k">const char</span>* msg) { fputs(msg, file); }
-
-    FileHandler(<span class="k">const</span> FileHandler&amp;) = <span class="k">delete</span>;            <span class="c">// copy band (Trap 2 dekho)</span>
-    FileHandler&amp; <span class="k">operator</span>=(<span class="k">const</span> FileHandler&amp;) = <span class="k">delete</span>;
-};
-
-<span class="k">void</span> risky() {
-    FileHandler fh(<span class="c">"log.txt"</span>);
-    fh.write(<span class="c">"hello\n"</span>);
-    <span class="k">throw</span> runtime_error(<span class="c">"something broke"</span>);       <span class="c">// exception!</span>
-}
-
-<span class="k">int</span> main() {
-    {
-        FileHandler fh(<span class="c">"log.txt"</span>);
-        fh.write(<span class="c">"hello\n"</span>);
-        cout &lt;&lt; <span class="c">"Scope end aa raha hai...\n"</span>;
-    }                                             <span class="c">// ← yahan destructor khud chala</span>
-
-    <span class="k">try</span> { risky(); }
-    <span class="k">catch</span> (<span class="k">const</span> exception&amp; e) { cout &lt;&lt; <span class="c">"Caught: "</span> &lt;&lt; e.what() &lt;&lt; <span class="c">"\n"</span>; }
-}</code></pre>
-<pre class="out">Constructor: file opened
-Scope end aa raha hai...
-Destructor: file closed
-Constructor: file opened
-<span class="hl">Destructor: file closed</span>        ← exception ke BAWAJOOD file band hui
-Caught: something broke</pre>
-  <p><strong>Dhyaan do:</strong> exception case mein <code>Destructor</code> <strong>catch se pehle</strong> print hua. Ye <strong>stack unwinding</strong> hai: exception <code>risky()</code> se bahar nikalte waqt uske saare local objects ke destructors chalte hain (Top30 Q29 mein <code>~R Base</code> wala output yahi tha). Developer ne <code>close</code> kahin call nahi kiya.</p>
-
-  <h2 id="stdlib">5. Real life mein RAII har jagah hai</h2>
-  <p>Standard library already RAII classes deti hai. Khud likhna rarely padta hai.</p>
-  <div class="tbl"><table>
-    <tr><th>Resource</th><th>RAII class</th><th>Constructor</th><th>Destructor</th></tr>
-    <tr><td>Heap memory (single owner)</td><td><code>std::unique_ptr</code></td><td>memory pakadta hai</td><td><code>delete</code> karta hai</td></tr>
-    <tr><td>Heap memory (shared)</td><td><code>std::shared_ptr</code></td><td>ref count = 1</td><td>count 0 hone pe <code>delete</code></td></tr>
-    <tr><td>Dynamic array</td><td><code>std::vector</code>, <code>std::string</code></td><td>memory allocate</td><td>memory free</td></tr>
-    <tr><td>File</td><td><code>std::ifstream</code> / <code>std::ofstream</code></td><td>file open</td><td>file close</td></tr>
-    <tr><td>Mutex</td><td><code>std::lock_guard</code>, <code>std::unique_lock</code></td><td><code>lock()</code></td><td><code>unlock()</code></td></tr>
-  </table></div>
-  <p>Smart pointers ki poori detail: <a href="smart-pointers.html">Smart Pointers</a> page.</p>
+  <p><strong>unique_ptr</strong> (detail: <a href="smart-pointers.html">Smart Pointers</a>):</p>
 <pre><code>{
-    unique_ptr&lt;<span class="k">int</span>&gt; p = make_unique&lt;<span class="k">int</span>&gt;(42);
-    cout &lt;&lt; *p;                    <span class="c">// 42</span>
-}                                  <span class="c">// delete apne aap, koi leak nahi</span></code></pre>
-  <h3>Mutex lock</h3>
-<pre><code>std::mutex m;
-<span class="k">void</span> update() {
-    std::lock_guard&lt;std::mutex&gt; lock(m);   <span class="c">// constructor: m.lock()</span>
-    sharedCounter++;
-    <span class="k">if</span> (bad) <span class="k">throw</span> ...;                    <span class="c">// exception? koi baat nahi</span>
-}                                          <span class="c">// destructor: m.unlock(), guaranteed</span></code></pre>
-  <p>Bina <code>lock_guard</code> ke, exception aane pe <code>unlock()</code> kabhi nahi chalta → baaki threads hamesha ke liye ruk jaate → <strong>deadlock</strong>. RAII ye bachata hai.</p>
+    unique_ptr&lt;Dog&gt; d = make_unique&lt;Dog&gt;();
+}   <span class="c">// delete nahi likha</span></code></pre>
+<pre class="out">Dog bana
+Dog gaya        ← apne aap</pre>
+  <p><strong>lock_guard</strong> (multithreading mein bahut poocha jaata hai):</p>
+<pre><code>{
+    lock_guard&lt;mutex&gt; g(m);     <span class="c">// lock</span>
+    <span class="c">// ... kaam ...</span>
+}                               <span class="c">// unlock apne aap, exception aaye tab bhi</span></code></pre>
+<pre class="out">lock liya:     try_lock = 0  (already locked)
+scope khatam:  try_lock = 1  (unlock ho chuka tha)</pre>
+  <p>Haath se <code>m.lock()</code>/<code>m.unlock()</code> likhte aur beech mein exception aata, toh lock kabhi nahi khulta. Baaki threads hamesha ke liye atak jaate: <strong>deadlock</strong>.</p>
 
-  <h2 id="gc">6. RAII vs Garbage Collector (Java)</h2>
-  <div class="tbl"><table>
-    <tr><th></th><th>RAII (C++)</th><th>Garbage Collector (Java)</th></tr>
-    <tr><td>Cleanup <strong>kab</strong></td><td><strong>Exactly</strong> scope ke end pe (deterministic)</td><td>Jab GC chale, pata nahi (non-deterministic)</td></tr>
-    <tr><td>Kya-kya handle</td><td><strong>Har resource</strong>: memory, file, lock, socket</td><td>Sirf <strong>memory</strong></td></tr>
-    <tr><td>Runtime cost</td><td>Kuch extra nahi</td><td>GC thread, pauses</td></tr>
-    <tr><td>File/lock ke liye</td><td>Destructor khud kar deta hai</td><td><code>try-with-resources</code> / <code>finally</code> likhna padta hai</td></tr>
-  </table></div>
-  <p>GFG Q77 bhi yahi kehta hai: Java ka try-with-resources C++ mein nahi hai, kyunki <strong>C++ ko uski zaroorat hi nahi, RAII hai.</strong></p>
+  <h2 id="traps">5. Traps (simple version)</h2>
+  <div class="callout tip"><span class="tag">Pehle ye rule pakka karo</span>
+    <p><strong>Destructor tab chalta hai jab object ka scope khatam ho, yaani <code>}</code> aate hi.</strong> RAII ka saara jaadu isi <code>}</code> pe hai. <strong>Trap 1 aur 2 important hain</strong>; 3 aur 4 bas ek ek line yaad rakho.</p>
+  </div>
 
-  <h2 id="traps">7. Traps (interviewer yahan pakadta hai)</h2>
-  <p>Saare traps ek sawaal pe tike hain: <strong>destructor kab chalta hai, aur kitni baar?</strong> RAII tabhi sahi chalta hai jab har resource ka destructor <strong>exactly ek baar</strong> chale. Trap 2 mein wo do baar chalta hai, Trap 3 mein ek baar bhi nahi, aur Trap 4 mein destructor khud gadbad karta hai.</p>
+  <h3 id="trap1">Trap 1: <code>new</code> se banaya toh <code>}</code> ka jaadu nahi chalta</h3>
+<pre><code>{
+    Buffer b;               <span class="c">// stack pe</span>
+}                           <span class="c">// } → b khatam → destructor chala ✅</span>
 
-  <h3 id="trap1">Trap 1: RAII sirf stack object pe automatic hai</h3>
-<pre><code>FileHandler* fh = <span class="k">new</span> FileHandler(<span class="c">"a.txt"</span>);   <span class="c">// heap pe</span>
-<span class="c">// delete bhool gaye → destructor kabhi nahi chalega → file kabhi band nahi</span></code></pre>
-  <p><strong>Fix:</strong> heap object ko bhi RAII mein lapeto: <code>auto fh = make_unique&lt;FileHandler&gt;("a.txt");</code>. <strong>Rule:</strong> Modern C++ mein raw <code>new</code>/<code>delete</code> likhna hi nahi chahiye.</p>
+{
+    Buffer* p = <span class="k">new</span> Buffer; <span class="c">// heap pe</span>
+}                           <span class="c">// } → sirf pointer p khatam hua</span>
+                            <span class="c">//      heap wala Buffer abhi bhi zinda ❌</span></code></pre>
+<pre class="out">stack:      LI → CHHODI      ✅
+heap (new): LI → (kuch nahi) ❌ leak</pre>
+  <p><code>new</code> se banaya object kisi <code>}</code> se bandha hi nahi. Wo tab tak zinda hai jab tak khud <code>delete</code> na karo. <strong>Fix:</strong> <code>unique_ptr</code>.</p>
+<pre><code>{
+    <span class="k">auto</span> u = make_unique&lt;Buffer&gt;();
+}   <span class="c">// } → unique_ptr khatam → wo khud delete karta hai ✅</span></code></pre>
+<pre class="out">unique_ptr: LI → CHHODI ✅</pre>
+  <p><strong>Yaad rakho:</strong> RAII object ko kabhi <code>new</code> se mat banao. Stack pe banao, ya <code>unique_ptr</code> mein rakho.</p>
 
-  <h3 id="trap2">Trap 2: Copy hua toh resource do baar free hoga</h3>
-  <p>Jab tum <code>Buffer b = a;</code> likhte ho aur khud ka copy constructor nahi likha, toh compiler ka default copy constructor <strong>har member ki value as-it-is copy</strong> karta hai. Member pointer hai toh <strong>sirf address copy hota hai, memory nahi</strong>. Isko <strong>shallow copy</strong> kehte hain (Top30 Q10).</p>
-<pre><code><span class="k">class</span> Buffer {
-    <span class="k">int</span>* data;
-<span class="k">public</span>:
-    Buffer()  { data = <span class="k">new int</span>[5]; cout &lt;&lt; <span class="c">"Constructor: memory li at "</span> &lt;&lt; data &lt;&lt; endl; }
-    ~Buffer() { cout &lt;&lt; <span class="c">"Destructor: delete "</span> &lt;&lt; data &lt;&lt; endl; <span class="k">delete</span>[] data; }
-};
-
-<span class="k">int</span> main() {
-    Buffer a;
-    Buffer b = a;      <span class="c">// default copy → shallow copy</span>
-    cout &lt;&lt; <span class="c">"main khatam"</span> &lt;&lt; endl;
-}</code></pre>
-
+  <h3 id="trap2">Trap 2: copy kiya toh ek cheez do baar delete</h3>
+  <p><strong>Analogy:</strong> ek locker, <strong>ek chaabi</strong>. Tumne duplicate chaabi bana ke dost ko de di. Jaate waqt tum locker tod ke phenk dete ho. Phir dost bhi <strong>wahi locker todne</strong> jaata hai, jo hai hi nahi. Crash.</p>
+<pre><code>Buffer a(10);    <span class="c">// a ke paas memory ka pointer (chaabi)</span>
+Buffer b = a;    <span class="c">// b ko SAME pointer mil gaya (duplicate chaabi)</span>
+}                <span class="c">// b ka destructor: delete ✅</span>
+                 <span class="c">// a ka destructor: wahi memory phir delete ❌</span></code></pre>
+<pre class="out crash">free(): double free detected   → crash</pre>
+  <p>Default copy sirf <strong>pointer</strong> copy karta hai, memory nahi (shallow copy). Do objects, ek memory, do baar delete.</p>
   <figure class="diag narrow">
     <svg viewBox="0 0 620 200" role="img" aria-label="After a shallow copy, a.data and b.data both hold address 0x2b0 and point to the same heap block. b's destructor deletes it first, then a's destructor deletes the same address again: double free.">
       <defs>
@@ -230,205 +192,80 @@ Caught: something broke</pre>
     </svg>
     <figcaption>Do objects, ek hi memory, aur dono sochte hain ki memory unki hai. Doosra <code>delete[]</code> already-free memory pe chalta hai.</figcaption>
   </figure>
-<pre class="out crash">Constructor: memory li at 0x562c609c82b0
-main khatam
-Destructor: delete 0x562c609c82b0     ← b ne free kiya
-Destructor: delete 0x562c609c82b0     ← a ne SAME address dobara free kiya
-free(): double free detected in tcache 2
-Aborted</pre>
-  <p><code>FileHandler</code> ke saath bilkul yahi hota hai: do objects, ek <code>FILE*</code>, do baar <code>fclose</code>.</p>
-  <h4>Fix 1: Copy band kar do</h4>
-<pre><code>FileHandler(<span class="k">const</span> FileHandler&amp;) = <span class="k">delete</span>;
-FileHandler&amp; <span class="k">operator</span>=(<span class="k">const</span> FileHandler&amp;) = <span class="k">delete</span>;</code></pre>
-  <p><code>= delete</code> ka matlab: "compiler, ye function mat banana." Ab koi copy karega toh <strong>compile error</strong> aayega. Galti runtime crash ki jagah compile time pe pakdi gayi. Ye isliye kiya kyunki <strong>ek file ka ek hi malik hona chahiye</strong>.</p>
-  <h4>Fix 2: Move allow karo</h4>
-  <p><strong>Move</strong> = malik badal do. Naya object resource le leta hai, purana <strong>khaali</strong> ho jaata hai (<code>nullptr</code>). Ab bhi malik ek hi hai, toh destructor bhi ek hi baar free karega. Copy = photocopy (do kaagaz ban gaye). Move = chaabi kisi aur ko dena (chaabi ek hi). <code>unique_ptr</code> exactly yahi karta hai: copy band, move allowed (<a href="smart-pointers.html#unique">detail</a>).</p>
+  <p><strong>Fix (sabse simple): duplicate chaabi banana hi band.</strong></p>
+<pre><code>Buffer(<span class="k">const</span> Buffer&amp;) = <span class="k">delete</span>;              <span class="c">// copy band</span>
+Buffer&amp; <span class="k">operator</span>=(<span class="k">const</span> Buffer&amp;) = <span class="k">delete</span>;   <span class="c">// copy assignment band</span></code></pre>
+<pre class="out err">Buffer b = a;  →  error: use of deleted function 'Buffer::Buffer(const Buffer&amp;)'</pre>
+  <p>Galti code chalne se pehle hi pakdi gayi. <code>unique_ptr</code> bhi yahi karta hai, isliye wo copy nahi hota (sirf move: chaabi kisi aur ko de di, apne paas nahi rahi). <strong>Aur bhi aasaan:</strong> class mein raw pointer rakho hi mat. <code>int* data</code> ki jagah <code>vector&lt;int&gt; data</code>, vector khud sambhaal lega. (Deep copy wala tareeka: <a href="playlist.html#v58">#58</a>.)</p>
 
-  <h3 id="trap3">Trap 3: Constructor ke beech mein exception, destructor chalega hi nahi</h3>
-  <div class="callout tip"><span class="tag">Rule</span>
-    <p><strong>Destructor sirf us object ka chalta hai jo poori tarah ban chuka ho</strong>, yaani jiska constructor pura khatam ho gaya. Lekin constructor fail ho jaye, toh bhi <strong>jo members already ban chuke hain, unke destructors chalte hain.</strong></p>
+  <h3 id="trap3">Trap 3 (ek line): destructor mein exception mat phenko</h3>
+  <p>Destructor ka kaam chupchaap safai karna hai. Safai karte karte hi ek aur problem khadi kar di, toh C++ program seedha band kar deta hai (<code>terminate</code>).</p>
+
+  <h3 id="trap4">Trap 4 (ek line): constructor beech mein fail hua toh destructor nahi chalta</h3>
+<pre class="out">Constructor chal raha hai:
+   1. file kholi        ✅
+   2. memory maangi     ❌ fail (exception)
+→ object poora bana hi nahi → destructor nahi chalega
+→ file khuli reh gayi (leak)</pre>
+  <p><strong>Fix:</strong> har resource ko uska apna RAII member do (jaise <code>unique_ptr</code>). Jo member ban chuka tha, wo <strong>khud</strong> saaf ho jaata hai:</p>
+<pre class="out">Bad  (raw pointer member):  file khuli → catch               ❌ file kabhi band nahi
+Good (unique_ptr member):   file khuli → file band → catch   ✅</pre>
+
+  <h3>Ek nazar mein</h3>
+  <div class="tbl"><table>
+    <tr><th>Trap</th><th>Ek line</th><th>Fix</th></tr>
+    <tr><td><strong>1</strong></td><td><code>new</code> se banaya toh <code>}</code> pe destructor nahi chalta</td><td><code>unique_ptr</code> ya stack</td></tr>
+    <tr><td><strong>2</strong></td><td>Copy kiya toh ek memory do baar delete</td><td>Copy <code>= delete</code>, ya <code>vector</code>/<code>unique_ptr</code> member</td></tr>
+    <tr><td>3</td><td>Destructor mein exception = program band</td><td>Destructor mein throw mat karo</td></tr>
+    <tr><td>4</td><td>Constructor fail = destructor nahi chalta</td><td>Har resource ka apna RAII member</td></tr>
+  </table></div>
+  <div class="callout tip"><span class="tag">Dhyan do</span>
+    <p>4 mein se 3 traps ka fix ek hi hai: <strong>raw <code>new</code> aur raw pointer avoid karo, <code>unique_ptr</code> / <code>vector</code> use karo.</strong> Ye kaise fix karte hain: <a href="smart-pointers.html">Smart Pointers</a>.</p>
   </div>
-  <div class="tbl"><table style="min-width:640px">
-    <tr><th>❌ Raw members</th><th>✅ RAII members</th></tr>
-    <tr><td style="width:50%"><pre style="margin:0"><code><span class="k">class</span> Two {
-    <span class="k">int</span>* a; <span class="k">int</span>* b;
-<span class="k">public</span>:
-    Two() {
-        a = <span class="k">new int</span>[5];
-        cout &lt;&lt; <span class="c">"a ki memory li\n"</span>;
-        <span class="k">throw</span> runtime_error(<span class="c">"b fail"</span>);
-        b = <span class="k">new int</span>[5];
-    }
-    ~Two() { <span class="k">delete</span>[] a; <span class="k">delete</span>[] b; }
-};</code></pre></td>
-    <td><pre style="margin:0"><code><span class="k">struct</span> Res {
-    <span class="k">const char</span>* name;
-    Res(<span class="k">const char</span>* n) : name(n)
-        { cout &lt;&lt; name &lt;&lt; <span class="c">" liya\n"</span>; }
-    ~Res() { cout &lt;&lt; name &lt;&lt; <span class="c">" chhoda\n"</span>; }
-};
-<span class="k">class</span> Two {
-    Res a; Res b;
-<span class="k">public</span>:
-    Two() : a(<span class="c">"A"</span>), b(<span class="c">"B"</span>)
-        { <span class="k">throw</span> runtime_error(<span class="c">"fail"</span>); }
-};</code></pre></td></tr>
-  </table></div>
 
-  <figure class="diag">
-    <svg viewBox="0 0 700 300" role="img" aria-label="With raw pointer members, the constructor allocates a, throws, and the destructor is skipped, so a leaks. With RAII members, A and B are constructed, the body throws, and B then A are destroyed, so nothing leaks.">
-      <defs><marker id="r3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker></defs>
-      <text class="d-tb" x="175" y="24" text-anchor="middle">Raw int* members</text>
-      <rect class="d-box" x="35" y="40" width="280" height="38" rx="6"/><text class="d-m" x="175" y="64" text-anchor="middle">a = new int[5]  ✓</text>
-      <line class="d-line" x1="175" y1="78" x2="175" y2="91" marker-end="url(#r3)"/>
-      <rect class="d-bad" x="35" y="92" width="280" height="38" rx="6"/><text class="d-m" x="175" y="116" text-anchor="middle">throw!</text>
-      <rect class="d-box d-dash" x="35" y="144" width="280" height="38" rx="6"/><text class="d-s" x="175" y="168" text-anchor="middle">b = new int[5]  (kabhi nahi chala)</text>
-      <path class="d-line" d="M35 111 L18 111 L18 253 L34 253" marker-end="url(#r3)"/>
-      <rect class="d-bad" x="35" y="226" width="280" height="54" rx="6"/><text class="d-tb" x="175" y="249" text-anchor="middle">~Two() skip → a LEAK</text><text class="d-s" x="175" y="267" text-anchor="middle">object pura bana hi nahi</text>
-
-      <text class="d-tb" x="525" y="24" text-anchor="middle">RAII members</text>
-      <rect class="d-box" x="385" y="40" width="280" height="38" rx="6"/><text class="d-m" x="525" y="64" text-anchor="middle">member A bana  ✓</text>
-      <line class="d-line" x1="525" y1="78" x2="525" y2="91" marker-end="url(#r3)"/>
-      <rect class="d-box" x="385" y="92" width="280" height="38" rx="6"/><text class="d-m" x="525" y="116" text-anchor="middle">member B bana  ✓</text>
-      <line class="d-line" x1="525" y1="130" x2="525" y2="143" marker-end="url(#r3)"/>
-      <rect class="d-bad" x="385" y="144" width="280" height="38" rx="6"/><text class="d-m" x="525" y="168" text-anchor="middle">constructor body: throw!</text>
-      <line class="d-line" x1="525" y1="182" x2="525" y2="225" marker-end="url(#r3)"/>
-      <rect class="d-good" x="385" y="226" width="280" height="54" rx="6"/><text class="d-tb" x="525" y="249" text-anchor="middle">~B, ~A chale → no leak</text><text class="d-s" x="525" y="267" text-anchor="middle">~Two() phir bhi skip (same rule)</text>
-    </svg>
-    <figcaption>Farak sirf members ke type ka hai. Bane hue members ke destructors chal jaate hain, isliye resource ko raw pointer ki jagah RAII member mein rakho.</figcaption>
-  </figure>
-<pre class="out">a ki memory li
-Caught: b lene mein fail          ← "Destructor" print hi nahi hua → a leak</pre>
-<pre class="out">A liya
-B liya
-B chhoda          ← member ka destructor chala
-A chhoda          ← reverse order
-Caught: constructor body fail</pre>
-  <p>Real code mein <code>Res</code> ki jagah <code>vector&lt;int&gt;</code> ya <code>unique_ptr&lt;int[]&gt;</code> use karoge. Yahi <a href="#who">Rule of Zero</a> hai.</p>
-
-  <h3 id="trap4">Trap 4: Destructor se exception mat phenko</h3>
-  <p>Exception aaya → C++ function se bahar nikalta hai → raste mein har local object ka destructor chalata hai (<strong>stack unwinding</strong>) → phir <code>catch</code> tak pahunchta hai. Agar <strong>cleanup ke dauraan hi</strong> ek destructor ne doosra exception phenk diya, toh hawa mein do exceptions ek saath hain. C++ ek waqt mein sirf ek handle kar sakta hai, isliye <code>std::terminate()</code> call karta hai aur program turant band.</p>
-  <figure class="diag">
-    <svg viewBox="0 0 760 120" role="img" aria-label="Exception one is thrown, stack unwinding runs the destructor, the destructor throws exception two, two exceptions are active at once, and std::terminate aborts the program.">
-      <defs><marker id="r4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker></defs>
-      <rect class="d-warn" x="10" y="30" width="132" height="56" rx="6"/><text class="d-tb" x="76" y="54" text-anchor="middle">throw #1</text><text class="d-s" x="76" y="72" text-anchor="middle">try ke andar</text>
-      <line class="d-line" x1="142" y1="58" x2="161" y2="58" marker-end="url(#r4)"/>
-      <rect class="d-box" x="162" y="30" width="132" height="56" rx="6"/><text class="d-tb" x="228" y="54" text-anchor="middle">unwinding</text><text class="d-s" x="228" y="72" text-anchor="middle">~Bad() chala</text>
-      <line class="d-line" x1="294" y1="58" x2="313" y2="58" marker-end="url(#r4)"/>
-      <rect class="d-warn" x="314" y="30" width="132" height="56" rx="6"/><text class="d-tb" x="380" y="54" text-anchor="middle">throw #2</text><text class="d-s" x="380" y="72" text-anchor="middle">destructor se</text>
-      <line class="d-line" x1="446" y1="58" x2="465" y2="58" marker-end="url(#r4)"/>
-      <rect class="d-bad" x="466" y="30" width="132" height="56" rx="6"/><text class="d-tb" x="532" y="54" text-anchor="middle">2 exceptions</text><text class="d-s" x="532" y="72" text-anchor="middle">ek saath</text>
-      <line class="d-line" x1="598" y1="58" x2="617" y2="58" marker-end="url(#r4)"/>
-      <rect class="d-bad" x="618" y="30" width="132" height="56" rx="6"/><text class="d-tb" x="684" y="54" text-anchor="middle">terminate()</text><text class="d-s" x="684" y="72" text-anchor="middle">Aborted</text>
-      <text class="d-s" x="380" y="112" text-anchor="middle">catch tak kabhi nahi pahuncha</text>
-    </svg>
-    <figcaption><code>try-catch</code> lagaya tha, phir bhi <code>Caught</code> kabhi print nahi hua.</figcaption>
-  </figure>
-<pre><code><span class="k">class</span> Bad {
-<span class="k">public</span>:
-    ~Bad() { cout &lt;&lt; <span class="c">"~Bad: exception phenk raha hoon"</span> &lt;&lt; endl;
-             <span class="k">throw</span> runtime_error(<span class="c">"from destructor"</span>); }
-};
-<span class="k">int</span> main() {
-    <span class="k">try</span> { Bad b; <span class="k">throw</span> runtime_error(<span class="c">"pehla exception"</span>); }
-    <span class="k">catch</span> (<span class="k">const</span> exception&amp; e) { cout &lt;&lt; <span class="c">"Caught: "</span> &lt;&lt; e.what() &lt;&lt; <span class="c">"\n"</span>; }
-}</code></pre>
-<pre class="out crash">~Bad: exception phenk raha hoon
-terminate called after throwing an instance of 'std::runtime_error'
-  what():  from destructor
-Aborted</pre>
-  <p><strong>"noexcept by default" ka matlab:</strong> <code>noexcept</code> = function ka promise ki "main exception nahi phenkunga." C++11 se <strong>har destructor apne aap <code>noexcept</code></strong> hota hai. Isliye pehla exception na bhi ho, destructor se exception nikla toh bhi <code>terminate()</code>. Compiler ne khud warning di thi:</p>
-<pre class="out err">warning: 'throw' will always call 'terminate'
-note: in C++11 destructors default to 'noexcept'</pre>
-  <p><strong>Fix:</strong> destructor ke andar koi kaam fail ho sakta hai, toh error ko andar hi handle karo (log ya ignore), bahar mat phenko:</p>
-<pre><code>~FileHandler() {
-    <span class="k">if</span> (file &amp;&amp; fclose(file) != 0) {
-        cerr &lt;&lt; <span class="c">"close failed\n"</span>;   <span class="c">// bas log kiya, throw nahi</span>
-    }
-}</code></pre>
-
-  <h3 id="trap5">Trap 5: Destruction order</h3>
-  <p>Ek scope mein kai RAII objects → <strong>reverse order</strong> mein destroy (Set 2 Q2). Lock pehle lo, file baad mein kholo, toh file pehle band hogi, lock baad mein chhootega. Order predictable hai.</p>
-
-  <h3>Traps ek nazar mein</h3>
+  <h2 id="gc">6. RAII vs Garbage Collector (Java)</h2>
   <div class="tbl"><table>
-    <tr><th>Trap</th><th>Destructor kitni baar</th><th>Result</th><th>Fix</th></tr>
-    <tr><td>1. Raw <code>new</code> on heap</td><td>Zero (delete bhoole)</td><td>Leak</td><td><code>make_unique</code></td></tr>
-    <tr><td>2. Shallow copy</td><td><strong>Do baar</strong></td><td>Double free, crash</td><td>Copy <code>= delete</code>, ya move</td></tr>
-    <tr><td>3. Constructor mein exception</td><td><strong>Zero</strong></td><td>Leak</td><td>Resources ko RAII members banao</td></tr>
-    <tr><td>4. Destructor se throw</td><td>Chala, par throw kiya</td><td><code>terminate()</code></td><td>Andar handle karo, throw nahi</td></tr>
-    <tr><td>5. Order</td><td>Reverse of construction</td><td>Predictable</td><td>Order ka fayda uthao</td></tr>
+    <tr><th></th><th>RAII (C++)</th><th>GC (Java)</th></tr>
+    <tr><td><strong>Kab saaf hota hai</strong></td><td>Scope khatam hote hi, <strong>exact pata hai</strong> (deterministic)</td><td>GC jab chahe, pata nahi kab</td></tr>
+    <tr><td><strong>Kya saaf hota hai</strong></td><td><strong>Koi bhi resource</strong>: memory, file, lock, socket</td><td>Sirf memory. File/lock ke liye <code>try-finally</code> alag se</td></tr>
+    <tr><td><strong>Overhead</strong></td><td>Koi background process nahi</td><td>GC thread, kabhi kabhi pause</td></tr>
   </table></div>
 
-  <h2 id="who">8. Constructor/destructor khud likhne padte hain ya C++ deta hai?</h2>
-  <p>Is sawaal mein do alag sawaal chhupe hain: <strong>call kaun karta hai</strong> aur <strong>likhta kaun hai</strong>.</p>
-  <h3>Call kaun karta hai? → Hamesha compiler</h3>
-<pre><code>{
-    FileHandler fh(<span class="c">"log.txt"</span>);   <span class="c">// compiler yahan constructor call daalta hai</span>
-    fh.write(<span class="c">"hello"</span>);
-}                                <span class="c">// compiler yahan destructor call daalta hai</span></code></pre>
-  <p>RAII ka asli jaadu yahi hai: <strong>call automatic hai</strong>, isliye bhool hi nahi sakte.</p>
-  <h3>Likhta kaun hai? → Resource pe depend karta hai</h3>
-  <p><strong>Case A: Ready-made RAII class use kar rahe ho → kuch nahi likhna.</strong> <code>vector</code>, <code>string</code>, <code>fstream</code>, smart pointers ke constructor/destructor library walon ne likh diye hain. Real code mein 90% time yahi hota hai.</p>
-<pre><code><span class="k">void</span> f() {
-    vector&lt;<span class="k">int</span>&gt; v(1000);        <span class="c">// constructor ne heap memory li</span>
-    ofstream file(<span class="c">"log.txt"</span>);   <span class="c">// constructor ne file kholi</span>
-}                               <span class="c">// dono ke destructors ne khud chhoda</span></code></pre>
-  <p><strong>Case B: Raw resource ko wrap kar rahe ho → tumhe likhna padega.</strong> <code>FILE*</code>, raw <code>new</code>, OS handles RAII nahi hain. <a href="#example">FileHandler</a> exactly yahi tha.</p>
-  <p><strong>Case C: Destructor nahi likha toh?</strong> Compiler ek default destructor bana deta hai jo sirf <strong>har member ka destructor call karta hai</strong>. Use nahi pata ki <code>FILE*</code> ko <code>fclose</code> karna hai ya pointer ko <code>delete</code>.</p>
-  <div class="tbl"><table style="min-width:600px">
-    <tr><th>❌ Leak</th><th>✅ No leak (Rule of Zero)</th></tr>
-    <tr><td style="width:50%"><pre style="margin:0"><code><span class="k">class</span> Bad {
-    <span class="k">int</span>* data;
-<span class="k">public</span>:
-    Bad() { data = <span class="k">new int</span>[100]; }
-    <span class="c">// destructor nahi likha</span>
-};</code></pre></td>
-    <td><pre style="margin:0"><code><span class="k">class</span> Good {
-    vector&lt;<span class="k">int</span>&gt; data;
-<span class="k">public</span>:
-    Good() : data(100) {}
-    <span class="c">// destructor ki zaroorat hi nahi</span>
-};</code></pre></td></tr>
-  </table></div>
-  <p>Default destructor <code>data</code> naam ka <strong>pointer variable</strong> (8 bytes ka address) hata dega, par jis memory pe wo point kar raha tha wo free nahi hogi. Pointer ek "address likha hua kaagaz" hai: kaagaz phenk diya, par ghar abhi bhi occupied hai. <code>Good</code> mein default destructor <code>vector</code> ka destructor call karta hai, aur wo memory free kar deta hai. Isi ko <strong>Rule of Zero</strong> kehte hain: members RAII rakho, khud ka destructor likhne ki zaroorat khatam.</p>
+  <h2 id="who">7. Constructor/destructor kaun likhta hai?</h2>
   <div class="tbl"><table>
-    <tr><th>Situation</th><th>Constructor/destructor kaun likhega?</th></tr>
-    <tr><td><code>vector</code>, <code>string</code>, <code>fstream</code>, smart pointers</td><td>Library ne likh diya, tum kuch nahi</td></tr>
-    <tr><td><code>FILE*</code>, raw <code>new</code>, OS handle wrap karna</td><td><strong>Tum khud</strong></td></tr>
-    <tr><td>Class ke members already RAII hain</td><td>Kuch nahi, compiler ka default kaafi (Rule of Zero)</td></tr>
+    <tr><th>Situation</th><th>Kaun likhega?</th></tr>
+    <tr><td><code>vector</code>, <code>string</code>, <code>fstream</code>, smart pointers use kar rahe ho</td><td>Library ne likh diya, tum kuch nahi</td></tr>
+    <tr><td><code>FILE*</code>, raw <code>new</code>, OS handle ko wrap karna</td><td><strong>Tum khud</strong></td></tr>
+    <tr><td>Class ke members already RAII hain (<code>vector</code>, <code>unique_ptr</code>)</td><td>Kuch nahi, default kaafi (<strong>Rule of Zero</strong>)</td></tr>
     <tr><td>Call kaun karta hai?</td><td><strong>Hamesha compiler</strong>, scope start/end pe</td></tr>
   </table></div>
+  <p>Destructor nahi likha aur member raw pointer hai toh default destructor sirf pointer (address) hatata hai, memory free nahi karta → leak. Member <code>vector</code> ho toh vector ka destructor khud free karta hai.</p>
 
-  <h2 id="interview">9. Interview mein kaise bolo</h2>
-  <div class="callout say"><span class="tag">30-second answer</span>
-    <p>"RAII ka matlab hai resource ki lifetime ko object ki lifetime se baandh dena. Constructor resource acquire karta hai, destructor release karta hai. C++ guarantee deta hai ki stack object ka destructor scope exit pe chalega, chahe normal return ho ya exception, toh resource kabhi leak nahi hota. Standard library mein <code>unique_ptr</code>, <code>shared_ptr</code>, <code>vector</code>, <code>fstream</code> aur <code>lock_guard</code> sab RAII hain. Isi wajah se C++ ko garbage collector ki zaroorat nahi padti, aur cleanup deterministic hota hai."</p>
+  <h2 id="interview">8. Interview mein</h2>
+  <div class="callout say"><span class="tag">Interview mein</span>
+    <p>"RAII stands for Resource Acquisition Is Initialization. The idea is to tie a resource's lifetime to an object's lifetime: the constructor acquires the resource and the destructor releases it. C++ guarantees that a stack object's destructor runs when it goes out of scope, whether the function returns normally, returns early or exits through an exception. During an exception, stack unwinding destroys all local objects in reverse order. So resources can never leak. The standard library is built on this: <code>vector</code> and <code>string</code> for memory, <code>unique_ptr</code> and <code>shared_ptr</code> for heap objects, <code>fstream</code> for files, and <code>lock_guard</code> for mutexes, which prevents a lock from staying held after an exception. The common pitfalls are creating the RAII object itself with raw <code>new</code>, and copying a class that owns a raw resource, which causes a double free; we prevent that by deleting the copy operations, implementing a deep copy, or better, following the Rule of Zero with <code>unique_ptr</code> or <code>vector</code> members. Compared to a garbage collector, RAII is deterministic and works for any resource, not just memory."</p>
   </div>
   <div class="tbl"><table>
-    <tr><th>Interviewer poochega</th><th>Jawab</th></tr>
-    <tr><td>Exception mein kaise kaam karta hai?</td><td>Stack unwinding: exception propagate hote waqt har scope ke local objects ke destructors reverse order mein chalte hain</td></tr>
-    <tr><td>GC se better kyun?</td><td>Deterministic timing + har resource handle karta hai, sirf memory nahi</td></tr>
-    <tr><td>RAII kab fail hota hai?</td><td>Raw <code>new</code> bina <code>delete</code>, ya RAII class ka shallow copy</td></tr>
-    <tr><td>Ek RAII example likho</td><td><code>lock_guard</code> ya apna <code>FileHandler</code></td></tr>
-    <tr><td><code>unique_ptr</code> copy kyun nahi hota?</td><td>Do owners ho jaate → double delete. Isliye sirf move</td></tr>
-    <tr><td>Destructor nahi likha toh?</td><td>Default sirf members ke destructors call karta hai. Raw pointer member → leak. Ya Rule of Three likho, ya better, member ko <code>vector</code>/<code>unique_ptr</code> bana do (Rule of Zero)</td></tr>
-    <tr><td>RAII class ek line mein?</td><td>"Har resource ka exactly ek malik, destructor exactly ek baar, bina throw kiye: copy disable, raw resources RAII members mein, destructors noexcept."</td></tr>
+    <tr><th>Follow-up</th><th>Short answer</th></tr>
+    <tr><td>How does it work with exceptions?</td><td>Stack unwinding: local objects' destructors run in reverse order of construction.</td></tr>
+    <tr><td>When does RAII fail?</td><td>When the RAII object is created with raw <code>new</code> and never deleted, or when it is shallow-copied.</td></tr>
+    <tr><td>Why can't <code>unique_ptr</code> be copied?</td><td>There would be two owners and a double delete, so it is move-only.</td></tr>
+    <tr><td>Can a destructor throw?</td><td>It should not. Destructors are <code>noexcept</code> by default, and throwing during unwinding calls <code>std::terminate</code>.</td></tr>
+    <tr><td>Give an RAII example.</td><td><code>lock_guard</code>: the constructor locks the mutex and the destructor unlocks it.</td></tr>
+    <tr><td>Why is RAII better than GC?</td><td>Cleanup is deterministic and it handles any resource, not just memory.</td></tr>
   </table></div>
-  <div class="callout tip"><span class="tag">MathWorks angle</span>
-    <p>"Bade, long-running software mein manual cleanup pe bharosa nahi kiya ja sakta. RAII se correctness compiler guarantee karta hai, programmer ki yaaddasht nahi. Isliye main apne code mein raw <code>new</code>/<code>delete</code> avoid karke smart pointers aur RAII wrappers use karta hoon."</p>
-  </div>
 
   <h2 id="check">Self-check</h2>
   <details class="qa"><summary>1. RAII ek line mein, aur ek example.</summary><div>
-    <p>Resource ki lifetime object ki lifetime se baandh do: constructor acquire, destructor release. Example: <code>lock_guard</code> constructor mein lock leta hai, scope khatam hote hi destructor unlock karta hai.</p></div></details>
-  <details class="qa"><summary>2. Exception aane pe bhi file kaise band hoti hai?</summary><div>
-    <p>Stack unwinding: exception function se bahar nikalte waqt us scope ke saare local objects ke destructors chalte hain, <code>catch</code> tak pahunchne se pehle.</p></div></details>
-  <details class="qa"><summary>3. RAII class ka shallow copy kyun crash karta hai, aur fix?</summary><div>
-    <p>Dono objects same pointer pakadte hain, dono ke destructors same resource free karte hain → double free. Fix: copy constructor aur copy assignment <code>= delete</code>, ya move allow karo.</p></div></details>
-  <details class="qa"><summary>4. Constructor beech mein throw kare toh kya leak hota hai?</summary><div>
-    <p>Us object ka destructor nahi chalta (object pura bana hi nahi), toh raw pointer members se li gayi memory leak hoti hai. Already-bane members ke destructors chal jaate hain, isliye resources RAII members mein rakho.</p></div></details>
-  <details class="qa"><summary>5. Destructor se exception kyun nahi phenkna chahiye?</summary><div>
-    <p>Destructors by default <code>noexcept</code> hain (C++11), aur stack unwinding ke dauraan doosra exception aaya toh do exceptions ek saath ho jaate hain. Dono cases mein <code>std::terminate()</code>.</p></div></details>
+    <p>Resource ki zindagi object ki zindagi se baandh do: constructor lo, destructor chhodo. Example: <code>lock_guard</code> constructor mein lock leta hai, <code>}</code> pe destructor unlock karta hai.</p></div></details>
+  <details class="qa"><summary>2. Exception aane pe bhi memory kaise free hoti hai?</summary><div>
+    <p>Stack unwinding: exception bahar nikalte waqt scope ke saare local objects ke destructors chalte hain (reverse order), <code>catch</code> tak pahunchne se pehle.</p></div></details>
+  <details class="qa"><summary>3. <code>Buffer* p = new Buffer;</code> mein RAII kyun fail hua?</summary><div>
+    <p><code>new</code> wala object kisi <code>}</code> se bandha nahi, toh destructor tab tak nahi chalta jab tak <code>delete</code> na karo. Fix: <code>make_unique&lt;Buffer&gt;()</code>.</p></div></details>
+  <details class="qa"><summary>4. RAII class copy karne pe crash kyun, aur fix?</summary><div>
+    <p>Default copy sirf pointer copy karta hai, toh do objects ek memory, do baar delete (double free). Fix: copy <code>= delete</code>, ya raw pointer ki jagah <code>vector</code>/<code>unique_ptr</code> member.</p></div></details>
+  <details class="qa"><summary>5. Trap 3 aur 4 ek ek line mein.</summary><div>
+    <p>3: destructor mein exception mat phenko, warna <code>terminate</code>. 4: constructor fail hua toh destructor nahi chalta, isliye har resource ko apna RAII member do.</p></div></details>
 
   <div class="footer-nav">
     <a href="gfg.html">← GFG Questions</a>

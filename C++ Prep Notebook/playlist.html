@@ -68,6 +68,8 @@
     <a href="gfg.html">GFG Questions</a>
     <a href="raii.html">RAII</a>
     <a href="smart-pointers.html">Smart Pointers</a>
+    <a href="topics.html">Topics</a>
+    <a href="gaps.html">Gaps (A)</a>
     <a href="playlist.html" aria-current="page">Playlist</a>
     <a href="revision.html">Revision</a>
   </nav>
@@ -1616,7 +1618,85 @@ qsort(arr, 5, <span class="k">sizeof</span>(<span class="k">int</span>), compare
       <details class="vid-body">
         <summary class="vid-head"><span class="check" aria-hidden="true"></span><span class="vnum">#19</span><h3>How To Return An Array From Function In C And C++?</h3><span class="meta"><span class="dur">8:28</span><span class="pill next">Notes</span><span class="chev" aria-hidden="true"></span></span></summary>
       <div class="notes">
-        <p>2D array return karne ke <strong>3 tareeke</strong>: dynamic array, static array, struct. (Problem wahi hai jo <a href="playlist.html#v18">#18</a> mein: local array function ke saath destroy ho jaata hai.)</p>
+        <h4>Problem: local array return karna</h4>
+<pre><code><span class="k">int</span>* getArray() {
+    <span class="k">int</span> arr[3] = {1, 2, 3};   <span class="c">// local array, function ke stack pe</span>
+    <span class="k">return</span> arr;               <span class="c">// sirf address return hota hai</span>
+}
+
+<span class="k">int</span>* p = getArray();
+cout &lt;&lt; p[0] &lt;&lt; p[1] &lt;&lt; p[2];</code></pre>
+<pre class="out crash">warning: address of local variable 'arr' returned
+Segmentation fault (core dumped)</pre>
+        <ul>
+          <li>Compile ho jaata hai, par <strong>runtime pe crash</strong>.</li>
+          <li>Function khatam hote hi uske <strong>local variables destroy</strong> ho jaate hain, <code>arr</code> bhi.</li>
+          <li>Array copy hoke wapas nahi aata. Sirf uska <strong>address</strong> aata hai, jo ab destroyed memory ki taraf point kar raha hai (dangling pointer).</li>
+        </ul>
+        <div class="callout trap"><span class="tag">Yaad rakho</span>
+          <p>Local variable ka <strong>pointer</strong> ya <strong>reference</strong> kabhi return mat karo.</p>
+        </div>
+
+        <h4>Way 1: <code>static</code> array</h4>
+<pre><code><span class="k">int</span>* getArray() {
+    <span class="k">static int</span> arr[3] = {1, 2, 3};   <span class="c">// static: destroy nahi hoga</span>
+    <span class="k">return</span> arr;
+}</code></pre>
+<pre class="out">static: 1 2 3</pre>
+        <p><code>static</code> memory <strong>program khatam hone tak</strong> rehti hai (global memory jaisi). Function se bahar aane pe bhi array zinda hai, toh address safe hai.</p>
+
+        <h4>Way 2: dynamic array (<code>new</code>)</h4>
+<pre><code><span class="k">int</span>* getArray() {
+    <span class="k">int</span>* arr = <span class="k">new int</span>[3];   <span class="c">// heap pe bana</span>
+    arr[0] = 1; arr[1] = 2; arr[2] = 3;
+    <span class="k">return</span> arr;
+}
+
+<span class="k">int</span>* h = getArray();
+<span class="c">// ... use karo ...</span>
+<span class="k">delete</span>[] h;                   <span class="c">// ⚠️ delete karna tumhari zimmedari</span></code></pre>
+<pre class="out">heap:   1 2 3</pre>
+        <p><code>new</code> (ya <code>malloc</code>) ki memory <strong>heap</strong> pe banti hai, function ke stack pe nahi. Function khatam hone pe sirf local pointer <code>arr</code> jaata hai, heap wala data rehta hai. Array ke liye <code>delete[]</code> likhna.</p>
+
+        <figure class="diag">
+          <svg viewBox="0 0 600 220" role="img" aria-label="The getArray stack frame holds a local array that is destroyed on return. main holds pointer p equal to 0x15, which points to a 12-byte array on the heap that survives the function.">
+            <defs><marker id="m19" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-acc"/></marker></defs>
+            <text class="d-tb" x="150" y="22" text-anchor="middle">Stack</text>
+            <rect class="d-bad" x="40" y="34" width="220" height="74" rx="6"/>
+            <text class="d-tb" x="150" y="56" text-anchor="middle">getArray() frame</text>
+            <text class="d-m" x="150" y="78" text-anchor="middle">int arr[3] = 1 2 3</text>
+            <text class="d-sbad" x="150" y="98" text-anchor="middle">return ke baad destroy ❌</text>
+            <rect class="d-box" x="40" y="116" width="220" height="74" rx="6"/>
+            <text class="d-tb" x="150" y="138" text-anchor="middle">main() frame</text>
+            <text class="d-m" x="150" y="162" text-anchor="middle">int* h = 0x15</text>
+            <text class="d-tb" x="460" y="22" text-anchor="middle">Heap</text>
+            <text class="d-s" x="460" y="108" text-anchor="middle">address 0x15 · 12 bytes</text>
+            <rect class="d-good" x="360" y="116" width="200" height="74" rx="6"/>
+            <text class="d-m" x="460" y="148" text-anchor="middle">1  2  3</text>
+            <text class="d-sgood" x="460" y="172" text-anchor="middle">function ke baad bhi zinda ✅</text>
+            <line class="d-line-acc" x1="262" y1="158" x2="356" y2="158" marker-end="url(#m19)"/>
+            <text class="d-sacc" x="309" y="150" text-anchor="middle">points to</text>
+          </svg>
+          <figcaption>Stack wala array function ke saath khatam. Heap wala array tab tak rehta hai jab tak <code>delete[]</code> na karo, isliye uska address return karna safe hai.</figcaption>
+        </figure>
+
+        <div class="callout tip"><span class="tag">Ek line mein</span>
+          <p>Local array ka address return karna = crash. Array ko <strong><code>static</code></strong> banao ya <strong><code>new</code></strong> se heap pe banao (aur baad mein <code>delete[]</code>).</p>
+        </div>
+
+        <div class="callout say"><span class="tag">Interview mein</span>
+          <p>"Returning a local array from a function is a bug. The array lives on the function's stack and is destroyed when the function returns; only its address is returned, so the caller gets a dangling pointer, and using it is undefined behavior, often a crash. In general we should never return a pointer or reference to a local variable. There are two simple fixes. First, declare the array <code>static</code>, so it lives until the program ends. Second, allocate it on the heap with <code>new</code> and return the pointer; the memory survives the function, but the caller is then responsible for freeing it with <code>delete[]</code>."</p>
+        </div>
+      </div>
+      </details>
+    </article>
+
+    <!-- #18 -->
+    <article class="vid" id="v18" data-num="18" data-batch="B" data-done="true" data-short="How To Return 2D Array From Function">
+      <details class="vid-body">
+        <summary class="vid-head"><span class="check" aria-hidden="true"></span><span class="vnum">#18</span><h3>How To Return 2D Array From Function In C &amp; C++</h3><span class="meta"><span class="dur">9:17</span><span class="pill next">Notes</span><span class="chev" aria-hidden="true"></span></span></summary>
+      <div class="notes">
+        <p>2D array return karne ke <strong>3 tareeke</strong>: dynamic array, static array, struct. (Problem wahi hai jo <a href="playlist.html#v19">#19</a> mein: local array function ke saath destroy ho jaata hai.)</p>
 
         <h4>Way 1: dynamic 2D array (<code>int**</code>)</h4>
 <pre><code><span class="k">int</span>** getArray() {
@@ -1634,18 +1714,18 @@ qsort(arr, 5, <span class="k">sizeof</span>(<span class="k">int</span>), compare
 d[2][1] = 3</pre>
         <figure class="diag">
           <svg viewBox="0 0 560 200" role="img" aria-label="arr of type int** points to an array of three int pointers. arr[0], arr[1] and arr[2] each point to their own row of three ints: 0 1 2, 1 2 3, 2 3 4. arr[2][1] is highlighted with value 3.">
-            <defs><marker id="m19" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-acc"/></marker></defs>
+            <defs><marker id="m18" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-acc"/></marker></defs>
             <text class="d-s" x="215" y="24" text-anchor="middle">new int*[3]</text>
             <text class="d-s" x="420" y="24" text-anchor="middle">new int[3]  (loop mein 3 baar)</text>
             <rect class="d-box" x="20" y="90" width="90" height="40" rx="6"/><text class="d-m" x="65" y="115" text-anchor="middle">arr</text>
             <text class="d-s" x="65" y="148" text-anchor="middle">int**</text>
-            <polyline class="d-line-acc" points="112,110 140,110 140,60 166,60" marker-end="url(#m19)"/>
+            <polyline class="d-line-acc" points="112,110 140,110 140,60 166,60" marker-end="url(#m18)"/>
             <rect class="d-acc" x="170" y="40" width="90" height="40" rx="6"/><text class="d-m" x="215" y="65" text-anchor="middle">arr[0]</text>
             <rect class="d-acc" x="170" y="90" width="90" height="40" rx="6"/><text class="d-m" x="215" y="115" text-anchor="middle">arr[1]</text>
             <rect class="d-acc" x="170" y="140" width="90" height="40" rx="6"/><text class="d-m" x="215" y="165" text-anchor="middle">arr[2]</text>
-            <line class="d-line-acc" x1="262" y1="60" x2="326" y2="60" marker-end="url(#m19)"/>
-            <line class="d-line-acc" x1="262" y1="110" x2="326" y2="110" marker-end="url(#m19)"/>
-            <line class="d-line-acc" x1="262" y1="160" x2="326" y2="160" marker-end="url(#m19)"/>
+            <line class="d-line-acc" x1="262" y1="60" x2="326" y2="60" marker-end="url(#m18)"/>
+            <line class="d-line-acc" x1="262" y1="110" x2="326" y2="110" marker-end="url(#m18)"/>
+            <line class="d-line-acc" x1="262" y1="160" x2="326" y2="160" marker-end="url(#m18)"/>
             <rect class="d-box" x="330" y="40" width="60" height="40"/><text class="d-m" x="360" y="65" text-anchor="middle">0</text>
             <rect class="d-box" x="390" y="40" width="60" height="40"/><text class="d-m" x="420" y="65" text-anchor="middle">1</text>
             <rect class="d-box" x="450" y="40" width="60" height="40"/><text class="d-m" x="480" y="65" text-anchor="middle">2</text>
@@ -1712,84 +1792,6 @@ fill(mine);</code></pre>
 
         <div class="callout say"><span class="tag">Interview mein</span>
           <p>"There are three common ways to return a 2D array. First, allocate it dynamically: an array of row pointers with <code>new int*[n]</code>, then each row with <code>new int[n]</code>, and return the <code>int**</code>; it survives because it lives on the heap, but the caller must delete each row and then the outer array. Second, make it a <code>static</code> array and return a pointer to its rows, like <code>int (*)[3]</code>; a <code>typedef</code> makes that syntax readable, and the column size must be a constant. Third, wrap the array in a struct and return the struct by value, which copies every element, so it gets slow for large arrays. In practice we usually avoid returning arrays: the caller creates the array and passes it in, and the function just fills it."</p>
-        </div>
-      </div>
-      </details>
-    </article>
-
-    <!-- #18 -->
-    <article class="vid" id="v18" data-num="18" data-batch="B" data-done="true" data-short="How To Return 2D Array From Function">
-      <details class="vid-body">
-        <summary class="vid-head"><span class="check" aria-hidden="true"></span><span class="vnum">#18</span><h3>How To Return 2D Array From Function In C &amp; C++</h3><span class="meta"><span class="dur">9:17</span><span class="pill next">Notes</span><span class="chev" aria-hidden="true"></span></span></summary>
-      <div class="notes">
-        <h4>Problem: local array return karna</h4>
-<pre><code><span class="k">int</span>* getArray() {
-    <span class="k">int</span> arr[3] = {1, 2, 3};   <span class="c">// local array, function ke stack pe</span>
-    <span class="k">return</span> arr;               <span class="c">// sirf address return hota hai</span>
-}
-
-<span class="k">int</span>* p = getArray();
-cout &lt;&lt; p[0] &lt;&lt; p[1] &lt;&lt; p[2];</code></pre>
-<pre class="out crash">warning: address of local variable 'arr' returned
-Segmentation fault (core dumped)</pre>
-        <ul>
-          <li>Compile ho jaata hai, par <strong>runtime pe crash</strong>.</li>
-          <li>Function khatam hote hi uske <strong>local variables destroy</strong> ho jaate hain, <code>arr</code> bhi.</li>
-          <li>Array copy hoke wapas nahi aata. Sirf uska <strong>address</strong> aata hai, jo ab destroyed memory ki taraf point kar raha hai (dangling pointer).</li>
-        </ul>
-        <div class="callout trap"><span class="tag">Yaad rakho</span>
-          <p>Local variable ka <strong>pointer</strong> ya <strong>reference</strong> kabhi return mat karo.</p>
-        </div>
-
-        <h4>Way 1: <code>static</code> array</h4>
-<pre><code><span class="k">int</span>* getArray() {
-    <span class="k">static int</span> arr[3] = {1, 2, 3};   <span class="c">// static: destroy nahi hoga</span>
-    <span class="k">return</span> arr;
-}</code></pre>
-<pre class="out">static: 1 2 3</pre>
-        <p><code>static</code> memory <strong>program khatam hone tak</strong> rehti hai (global memory jaisi). Function se bahar aane pe bhi array zinda hai, toh address safe hai.</p>
-
-        <h4>Way 2: dynamic array (<code>new</code>)</h4>
-<pre><code><span class="k">int</span>* getArray() {
-    <span class="k">int</span>* arr = <span class="k">new int</span>[3];   <span class="c">// heap pe bana</span>
-    arr[0] = 1; arr[1] = 2; arr[2] = 3;
-    <span class="k">return</span> arr;
-}
-
-<span class="k">int</span>* h = getArray();
-<span class="c">// ... use karo ...</span>
-<span class="k">delete</span>[] h;                   <span class="c">// ⚠️ delete karna tumhari zimmedari</span></code></pre>
-<pre class="out">heap:   1 2 3</pre>
-        <p><code>new</code> (ya <code>malloc</code>) ki memory <strong>heap</strong> pe banti hai, function ke stack pe nahi. Function khatam hone pe sirf local pointer <code>arr</code> jaata hai, heap wala data rehta hai. Array ke liye <code>delete[]</code> likhna.</p>
-
-        <figure class="diag">
-          <svg viewBox="0 0 600 220" role="img" aria-label="The getArray stack frame holds a local array that is destroyed on return. main holds pointer p equal to 0x15, which points to a 12-byte array on the heap that survives the function.">
-            <defs><marker id="m18" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-acc"/></marker></defs>
-            <text class="d-tb" x="150" y="22" text-anchor="middle">Stack</text>
-            <rect class="d-bad" x="40" y="34" width="220" height="74" rx="6"/>
-            <text class="d-tb" x="150" y="56" text-anchor="middle">getArray() frame</text>
-            <text class="d-m" x="150" y="78" text-anchor="middle">int arr[3] = 1 2 3</text>
-            <text class="d-sbad" x="150" y="98" text-anchor="middle">return ke baad destroy ❌</text>
-            <rect class="d-box" x="40" y="116" width="220" height="74" rx="6"/>
-            <text class="d-tb" x="150" y="138" text-anchor="middle">main() frame</text>
-            <text class="d-m" x="150" y="162" text-anchor="middle">int* h = 0x15</text>
-            <text class="d-tb" x="460" y="22" text-anchor="middle">Heap</text>
-            <text class="d-s" x="460" y="108" text-anchor="middle">address 0x15 · 12 bytes</text>
-            <rect class="d-good" x="360" y="116" width="200" height="74" rx="6"/>
-            <text class="d-m" x="460" y="148" text-anchor="middle">1  2  3</text>
-            <text class="d-sgood" x="460" y="172" text-anchor="middle">function ke baad bhi zinda ✅</text>
-            <line class="d-line-acc" x1="262" y1="158" x2="356" y2="158" marker-end="url(#m18)"/>
-            <text class="d-sacc" x="309" y="150" text-anchor="middle">points to</text>
-          </svg>
-          <figcaption>Stack wala array function ke saath khatam. Heap wala array tab tak rehta hai jab tak <code>delete[]</code> na karo, isliye uska address return karna safe hai.</figcaption>
-        </figure>
-
-        <div class="callout tip"><span class="tag">Ek line mein</span>
-          <p>Local array ka address return karna = crash. Array ko <strong><code>static</code></strong> banao ya <strong><code>new</code></strong> se heap pe banao (aur baad mein <code>delete[]</code>).</p>
-        </div>
-
-        <div class="callout say"><span class="tag">Interview mein</span>
-          <p>"Returning a local array from a function is a bug. The array lives on the function's stack and is destroyed when the function returns; only its address is returned, so the caller gets a dangling pointer, and using it is undefined behavior, often a crash. In general we should never return a pointer or reference to a local variable. There are two simple fixes. First, declare the array <code>static</code>, so it lives until the program ends. Second, allocate it on the heap with <code>new</code> and return the pointer; the memory survives the function, but the caller is then responsible for freeing it with <code>delete[]</code>."</p>
         </div>
       </div>
       </details>
@@ -4023,7 +4025,7 @@ Counter t3;  t3 = *this;  → copy assignment chala   (t3 pehle se bana tha)</pr
         <h4>Step 6: return types alag kyun?</h4>
         <ul>
           <li><strong>Pre → <code>Counter&amp;</code> (reference):</strong> badha hua object khud <code>c</code> hi hai. Uska reference de do, copy ki zaroorat nahi. Bonus: <code>++(++c)</code> bhi chalta hai (c 7 se 9 ho gaya).</li>
-          <li><strong>Post → <code>Counter</code> (by value):</strong> <code>temp</code> ek <strong>local variable</strong> hai. Function khatam, temp khatam. Local ka reference return kiya toh dangling (<a href="playlist.html#v18">#18</a> wala rule). Isliye copy return karte hain.</li>
+          <li><strong>Post → <code>Counter</code> (by value):</strong> <code>temp</code> ek <strong>local variable</strong> hai. Function khatam, temp khatam. Local ka reference return kiya toh dangling (<a href="playlist.html#v19">#19</a> wala rule). Isliye copy return karte hain.</li>
         </ul>
 <pre class="out err">post mein Counter&amp; return kiya:
 warning: reference to local variable 'temp' returned</pre>
@@ -4082,7 +4084,7 @@ int:       ++(++i) → i = 7   ✅</pre>
 <pre><code>Counter&amp; <span class="k">operator</span>++(<span class="k">int</span>) { Counter temp = *<span class="k">this</span>; x = x + 1; <span class="k">return</span> temp; }   <span class="c">// ❌</span></code></pre>
 <pre class="out crash">warning: reference to local variable 'temp' returned
 Segmentation fault</pre>
-          <p><code>temp</code> <strong>local variable</strong> hai: function khatam, temp destroy. Reference mein sirf "temp yahan hai" jaata hai, aur wahan kuch bacha nahi (dangling, <a href="playlist.html#v18">#18</a> wala rule). <strong>Seekh:</strong> reference sirf us cheez ka return karo jo <strong>function ke baad bhi zinda</strong> rahe. <code>*this</code> (i) zinda rehta hai ✅, <code>temp</code> nahi ❌.</p>
+          <p><code>temp</code> <strong>local variable</strong> hai: function khatam, temp destroy. Reference mein sirf "temp yahan hai" jaata hai, aur wahan kuch bacha nahi (dangling, <a href="playlist.html#v19">#19</a> wala rule). <strong>Seekh:</strong> reference sirf us cheez ka return karo jo <strong>function ke baad bhi zinda</strong> rahe. <code>*this</code> (i) zinda rehta hai ✅, <code>temp</code> nahi ❌.</p>
         </div>
 
         <div class="callout tip"><span class="tag">Ek line mein</span>
@@ -4468,25 +4470,123 @@ w.insert(w.begin(), 0);          <span class="c">// baaki 5 elements ek ek aage 
           <p>Is lecture ka transcript nahi tha. Ye notes standard points se banaye hain, sab code se verify kiye.</p>
         </div>
 
-        <h4>Problem: name clash</h4>
-        <p><code>std</code> namespace mein hazaaron naam hain: <code>count</code>, <code>max</code>, <code>find</code>, <code>distance</code>... <code>using namespace std;</code> ye <strong>saare naam</strong> tumhare code mein khol deta hai. Tumne apna variable usi naam se banaya toh compiler confuse:</p>
-<pre><code><span class="k">#include</span> &lt;algorithm&gt;
-<span class="k">using namespace</span> std;
-<span class="k">int</span> count = 0;          <span class="c">// mera count</span>
-<span class="k">int</span> main() { count++; }   <span class="c">// mera wala ya std::count?</span></code></pre>
-<pre class="out err">error: reference to 'count' is ambiguous</pre>
-        <p>Same code bina <code>using namespace std;</code> ke chal jaata hai (<code>count = 1</code>). Aaj chal raha code bhi kal toot sakta hai, jab library mein koi naya naam add ho.</p>
+        <h4>Pehle: namespace = surname</h4>
+        <p>Class mein <strong>do Rahul</strong> hain (Rahul Sharma, Rahul Verma). Teacher sirf "Rahul!" bole toh dono khade ho jaayenge, isliye surname ke saath bulata hai. C++ mein <strong>namespace = surname</strong>: standard library ke saare naam <code>std</code> surname ke andar hain (<code>std::cout</code>, <code>std::count</code>, <code>std::max</code>...). Surname laga hai toh kabhi confusion nahi.</p>
+        <p><code>using namespace std;</code> bolta hai: <strong>"std family ke sab logon ka surname hata do."</strong> Aur std family mein <strong>hazaaron naam</strong> hain: <code>count</code>, <code>max</code>, <code>min</code>, <code>find</code>, <code>distance</code>, <code>swap</code>, <code>size</code>...</p>
 
-        <h4>Header file mein toh bilkul nahi</h4>
-        <p><code>#include</code> = copy-paste (<a href="playlist.html#v57">#57</a>). Header mein <code>using namespace std;</code> likha toh <strong>har wo file</strong> jo header include karti hai, uspe bhi zabardasti lag jaata hai. Unka code bina wajah toot sakta hai.</p>
+        <h4>Problem: name clash (<code>count</code> example)</h4>
+<pre><code><span class="k">#include</span> &lt;iostream&gt;
+<span class="k">#include</span> &lt;algorithm&gt;
+<span class="k">using namespace</span> std;     <span class="c">// std ke saare surnames hata diye</span>
+
+<span class="k">int</span> count = 0;           <span class="c">// mera apna count</span>
+
+<span class="k">int</span> main() {
+    count++;             <span class="c">// ❓ mera count ya std::count?</span>
+}</code></pre>
+<pre class="out err">error: reference to 'count' is ambiguous</pre>
+        <p>Compiler wahi teacher hai jo "Rahul!" pe confuse ho gaya. <code>std</code> mein bhi ek <code>count</code> hai (elements ginne wala function), tumhara bhi ek. Bina <code>using namespace std;</code> ke same code chal jaata hai, kyunki std wala <code>std::count</code> hai:</p>
+<pre><code><span class="k">int</span> count = 0;
+<span class="k">int</span> main() {
+    count++;               <span class="c">// sirf mera count</span>
+    std::cout &lt;&lt; count;    <span class="c">// ✅</span>
+}</code></pre>
+<pre class="out">count = 1</pre>
+
+        <div class="callout trap"><span class="tag">Meri galti: "local count bhi toh chal gaya?"</span>
+<pre><code><span class="k">using namespace</span> std;
+<span class="k">int</span> main() { <span class="k">int</span> count = 0; cout &lt;&lt; count; }   <span class="c">// ✅ chal gaya (local)</span>
+
+<span class="k">int</span> count = 0;                                   <span class="c">// global</span>
+<span class="k">int</span> main() { cout &lt;&lt; count; }                   <span class="c">// ❌ ambiguous</span></code></pre>
+<pre class="out">local:  0
+global: error: reference to 'count' is ambiguous</pre>
+          <p>Maine socha tha <code>using namespace std;</code> ke saath <code>count</code> naam ka koi bhi variable error dega. <strong>Galat.</strong> Compiler naam <strong>andar se bahar</strong> dhoondhta hai aur jo pehle mile wahi leta hai:</p>
+          <ul>
+            <li><strong>Local count:</strong> main ke andar hi mil gaya, wahin ruk gaya. <code>std::count</code> tak pahuncha hi nahi.</li>
+            <li><strong>Global count:</strong> main mein kuch nahi, bahar dekha toh <strong>do</strong> mile (mera + <code>std::count</code>, kyunki <code>using namespace std</code> ne std ke naam global level pe khol diye). Same level, toh ambiguous.</li>
+          </ul>
+          <p>Analogy: ghar (main) mein ek Rahul hai toh maa ke "Rahul!" pe wahi aayega. Confusion tab jab dono Rahul <strong>mohalle (global) mein ek level pe</strong> hon.</p>
+          <p><strong>Side effect:</strong> local <code>count</code> ne std wale ko <strong>chhupa</strong> diya. Ab main ke andar <code>count(v.begin(), v.end(), 1)</code> → <code>error: 'count' cannot be used as a function</code>. Fix: <code>std::count(...)</code> likho (output: <code>std::count = 3, mera count = 0</code>).</p>
+          <p><strong>Seekh:</strong> ambiguous error tab aata hai jab mera naam aur std ka naam <strong>dono global level pe</strong> hon. Local naam bahar wale naamon ko hide kar deta hai.</p>
+        </div>
+
+        <h4>"Main dhyan rakhunga" kyun kaafi nahi</h4>
+        <ol>
+          <li><strong>Std ke saare naam yaad nahi.</strong> Hazaaron hain, aur <code>count</code>, <code>distance</code>, <code>size</code> jaise naam hum roz variables ke liye use karte hain.</li>
+          <li><strong>Library future mein naye naam add karti hai.</strong> Aaj code chal raha hai, C++ ke naye version mein std mein tumhare variable jaisa naam aa gaya toh bina kuch badle code toot jaayega.</li>
+        </ol>
+
+        <h4>Header file mein sabse bura: Ravi aur Priya</h4>
+        <p><strong>Ravi</strong> ne header banaya aur usme <code>using namespace std;</code> likh diya:</p>
+<pre><code><span class="c">// animal.h (Ravi ki file)</span>
+<span class="k">#pragma once</span>
+<span class="k">#include</span> &lt;iostream&gt;
+<span class="k">#include</span> &lt;algorithm&gt;
+<span class="k">using namespace</span> std;        <span class="c">// ⚠️ header mein!</span>
+
+<span class="k">class</span> Animal {
+<span class="k">public</span>:
+    <span class="k">void</span> speak() { cout &lt;&lt; <span class="s">"Animal sound\n"</span>; }
+};</code></pre>
+        <p><strong>Priya</strong> ne bas Ravi ka header include kiya. Usne <strong>kahin <code>using namespace std;</code> nahi likha</strong>, wo <code>std::cout</code> use kar rahi hai:</p>
+<pre><code><span class="c">// main.cpp (Priya ki file)</span>
+<span class="k">#include</span> <span class="s">"animal.h"</span>         <span class="c">// bas Animal class chahiye thi</span>
+
+<span class="k">int</span> count = 0;              <span class="c">// Priya ka apna variable</span>
+
+<span class="k">int</span> main() {
+    Animal a;
+    a.speak();
+    count++;
+    std::cout &lt;&lt; <span class="s">"count = "</span> &lt;&lt; count &lt;&lt; <span class="s">"\n"</span>;
+}</code></pre>
+<pre class="out err">main.cpp:8: error: reference to 'count' is ambiguous</pre>
+        <p>Priya confuse: "Maine toh <code>using namespace std</code> likha hi nahi!"</p>
+
+        <p><strong>Hua kya? Copy-paste</strong> (<a href="playlist.html#v57">#57</a>). <code>#include</code> ne Ravi ki poori file Priya ki file mein paste kar di. Compiler ko Priya ki file asal mein aisi dikhti hai:</p>
+<pre><code><span class="c">// ---- animal.h yahan paste hua ----</span>
+<span class="k">#include</span> &lt;iostream&gt;
+<span class="k">#include</span> &lt;algorithm&gt;
+<span class="k">using namespace</span> std;        <span class="c">// ← Ravi ki line, ab PRIYA ki file mein!</span>
+<span class="k">class</span> Animal { ... };
+<span class="c">// ---- paste khatam ----</span>
+
+<span class="k">int</span> count = 0;              <span class="c">// Priya ka count</span>
+<span class="k">int</span> main() {
+    count++;                <span class="c">// ❓ Priya ka count ya std::count?</span>
+}</code></pre>
+        <ul>
+          <li><strong>Galti Ravi ki, error Priya ko.</strong> Priya ki file mein koi galti nahi thi.</li>
+          <li><strong>Wajah dhoondhna mushkil.</strong> Error Priya ki line 8 pe, kaaran kisi aur ki file ki ek line.</li>
+          <li><strong>Phailta jaata hai.</strong> 50 log Ravi ka header use karein toh sab 50 pe problem. Priya ka header koi teesra include kare toh uspe bhi.</li>
+        </ul>
+
+        <p><strong>Fix: Ravi header mein <code>std::</code> likhe</strong></p>
+<pre><code><span class="c">// animal.h</span>
+<span class="k">class</span> Animal {
+<span class="k">public</span>:
+    <span class="k">void</span> speak() { std::cout &lt;&lt; <span class="s">"Animal sound\n"</span>; }   <span class="c">// using namespace hata diya</span>
+};</code></pre>
+<pre class="out">Animal sound
+count = 1          ← Priya ka code bina kuch badle chal gaya</pre>
+        <div class="tbl"><table>
+          <tr><th>Kahan likha</th><th>Asar kis pe</th></tr>
+          <tr><td>Apni <code>.cpp</code> file mein</td><td>Sirf usi file pe (<code>.cpp</code> kahin include nahi hoti)</td></tr>
+          <tr><td><strong>Header</strong> mein</td><td><strong>Har include karne wali file</strong> pe (chupke se paste ho jaata hai)</td></tr>
+        </table></div>
 
         <h4>Kya likhein</h4>
-<pre><code>std::cout &lt;&lt; x;          <span class="c">// ✅ best: har jagah std:: likho</span>
+<pre><code>std::cout &lt;&lt; x;          <span class="c">// ✅ best: surname ke saath bulao</span>
 
-<span class="k">using</span> std::cout;          <span class="c">// ✅ sirf jo chahiye wahi lao</span>
-cout &lt;&lt; x;</code></pre>
+<span class="k">using</span> std::cout;          <span class="c">// ✅ sirf ek ka surname hatao</span>
+cout &lt;&lt; x;               <span class="c">//    baaki sab std:: ke saath</span></code></pre>
 <pre class="out">using std::cout: count = 1    (apna count bhi theek chala)</pre>
-        <p>Chhote programs / competitive programming mein <code>using namespace std;</code> chalta hai. Bade projects aur headers mein avoid karo.</p>
+        <p>Chhote programs / practice / competitive programming mein <code>using namespace std;</code> chalta hai. Bade projects aur <strong>headers mein kabhi nahi</strong>.</p>
+
+        <div class="callout tip"><span class="tag">Ek line mein</span>
+          <p><code>using namespace std;</code> std ke hazaaron naamon ka "surname" hata deta hai, toh tumhara koi naam match kar gaya toh ambiguous error. Header mein likha toh copy-paste ki wajah se har include karne wale ki file mein pahunch jaata hai: tumhari galti, unka code toot-ta hai.</p>
+        </div>
 
         <div class="callout say"><span class="tag">Interview mein</span>
           <p>"<code>using namespace std;</code> pulls every name from the standard library into the current scope, and std contains thousands of names like <code>count</code>, <code>max</code> and <code>find</code>. If my own code uses the same name, I get ambiguity errors or, worse, the wrong function silently chosen, and code can break later when the library adds new names. It is especially bad in a header file, because every file that includes the header gets the directive too. It is better to write <code>std::</code> explicitly or bring in only specific names with <code>using std::cout;</code>. In small programs or competitive programming it is usually acceptable."</p>

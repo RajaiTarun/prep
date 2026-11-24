@@ -124,6 +124,11 @@ body.exam li.extra{display:none}
 .btn{border:0;border-radius:9px;padding:9px 14px;font-weight:600;font-size:14px;cursor:pointer;background:var(--accent);color:#fff}
 .hrday .btn{background:var(--hr)}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.block.ntb{border-left:5px solid var(--hr)}
+.ntb .letter{background:var(--hr-soft);color:var(--hr)}
+.ntb .qbtn{border-color:var(--hr);color:var(--hr)} .ntb .qbtn .qn{background:var(--hr-soft)} .ntb .qbtn:hover{background:var(--hr);color:#fff}
+.block.dsab .letter{background:var(--code);color:var(--ink,inherit)}
+.slot.nt .n{color:var(--hr);font-weight:600}
 .talk{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--hr);border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start}
 .talk input{width:19px;height:19px;margin-top:3px;accent-color:var(--good)}
 .talk b{display:block;font-family:var(--display);font-size:16px;margin-bottom:2px}
@@ -184,11 +189,12 @@ pre{margin:0;font:13px/1.55 var(--mono);background:var(--code);border:1px solid 
   <details class="how">
     <summary>How to use this plan</summary>
     <ul>
-      <li>Pick today's day below. Each day has ONE theme and three study blocks (A, B, C), so there's no hourly subject switching.</li>
+      <li>Two tech chunks, one theme each: <b>Chunk 1</b> (Sat 21 to Tue 24) = C++ + OOPS revision, your POSIX shell, OS, and C++ threading/concurrency. <b>Chunk 2</b> (Wed 25 to Fri 27) = SOLID, design patterns, LLD, HLD, MerchFlow and the Kafka-style log. Sat 28 = non-tech final wrap-up + mocks.</li>
+      <li>Every day: <b>N</b> = 30-min non-tech slot at 8:30 AM (HR + Managerial, out loud), <b>A, B, C</b> = the day's chunk, <b>D</b> = 1-1.5 h DSA (only problems seniors were asked).</li>
       <li>Tick tasks as you finish them. Tasks marked <span class="core">Core</span> are the must-dos.</li>
-      <li>Exam today? Turn on "Exam day" to see only Core tasks (about 3 hours). Skipped tasks go to the Day 8 buffer.</li>
+      <li>Exam today? Turn on "Exam day" to see only Core tasks (about 3 hours). Skipped tasks go to the Sat 28 buffer.</li>
       <li>Every topic has its own <b>Quiz</b> button (usually 8-10 interview-level questions). Finish the topic, then press it. One question at a time; your best score is saved on the button.</li>
-      <li>Never skip the 9:30 PM Talk-aloud. 6-9:30 PM stays free for college exams and assignments.</li>
+      <li>Never skip the 8:30 AM non-tech slot (it is first so an assignment can't eat it). 6-9:30 PM stays free for college exams and assignments.</li>
     </ul>
   </details>
 
@@ -214,7 +220,7 @@ const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
-let ticks = store.get("mw7-ticks", {}) || {};
+let ticks = store.get("mw7b-ticks", {}) || {};
 let best = store.get("mw7-best", {}) || {};
 let examMode = !!store.get("mw7-examv", false);
 
@@ -232,7 +238,7 @@ function el(tag, attrs, ...kids){
 }
 const isHR = d => d.kind === "Non-tech";
 const blockIds = (d, bi) => d.blocks[bi].items.map((_, ii) => d.id + "-" + bi + "-" + ii);
-const dayIds = d => d.blocks.flatMap((_, bi) => blockIds(d, bi)).concat(d.id + "-talk");
+const dayIds = d => d.blocks.flatMap((_, bi) => blockIds(d, bi));
 const pct = ids => ids.length ? Math.round(100 * ids.filter(i => ticks[i]).length / ids.length) : 0;
 
 function refreshProgress(){
@@ -272,7 +278,7 @@ function taskRow(id, text, core, tag, quiz){
   const cb = el("input", {type: "checkbox", id: "cb-" + id});
   const li = el("li", {class: core ? "" : "extra"}, cb);
   cb.checked = !!ticks[id]; li.classList.toggle("done", cb.checked);
-  cb.addEventListener("change", () => { ticks[id] = cb.checked; li.classList.toggle("done", cb.checked); store.set("mw7-ticks", ticks); refreshProgress(); });
+  cb.addEventListener("change", () => { ticks[id] = cb.checked; li.classList.toggle("done", cb.checked); store.set("mw7b-ticks", ticks); refreshProgress(); });
   li.append(el("label", {for: "cb-" + id}, core ? el("span", {class: "core", text: "Core"}) : null, text, tag ? el("span", {class: "vtag", text: tag}) : null));
   if (quiz) {
     const n = DATA.quiz[quiz].length, bs = best[quiz];
@@ -294,25 +300,20 @@ function renderDay(d){
     el("h2", {text: d.title}), el("p", {text: d.why})));
 
   const plan = el("section", {class: "plan", "aria-label": "Today's schedule"});
-  const rest = ["Break (30 min): walk, water, no phone scrolling", "Lunch and rest (~1.5 h)"];
-  d.blocks.forEach((b, bi) => {
-    const L = "ABC"[bi];
-    const q = b.items.filter(it => it.quiz).length;
-    plan.append(el("div", {class: "slot study", tabindex: "0", onclick: () => document.getElementById("blk-" + bi).scrollIntoView({behavior: "smooth"}),
-      onkeydown: e => { if (e.key === "Enter") document.getElementById("blk-" + bi).scrollIntoView({behavior: "smooth"}); }},
-      el("span", {class: "t", text: b.time}), el("span", {class: "n", text: "Block " + L + ": " + b.name + (q ? "  ·  quiz of " + q : "")}),
+  d.plan.forEach(([t, n, bi]) => {
+    if (bi == null || bi < 0) { plan.append(el("div", {class: "slot rest"}, el("span", {class: "t", text: t}), el("span", {class: "n", text: n}), el("span"))); return; }
+    const b = d.blocks[bi], q = b.items.filter(it => it.quiz).length, go = () => document.getElementById("blk-" + bi).scrollIntoView({behavior: "smooth"});
+    plan.append(el("div", {class: "slot study" + (b.k === "nt" ? " nt" : ""), tabindex: "0", onclick: go, onkeydown: e => { if (e.key === "Enter") go(); }},
+      el("span", {class: "t", text: b.time}), el("span", {class: "n", text: b.L + ": " + b.name + (q ? "  ·  quiz of " + q : "")}),
       el("span", {class: "r", "data-bcount": d.id + ":" + bi})));
-    if (bi < d.blocks.length - 1) plan.append(el("div", {class: "slot rest"}, el("span", {class: "t", text: ""}), el("span", {class: "n", text: rest[bi]}), el("span")));
   });
-  plan.append(el("div", {class: "slot rest"}, el("span", {class: "t", text: "6:00 - 9:30 PM"}), el("span", {class: "n", text: "College: exams and assignments"}), el("span")));
-  plan.append(el("div", {class: "slot rest"}, el("span", {class: "t", text: "9:30 - 9:55 PM"}), el("span", {class: "n", text: "Talk-aloud (below)"}), el("span")));
   v.append(plan);
 
   d.blocks.forEach((b, bi) => {
     const ul = el("ul", {class: "tasks"});
     b.items.forEach((it, ii) => ul.append(taskRow(d.id + "-" + bi + "-" + ii, it.x, it.c, it.tag, it.quiz)));
-    const card = el("article", {class: "block", id: "blk-" + bi},
-      el("div", {class: "bh"}, el("span", {class: "letter", text: "ABC"[bi]}),
+    const card = el("article", {class: "block" + (b.k === "nt" ? " ntb" : b.k === "dsa" ? " dsab" : ""), id: "blk-" + bi},
+      el("div", {class: "bh"}, el("span", {class: "letter", text: b.L}),
         el("div", null, el("h3", {text: b.name}), el("span", {class: "tm", text: b.time})),
         el("span", {class: "cnt"}, el("span", {"data-bcount": d.id + ":" + bi}))),
       ul);
@@ -327,10 +328,6 @@ function renderDay(d){
     v.append(card);
   });
 
-  const tid = d.id + "-talk", tcb = el("input", {type: "checkbox", id: "cb-" + tid}); tcb.checked = !!ticks[tid];
-  tcb.addEventListener("change", () => { ticks[tid] = tcb.checked; store.set("mw7-ticks", ticks); refreshProgress(); });
-  v.append(el("section", {class: "talk"}, tcb, el("label", {for: "cb-" + tid},
-    el("b", {text: "9:30 PM Talk-aloud (25 min, never skip)"}), d.talk, " Record on your phone, listen once.")));
   refreshProgress();
 }
 
@@ -448,7 +445,7 @@ function startTab(){
   return store.get("mw7-tab", "d1");
 }
 window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (h === "depth" || DATA.days.some(d => d.id === h)) show(h); });
-document.getElementById("reset").addEventListener("click", () => { ticks = {}; best = {}; store.set("mw7-ticks", ticks); store.set("mw7-best", best); show(startTab()); });
+document.getElementById("reset").addEventListener("click", () => { ticks = {}; best = {}; store.set("mw7b-ticks", ticks); store.set("mw7-best", best); show(startTab()); });
 document.body.classList.toggle("exam", examMode);
 buildDays(); countdown(); show(startTab());
 </script>

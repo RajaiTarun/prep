@@ -7,8 +7,10 @@ def mcq(q, opts, ans, why, code=None):
 def out(q, code, ans, why):
     return {"t": "out", "q": q, "code": code, "ans": ans, "why": why}
 
-def item(text, core=True, tag=None):
-    return {"x": text, "c": core, "tag": tag}
+def item(text, core=True, tag=None, quiz=None):
+    d = {"x": text, "c": core, "tag": tag}
+    if quiz: d["quiz"] = quiz
+    return d
 
 # ---------- quiz banks ----------
 Q = {}
@@ -317,198 +319,242 @@ for k, v in X.items():
     Q.setdefault(k, []).extend(v)
 
 # ---------- days ----------
+# Layout (changed 21 Nov): Chunk 1 = C++ + POSIX + OS + C++ concurrency (Sat 21 - Tue 24),
+# Chunk 2 = SOLID + patterns + LLD + HLD + MerchFlow + Kafka log (Wed 25 - Fri 27),
+# Sat 28 = non-tech final wrap-up + mocks. Every day: N = 30-min non-tech slot at 8:30 AM,
+# A/B/C = the chunk, D = 1-1.5 h DSA. Each item names its quiz key explicitly (quiz=...).
 NONTECH = "Non-tech"
 TECH = "Tech"
 
+def blk(L, k, time, name, items, game=None):
+    b = {"L": L, "k": k, "time": time, "name": name, "items": items}
+    if game: b["game"] = game
+    return b
+
+def N(items, game=None, time="8:30 - 9:00 AM", name="Non-tech, out loud"):
+    return blk("N", "nt", time, name, items, game)
+
+def D(name, items, time="4:45 - 6:00 PM"):
+    return blk("D", "dsa", time, "DSA: " + name, items)
+
+def std_plan():
+    return [["", "", 0], ["", "", 1], ["", "Break (30 min): walk, water, no phone scrolling", -1], ["", "", 2],
+            ["", "Lunch and rest (~1.5 h)", -1], ["", "", 3], ["", "Break (15 min)", -1], ["", "", 4],
+            ["6:00 - 9:30 PM", "College: exams and assignments", -1]]
+
+A_T, B_T, C_T = "9:00 - 11:30 AM", "12:00 - 1:30 PM", "3:00 - 4:30 PM"
+
 days = [
- {"id": "d1", "n": 1, "date": "Sat 21 Nov", "kind": NONTECH, "title": "MathWorks and you",
-  "why": "Start where you lose most marks: HR and managerial. Today is half a day, from 1 PM.",
+ {"id": "d1", "n": 1, "date": "Sat 21 Nov", "kind": TECH, "title": "Chunk 1 · C++ concepts sweep",
+  "why": "OOPS is done, so block A is revision. Finish the C++ concepts by evening, do the assignment, then write the code seniors were asked to write, on notepad at night. No DSA today because of the deadline; it starts tomorrow.",
+  "plan": [["", "", 0], ["", "", 1], ["", "Break (30 min)", -1], ["", "", 2], ["6:30 - 10:00 PM", "Assignment (deadline today) + dinner", -1], ["", "", 3]],
   "blocks": [
-    {"time": "1:00 - 3:00 PM", "name": "Know MathWorks, EDG and your location", "items": [
-      item("Read mathworks.com: what MATLAB and Simulink do, which industries use them. Write 3 products you can name."),
-      item("Read the MathWorks core values. Write each in one line, plus one story of yours that fits it."),
-      item("EDG: careers page + search. Write 5 lines: what it is, the training, domains, why it fits you (correct it after the PPT)."),
-      item("Decide Hyderabad or Bengaluru. Write 2 professional reasons."),
-      item("Read MathWorks' guide 'Interviewing at MathWorks as a Student'.", False),
-    ], "quiz": "d1a", "quizName": "Pick the stronger answer"},
-    {"time": "3:30 - 6:00 PM", "name": "Your journey, in your words", "items": [
-      item("Write 'Tell me about yourself' (90 sec). Record it twice on your phone."),
-      item("Year-by-year timeline from Class 10: marks, GATE 2024 and 2025, GATE DA, PGEE AIR 114, CGPAs. A one-line 'why' for each decision."),
-      item("Motivation answers: why M.Tech, why not PhD, why not abroad, why MathWorks, what if you get a better offer."),
-      item("Write 4 questions to ask them (2-3 technical about MATLAB / MathWorks, 1 about EDG).", False),
-    ], "quiz": "d1b", "quizName": "Answer makeover",
-     "game": "Why x 3: for every decision on your timeline, ask yourself 'why?' three times in a row. If you stall on the third, rewrite that line."},
-  ],
-  "talk": "Say 'Tell me about yourself' and 'Why MathWorks?' out loud, timed."},
+    N([item("Optional today: a first draft of 'Tell me about yourself' (90 sec). Just a draft; you polish it on Tue.", False)],
+      time="Any 15 min", name="Non-tech (optional today)"),
+    blk("A", "tech", "1:00 - 3:30 PM", "OOPS revision + polymorphism", [
+      item("Abstract class vs interface; pure virtual; an abstract class CAN have a constructor; a pure virtual destructor needs a body.", quiz="d2-0-0"),
+      item("Draw the vtable and vptr on paper: one vtable per class, one vptr per object, the effect on sizeof, a virtual call inside a constructor.", quiz="d2-0-1"),
+      item("Why there is no virtual constructor; when the destructor must be virtual.", quiz="d2-0-2"),
+      item("The 6 special members, = default, = delete, Rule of 3 / 5, when the default constructor disappears.", quiz="d2-1-0"),
+      item("Can a constructor be overridden? Can a destructor be overloaded? Why is a default constructor needed?", False, quiz="d2-1-2"),
+      item("Video #17 dynamic_cast (safe downcast, needs a polymorphic base).", False, "Video", quiz="d2-0-3"),
+    ]),
+    blk("B", "tech", "4:00 - 6:30 PM", "Your list: static, friend, const, lambdas, struct, memory, smart pointers", [
+      item("static members and functions (object counter), friend function and friend class rules.", quiz="d2-2-0"),
+      item("const: const member functions, mutable, const int* vs int* const vs const int* const.", quiz="d2-2-1"),
+      item("Lambdas = functors made by the compiler: [=] vs [&], mutable. Watch video #39 Functor.", True, "Video", quiz="d2-2-2"),
+      item("malloc / calloc / realloc / free vs new / delete: constructor calls, NULL vs bad_alloc.", quiz="d3-1-0"),
+      item("Smart pointers (unique / shared / weak, control block, cycles) and RAII in 30 seconds, from your notebook pages.", quiz="d3-2-1"),
+      item("C struct vs C++ struct; access specifiers + the public / protected / private inheritance table.", False, quiz="d2-2-3"),
+      item("namespace std: 5-minute revision of #60.", False, quiz="d2-2-4"),
+    ]),
+    blk("C", "tech", "10:00 - 11:30 PM", "Night: code seniors had to write (notepad, no IDE)", [
+      item("A String class with constructor, copy constructor, operator= (self-assignment check, deep copy) and destructor (Digvijay).", quiz="d2-1-1"),
+      item("Your own unique_ptr (move-only) and shared_ptr (ref count, copy constructor, operator=, destructor) (Digvijay, Sanchit).", quiz="d3-2-0"),
+      item("Vector in C with push_back, pop_back, erase using realloc (Nikhil). Not done tonight? First thing Sun.", False, quiz="d3-1-2"),
+      item("Copy a 2D array from stack to heap with malloc, and free it correctly (Anubhav).", False, quiz="d3-1-1"),
+    ]),
+  ]},
 
- {"id": "d2", "n": 2, "date": "Sun 22 Nov", "kind": TECH, "title": "OOPS day",
-  "why": "The deepest part of every MathWorks tech round. Piyush: 'very thorough on OOPS, specially abstract and interface'.",
+ {"id": "d2", "n": 2, "date": "Sun 22 Nov", "kind": TECH, "title": "Chunk 1 · Pointers, then processes and pipes",
+  "why": "Close C++ with pointer output drills (most snippet questions are pointers: Piyush, Aashima, Aryan). Then start your POSIX shell from the OS side: Sanchit got fork counting and dup vs dup2, Anubhav had to write pipe code because POSIX was on his resume.",
+  "plan": std_plan(),
   "blocks": [
-    {"time": "9:00 - 11:30 AM", "name": "Polymorphism inside out", "items": [
-      item("Abstract class vs interface; pure virtual; an abstract class CAN have a constructor; a pure virtual destructor needs a body."),
-      item("Draw the vtable and vptr on paper: one vtable per class, one vptr per object, the effect on sizeof, a virtual call inside a constructor."),
-      item("Why there is no virtual constructor; when the destructor must be virtual."),
-      item("Video #17 dynamic_cast (safe downcast, needs a polymorphic base).", False, "Video"),
-    ], "quiz": "d2a", "quizName": "Output arena: virtual"},
-    {"time": "12:00 - 1:30 PM", "name": "Constructors and the special members", "items": [
-      item("The 6 special members, = default, = delete, Rule of 3 / 5, when the default constructor disappears."),
-      item("Notepad, no IDE: a String class with constructor, copy constructor, operator= (self-assignment check, deep copy) and destructor."),
-      item("Can a constructor be overridden? Can a destructor be overloaded? Why is a default constructor needed?", False),
-    ], "quiz": "d2b", "quizName": "Copy or assign?"},
-    {"time": "3:00 - 5:30 PM", "name": "Your list: static, friend, const, lambdas, struct", "items": [
-      item("static members and functions (object counter), friend function and friend class rules."),
-      item("const: const member functions, mutable, const int* vs int* const vs const int* const."),
-      item("Lambdas = functors made by the compiler: [=] vs [&], mutable. Watch video #39 Functor.", True, "Video"),
-      item("C struct vs C++ struct; access specifiers + the public / protected / private inheritance table.", False),
-      item("namespace std: 5-minute revision of #60.", False),
-    ], "quiz": "d2c", "quizName": "Trap hunt"},
-  ],
-  "talk": "Explain the vtable to a non-tech friend in 60 sec. Then story 1: a conflict with a teammate (Kafka project)."},
+    N([item("Read mathworks.com: what MATLAB and Simulink do, which industries use them. Say 3 products out loud.", quiz="d1-0-0"),
+       item("Core values: one line each, plus one story of yours that fits one of them.", quiz="d1-0-1")]),
+    blk("A", "tech", A_T, "Pointer output drills + leftover code", [
+      item("*p++, ++*p, *++p, (*p)++; array vs &array; sizeof of an array inside a function.", quiz="d3-0-0"),
+      item("25 pointer output questions on paper (GfG / IndiaBix). Trace each line before checking.", quiz="d3-0-1"),
+      item("Finish any notepad code left from last night (Vector in C, 2D array to heap)."),
+      item("Videos #24 (argument evaluation order), #27 (comma operator), #66 (pre vs post increment).", False, "Video", quiz="d3-0-2"),
+      item("Function pointers and struct padding: quick revision.", False, quiz="d3-1-3"),
+      item("How printf works: va_list, va_start, va_arg, va_end, then a buffered write().", False, quiz="d3-2-2"),
+      item("How int and float are stored: two's complement, IEEE 754.", False, quiz="d3-2-3"),
+    ]),
+    blk("B", "tech", B_T, "Processes", [
+      item("fork / exec / wait / waitpid; zombie vs orphan; fork counting (GfG fork practice).", quiz="d5-0-0"),
+      item("Why the shell forks before exec; what the child inherits (fd table, signal dispositions)."),
+    ]),
+    blk("C", "tech", C_T, "Pipes and file descriptors", [
+      item("Notepad: a pipe between two commands in C (pipe, fork twice, dup2, close unused ends, waitpid).", quiz="d5-0-1"),
+      item("dup vs dup2, the fd table, I/O redirection (how your shell does > and <).", quiz="d5-0-2"),
+    ]),
+    D("linked lists", [item("Reverse a list (iterative + recursive); LC 92; middle / fractional n/k-th node; LC 141 + 142; LC 287.", quiz="d7-0-0")]),
+  ]},
 
- {"id": "d3", "n": 3, "date": "Mon 23 Nov", "kind": TECH, "title": "Pointers and memory day",
-  "why": "Snippet output and debugging questions are mostly pointers (Piyush, Aashima, Aryan), and Nikhil had to write a Vector in C.",
+ {"id": "d3", "n": 3, "date": "Mon 23 Nov", "kind": TECH, "title": "Chunk 1 · Your POSIX shell + threads",
+  "why": "Your shell at L3 depth in the morning, then the same OS ideas from the thread side and how C++ does them. Read together, 'process vs thread' flows straight into std::thread and mutex, which is how follow-up questions go.",
+  "plan": std_plan(),
   "blocks": [
-    {"time": "9:00 - 11:30 AM", "name": "Pointer output drills", "items": [
-      item("*p++, ++*p, *++p, (*p)++; array vs &array; sizeof of an array inside a function."),
-      item("25 pointer output questions on paper (GfG / IndiaBix). Trace each line before checking."),
-      item("Videos #24 (argument evaluation order), #27 (comma operator), #66 (pre vs post increment).", False, "Video"),
-    ], "quiz": "d3a", "quizName": "Output arena: pointers"},
-    {"time": "12:00 - 1:30 PM", "name": "Memory, by hand", "items": [
-      item("malloc / calloc / realloc / free vs new / delete: constructor calls, NULL vs bad_alloc."),
-      item("Notepad: copy a 2D array from stack to heap with malloc, and free it correctly (Anubhav)."),
-      item("Notepad: Vector in C with push_back, pop_back, erase using realloc (Nikhil)."),
-      item("Function pointers and struct padding: quick revision.", False),
-    ], "quiz": "d3b", "quizName": "Memory quiz"},
-    {"time": "3:00 - 5:30 PM", "name": "Smart pointers and how things work", "items": [
-      item("Notepad: your own unique_ptr (move-only) and shared_ptr (ref count, copy constructor, operator=, destructor)."),
-      item("Say RAII in 30 seconds (use your notebook page)."),
-      item("How printf works: va_list, va_start, va_arg, va_end, then a buffered write().", False),
-      item("How int and float are stored: two's complement, IEEE 754.", False),
-    ], "quiz": "d3c", "quizName": "Ownership quiz"},
-  ],
-  "talk": "Explain smart pointers in 30 sec. Then story 4: the rate-limiter race condition bug."},
-
- {"id": "d4", "n": 4, "date": "Tue 24 Nov", "kind": NONTECH, "title": "Stories day",
-  "why": "Two of the three rounds are behavioural, and many peers were rejected in HR. Generic answers fail; stories pass.",
-  "blocks": [
-    {"time": "9:00 - 11:30 AM", "name": "Build 11 STAR stories", "items": [
-      item("Write each as Situation, Task, Action (what YOU did), Result (with a number). Max 90 sec each."),
-      item("1 Conflict (Kafka team) - 2 Leadership (MerchFlow, approaching clubs) - 3 Customer focus (user interviews) - 4 Hard bug (rate limiter) - 5 Last-minute change (stale stock)."),
-      item("6 Deadlines + one real miss - 7 Learning fast (POSIX syscalls) - 8 Explaining tech to non-tech - 9 Setback (GATE) - 10 Critical feedback - 11 Motivating a team / stress."),
-    ], "quiz": "d4a", "quizName": "Spot the weak story"},
-    {"time": "12:00 - 1:30 PM", "name": "Traits and manager situations", "items": [
-      item("2 strengths with proof, 2 REAL weaknesses with fixes, what friends and professors would say (good and bad)."),
-      item("Manager situations: project + customer queries together; how you prioritise; an unfamiliar platform like MATLAB; explaining tech to non-tech; a non-technical teammate."),
-      item("'No internship' answer (steer to projects); PPO / commitment answer.", False),
-    ], "quiz": "d4b", "quizName": "What would you do?"},
-    {"time": "3:00 - 5:30 PM", "name": "Mock HR interview #1", "items": [
-      item("A friend plays HR for 40 min using the Question Bank tab. After EVERY answer they ask 'why?' or 'give an example'."),
-      item("Record it. Mark your 3 weakest answers and rewrite them."),
-      item("Rapid fire: 20 questions in 20 minutes, no pauses.", False),
-    ], "game": "Score your mock out of 5, one point each: no generic answer - every answer under 2 min - steady pace - a number in every result - no long silent pauses."},
-  ],
-  "talk": "Say your 2 strengths and 2 weaknesses. Then story 2: leadership."},
-
- {"id": "d5", "n": 5, "date": "Wed 25 Nov", "kind": TECH, "title": "OS + your POSIX shell",
-  "why": "One theme: OS and your shell project are the same topic. Anubhav was asked to write pipe code because POSIX was on his resume; Sanchit got dup/dup2 and fork counting.",
-  "blocks": [
-    {"time": "9:00 - 11:30 AM", "name": "Processes and pipes", "items": [
-      item("fork / exec / wait / waitpid; zombie vs orphan; process vs thread; fork counting (GfG fork practice)."),
-      item("Notepad: a pipe between two commands in C (pipe, fork twice, dup2, close unused ends, waitpid)."),
-      item("dup vs dup2, the fd table, I/O redirection.", False),
-    ], "quiz": "d5a", "quizName": "Fork counter"},
-    {"time": "12:00 - 1:30 PM", "name": "Your shell at L3 depth", "items": [
-      item("Walk through `ls | grep a > out.txt &` end to end, out loud."),
-      item("Signals: why the Ctrl+C handler only sets a flag, Ctrl+Z / SIGTSTP, process groups, SIGCHLD reaping."),
+    N([item("EDG: what it is, the training, domains, why it fits you. Say it in 60 sec (correct it after the PPT).", quiz="d1-0-2"),
+       item("Decide Hyderabad or Bengaluru with 2 professional reasons. Say it in one line.", quiz="d1-0-3")]),
+    blk("A", "tech", A_T, "Your shell at L3 depth", [
+      item("Walk through `ls | grep a > out.txt &` end to end, out loud.", quiz="d5-1-0"),
+      item("Signals: why the Ctrl+C handler only sets a flag, Ctrl+Z / SIGTSTP, process groups, SIGCHLD reaping.", quiz="d5-1-1"),
       item("Prepare 2-min, 5-min and 20-min versions of the project."),
-      item("Bounded deque history (why O(1)), the OOP module split.", False),
-    ], "quiz": "d5b", "quizName": "Shell debugger"},
-    {"time": "3:00 - 5:30 PM", "name": "Sync and memory", "items": [
-      item("Mutex vs semaphore, locks, the 4 deadlock conditions + prevention, race conditions (link to your rate limiter)."),
-      item("Virtual memory, paging, page faults; how a program runs (compile, link, load)."),
-      item("What threads share vs what processes share.", False),
-    ], "quiz": "d5c", "quizName": "OS rapid fire"},
-  ],
-  "talk": "POSIX shell 2-min version. Then story 7: learning something fast."},
+      item("Bounded deque history (why O(1)), the OOP module split.", False, quiz="d5-1-3"),
+    ]),
+    blk("B", "tech", B_T, "Threads and sync, the OS view", [
+      item("Process vs thread; what threads share (heap, globals, code) vs own (stack, registers).", quiz="d5-2-2"),
+      item("Mutex vs semaphore, the 4 deadlock conditions + prevention, race conditions (link to your rate limiter).", quiz="d5-2-0"),
+    ]),
+    blk("C", "tech", C_T, "C++ threads: std::thread, mutex, locks", [
+      item("std::thread: create, join vs detach, terminate if still joinable, passing args (std::ref). Data race on ++count. mutex + lock_guard / unique_lock / scoped_lock.", quiz="cc1"),
+      item("Notepad: two threads increment a shared counter. Write it broken, then with a mutex, then with std::atomic."),
+    ]),
+    D("stacks", [item("LC 155 Min Stack (class-based); next greater element; a popular stack question (valid parentheses).", quiz="d7-0-1")]),
+  ]},
 
- {"id": "d6", "n": 6, "date": "Thu 26 Nov", "kind": TECH, "title": "Projects day: MerchFlow + Kafka log",
-  "why": "Managerial rounds are resume-heavy, and Nikhil said to prepare 20 minutes per project. Your 'Familiar' tech is covered here, at the depth in the Resume depth tab.",
+ {"id": "d4", "n": 4, "date": "Tue 24 Nov", "kind": TECH, "title": "Chunk 1 · C++ concurrency + chunk wrap-up",
+  "why": "Finish concurrency at interview level (condition variables, producer-consumer, atomics, thread-safe singleton), then close Chunk 1 with a timed mixed mock so tomorrow starts clean on the systems side.",
+  "plan": std_plan(),
   "blocks": [
-    {"time": "9:00 - 11:30 AM", "name": "MerchFlow (checkout at L3)", "items": [
-      item("Draw the HLD: 5 services, Postgres, Mongo, Redis, RabbitMQ. Walk through one order end to end."),
-      item("Checkout: Redis lock (SET NX PX + unique token), idempotency keys, Saga compensation. Why each."),
-      item("Why Postgres vs Mongo; transactions, isolation, the oversell race and its fix."),
-      item("Cache invalidation + how you measured 40%; rate limiter race + fix; JWT / RBAC / the access-control bug.", False),
-    ], "quiz": "d6a", "quizName": "Checkout under fire"},
-    {"time": "12:00 - 1:30 PM", "name": "Familiar tech at the right depth", "items": [
-      item("Node.js: single thread, event loop, async/await, why Node for an I/O-heavy gateway (Aryan was asked)."),
-      item("RabbitMQ: ack, retry, dead-letter queue, why not Kafka for notifications."),
-      item("Express middleware chain, REST verbs and idempotency, MongoDB document model.", False),
-      item("Code Strategy + Observer in C++ (the warning-stack question).", False),
-    ], "quiz": "d6b", "quizName": "Event-loop puzzle"},
-    {"time": "3:00 - 5:30 PM", "name": "Kafka-style event log (L2)", "items": [
-      item("Partitions, append-only log, offsets; leader-follower replication, commit watermark, in-sync replicas."),
-      item("Raft election (terms, votes, majority), split brain + leader epochs, idempotent producer."),
-      item("CAP placement; gRPC benefits and limits (Vanshika); YOUR part vs your teammate's."),
-      item("LLD: design classes for the student-rank system (Kashif). SQL: join, GROUP BY, nth highest salary.", False),
-    ], "quiz": "d6c", "quizName": "Distributed quiz"},
-  ],
-  "talk": "MerchFlow 2-min version + Kafka 2-min version. Then story 3: customer focus."},
+    N([item("Polish 'Tell me about yourself' (90 sec). Record it twice.", quiz="d1-1-0"),
+       item("Year-by-year timeline from Class 10: marks, GATE 2024 and 2025, GATE DA, PGEE AIR 114, CGPAs. A one-line 'why' for each decision.", quiz="d1-1-1")],
+      game="Why x 3: for every decision on your timeline, ask yourself 'why?' three times in a row. If you stall on the third, rewrite that line."),
+    blk("A", "tech", A_T, "Condition variables and producer-consumer", [
+      item("condition_variable: wait with a predicate, spurious and lost wakeups, why unique_lock, notify_one vs notify_all, clean shutdown.", quiz="cc2"),
+      item("Notepad: a bounded blocking queue (push waits while full, pop waits while empty)."),
+    ]),
+    blk("B", "tech", B_T, "Atomics, singleton, and how a program runs", [
+      item("std::atomic and fetch_add; x = x + 1 is not atomic; thread-safe singleton (function-local static, call_once); volatile is not for threads; concurrency in your projects.", quiz="cc3"),
+      item("Virtual memory, paging, page faults; how a program runs (compile, link, load).", quiz="d5-2-1"),
+    ]),
+    blk("C", "tech", C_T, "Chunk 1 mock + fix", [
+      item("45-min paper mock, timed: 2 OOPS outputs, 2 pointer outputs, 1 fork count, 1 thread question, 1 class from scratch."),
+      item("Redo every quiz question you marked 'missed' in Chunk 1."),
+      item("Your notebook's Interview Revision page in practice mode.", False),
+    ]),
+    D("arrays", [item("LC 73 Set Matrix Zeroes; kth smallest (quickselect); min / max / median of 2 sorted arrays; student ranks (getNthRank).", quiz="d7-1-0")]),
+  ]},
 
- {"id": "d7", "n": 7, "date": "Fri 27 Nov", "kind": TECH, "title": "DSA day",
-  "why": "Only problems seniors were actually asked, written fully on paper, brute force first then optimal, thinking aloud.",
+ {"id": "d5", "n": 5, "date": "Wed 25 Nov", "kind": TECH, "title": "Chunk 2 · SOLID, design patterns, LLD",
+  "why": "The systems chunk starts at class level. Your resume lists OOD, design patterns and LLD; Vanshika got the warning-stack question (Strategy) and Kashif got a student-rank class design.",
+  "plan": std_plan(),
   "blocks": [
-    {"time": "9:00 - 11:30 AM", "name": "Linked lists and stacks", "items": [
-      item("Reverse a list (iterative + recursive); LC 92; middle / fractional node; LC 141 + 142; LC 287."),
-      item("LC 155 Min Stack (class-based); next greater element; a popular stack question (valid parentheses)."),
-    ], "quiz": "d7a", "quizName": "Name the pattern in 10 seconds"},
-    {"time": "12:00 - 1:30 PM", "name": "Arrays and classes", "items": [
-      item("LC 73 Set Matrix Zeroes; kth smallest (quickselect); min / max / median of 2 sorted arrays; student ranks (getNthRank)."),
-      item("Notepad: a Linked List class (constructor from an array + reverse)."),
-    ], "quiz": "d7b", "quizName": "Complexity check"},
-    {"time": "3:00 - 5:30 PM", "name": "Trees, heap, backtracking", "items": [
-      item("LCA (LC 236 / 235); binary tree to BST without extra space; heap ops + why O(log n); LC 215."),
-      item("Rat in a maze; Word Search (LC 79)."),
-      item("Pick ONE favourite DS (linked list) and know everything: ops, complexity, implementation, real uses.", False),
-    ], "quiz": "d7c", "quizName": "Heap + puzzle"},
-  ],
-  "talk": "Your favourite data structure in 2 min. Then your location answer and the 4 questions you'll ask them."},
+    N([item("Motivation answers out loud: why M.Tech, why not PhD, why not abroad, why MathWorks, what if you get a better offer.", quiz="d1-1-2"),
+       item("Write 4 questions to ask them (2-3 technical about MATLAB / MathWorks, 1 about EDG).", quiz="d1-1-3")]),
+    blk("A", "tech", A_T, "SOLID", [
+      item("The 5 principles, each with a violation and a C++ fix.", quiz="sd1"),
+      item("Map each principle to one real example in MerchFlow, the shell or the Kafka log."),
+    ]),
+    blk("B", "tech", B_T, "Design patterns", [
+      item("Factory, Builder, Command, Strategy, Observer (+ Singleton): what, when, where each sits in MerchFlow.", quiz="d6-1-3"),
+      item("Notepad: the stack that warns before its limit without changing main (Strategy / Observer) (Vanshika)."),
+    ]),
+    blk("C", "tech", C_T, "LLD", [
+      item("LLD: classes for the student-rank system (Kashif); your shell's class diagram; a parking lot for practice. SQL warm-up: join, GROUP BY, nth highest salary.", quiz="d6-2-3"),
+    ]),
+    D("Linked List class", [item("Notepad: a Linked List class (constructor from an array + reverse) (Aashrey).", quiz="d7-1-1")]),
+  ]},
 
- {"id": "d8", "n": 8, "date": "Sat 28 Nov", "kind": NONTECH, "title": "Dress rehearsal (light day)",
-  "why": "No new topics. Mock all three rounds, fix gaps, use the buffer for anything an exam pushed out, sleep early.",
+ {"id": "d6", "n": 6, "date": "Thu 26 Nov", "kind": TECH, "title": "Chunk 2 · HLD + MerchFlow",
+  "why": "HLD basics first, then use them on your own system. Managerial rounds are resume-heavy (Nikhil: prepare 20 minutes per project) and Aashrey's tech round had a little system design. Your 'Familiar' tech is covered at the depth in the Resume depth tab.",
+  "plan": std_plan(),
   "blocks": [
-    {"time": "9:00 - 11:30 AM", "name": "Tech mock + buffer", "items": [
-      item("60-min tech mock on notepad: 2 OOPS outputs, 1 pointer snippet, 1 class to implement, 1 DSA, 10 min of resume."),
-      item("Buffer: finish any items skipped on exam days."),
-    ]},
-    {"time": "12:00 - 1:30 PM", "name": "Manager + HR mocks", "items": [
-      item("30-min manager mock (resume deep-dive + situations) and 30-min HR mock with a friend."),
-      item("Fix the 3 weakest answers."),
-    ]},
-    {"time": "3:00 - 5:00 PM", "name": "Cheat sheet + calm", "items": [
+    N([item("STAR shape: Situation, Task, Action (what YOU did), Result (with a number). Max 90 sec.", quiz="d4-0-0"),
+       item("Stories 1-5: Conflict (Kafka team) - Leadership (MerchFlow, approaching clubs) - Customer focus (user interviews) - Hard bug (rate limiter) - Last-minute change (stale stock).", quiz="d4-0-1")]),
+    blk("A", "tech", A_T, "HLD basics + MerchFlow's HLD", [
+      item("How to approach a design question; vertical vs horizontal scaling; stateless services + load balancer; cache + read replicas; sharding and consistent hashing; queues; rate limiting.", quiz="sd2"),
+      item("Draw MerchFlow's HLD: 5 services, Postgres, Mongo, Redis, RabbitMQ. Walk through one order end to end.", quiz="d6-0-0"),
+    ]),
+    blk("B", "tech", B_T, "MerchFlow checkout at L3", [
+      item("Checkout: Redis lock (SET NX PX + unique token), idempotency keys, Saga compensation. Why each.", quiz="d6-0-1"),
+      item("Why Postgres vs Mongo; transactions, isolation, the oversell race and its fix.", quiz="d6-0-2"),
+      item("Cache invalidation + how you measured 40%; rate limiter race + fix; JWT / RBAC / the access-control bug.", False, quiz="d6-0-3"),
+    ]),
+    blk("C", "tech", C_T, "Familiar tech at the right depth", [
+      item("Node.js: single thread, event loop, async/await, why Node for an I/O-heavy gateway (Aryan was asked).", quiz="d6-1-0"),
+      item("RabbitMQ: ack, retry, dead-letter queue, why not Kafka for notifications.", quiz="d6-1-1"),
+      item("Express middleware chain, REST verbs and idempotency, MongoDB document model.", False, quiz="d6-1-2"),
+    ]),
+    D("trees and heaps", [item("LCA (LC 236 / 235, edge cases); binary tree to BST without extra space; heap ops + why O(log n); LC 215.", quiz="d7-2-0")]),
+  ]},
+
+ {"id": "d7", "n": 7, "date": "Fri 27 Nov", "kind": TECH, "title": "Chunk 2 · Kafka-style log + resume sweep",
+  "why": "Your Kafka project at L2 (your own part at L3), then a full pass over the resume so every line on it is defensible. Kashif got CAP and hashing; Vanshika got gRPC benefits and limits.",
+  "plan": std_plan(),
+  "blocks": [
+    N([item("Stories 6-11: Deadlines + one real miss - Learning fast (POSIX syscalls) - Tech to non-tech - Setback (GATE) - Critical feedback - Motivating a team / stress.", quiz="d4-0-2"),
+       item("2 strengths with proof, 2 REAL weaknesses with fixes, what friends and professors would say (good and bad).", quiz="d4-1-0")]),
+    blk("A", "tech", A_T, "Kafka log: replication and Raft", [
+      item("Partitions, append-only log, offsets; leader-follower replication, commit watermark, in-sync replicas.", quiz="d6-2-0"),
+      item("Raft election (terms, votes, majority), split brain + leader epochs, idempotent producer.", quiz="d6-2-1"),
+    ]),
+    blk("B", "tech", B_T, "CAP, gRPC, your role", [
+      item("CAP placement; gRPC benefits and limits (Vanshika); YOUR part vs your teammate's.", quiz="d6-2-2"),
+      item("Concurrency inside your broker: which threads touch a partition's log, what you lock, what is atomic (links back to Chunk 1)."),
+    ]),
+    blk("C", "tech", C_T, "Resume sweep", [
+      item("2-min, 5-min and 20-min versions of MerchFlow and the Kafka log (the shell was done Mon)."),
+      item("Go down the Resume depth tab. Mark anything you can't explain at its level and fix it now."),
+      item("DBMS: ACID, normalisation, isolation levels, indexes (Sneha).", False),
+    ]),
+    D("backtracking", [item("Rat in a maze; Word Search (LC 79).", quiz="d7-2-1")]),
+  ]},
+
+ {"id": "d8", "n": 8, "date": "Sat 28 Nov", "kind": NONTECH, "title": "Non-tech final wrap-up + dress rehearsal",
+  "why": "No new topics. The morning is the non-tech wrap-up: all seven 8:30 AM slots come together in two mocks. Then a tech mock, the buffer for anything skipped, and sleep early.",
+  "plan": [["", "", 0], ["", "Break (30 min)", -1], ["", "", 1], ["", "Lunch and rest (~1.5 h)", -1], ["", "", 2], ["", "Break (15 min)", -1], ["", "", 3],
+           ["6:00 PM onwards", "Light evening: confidence round, pack, sleep by 11 PM", -1]],
+  "blocks": [
+    blk("A", "nt", A_T, "Non-tech wrap-up: HR mock", [
+      item("Manager situations: project + customer queries together; prioritising; an unfamiliar platform like MATLAB; explaining tech to non-tech; a non-technical teammate.", quiz="d4-1-1"),
+      item("'No internship' answer (steer to projects); PPO / commitment answer.", quiz="d4-1-2"),
+      item("A friend plays HR for 40 min using the Question Bank tab. After EVERY answer they ask 'why?' or 'give an example'. Record it."),
+      item("Mark your 3 weakest answers and rewrite them."),
+      item("Rapid fire: 20 questions in 20 minutes, no pauses.", False, quiz="d4-2-2"),
+    ], game="Score your mock out of 5, one point each: no generic answer - every answer under 2 min - steady pace - a number in every result - no long silent pauses."),
+    blk("B", "nt", B_T, "Manager mock + cheat sheet", [
+      item("30-min manager mock with a friend: resume deep-dive + situations."),
       item("1-page cheat sheet: Tell me about yourself, EDG, location + reasons, 2 + 2 traits, 4 questions to ask."),
-      item("Your notebook's Interview Revision page in practice mode."),
-      item("Laptop, charger, ID, internet (if online). Sleep by 11 PM."),
-    ], "quiz": "d8c", "quizName": "Confidence round"},
-  ],
-  "talk": "Final 'Tell me about yourself' + EDG in 60 sec. Then stop studying."},
+    ]),
+    blk("C", "tech", C_T, "Tech mock + buffer", [
+      item("60-min tech mock on notepad: 2 OOPS outputs, 1 pointer snippet, 1 class to implement, 1 DSA, 10 min of resume."),
+      item("Buffer: finish any tasks skipped on busy days."),
+      item("Evening: the confidence round, then laptop, charger, ID, internet (if online). Sleep by 11 PM.", quiz="d8-2-1"),
+    ]),
+    D("favourite DS + puzzles", [item("Pick ONE favourite DS (linked list) and know everything: ops, complexity, implementation, real uses. Then the puzzles.", quiz="d7-2-2")],
+      time="4:45 - 5:45 PM"),
+  ]},
 ]
 
 depth = [
- ["POSIX shell (C++)", "L3", "Must", "Day 5", "fork / exec / pipe / dup2 / waitpid / sigaction, pipe code in C, signals, zombies. Overlaps with OS, so it's double value."],
- ["MerchFlow", "L2, checkout at L3", "Must", "Day 6", "HLD drawing, one order end to end, Redis lock + idempotency + Saga in depth, why each database."],
- ["Kafka-style event log", "L2, your part at L3", "Must", "Day 6", "Partitions, replication + watermark, Raft, leader epochs, idempotent producer, CAP, gRPC. Know exactly what YOU built."],
- ["C++ (proficient)", "L3", "Must", "Days 2-3", "OOPS, pointers, memory, smart pointers, special members. Write code without an IDE."],
- ["SQL (proficient)", "L2", "Should", "Day 6 extra", "Write a join, GROUP BY / HAVING, nth highest salary; indexes; transactions."],
- ["JavaScript / Node.js (familiar)", "L2", "Should", "Day 6", "Single thread, event loop, promises vs setTimeout order, async/await, why Node for the gateway. Skip prototypes and V8 internals."],
- ["Express / REST (familiar)", "L1", "Should", "Day 6 extra", "Middleware chain (JWT, RBAC, rate limit), verbs, status codes, which methods are idempotent."],
- ["PostgreSQL (familiar)", "L2", "Should", "Day 6", "ACID, isolation levels, the lost-update race, SELECT ... FOR UPDATE, indexes."],
- ["MongoDB (familiar)", "L1", "Should", "Day 6 extra", "Document model and why it suits a catalog with varying attributes. Skip aggregation pipelines."],
- ["Redis (familiar)", "L2", "Must", "Day 6", "Cache-aside + invalidation, TTL, SET NX PX lock with a token, INCR for rate limiting, single-threaded."],
- ["RabbitMQ (familiar)", "L1-L2", "Should", "Day 6", "Queue, ack, redelivery, dead-letter queue, why async for notifications, vs Kafka."],
- ["Design patterns", "L2, Strategy + Observer at L3", "Must", "Day 6 extra", "Where each pattern sits in MerchFlow; code Strategy for the warning-stack question."],
- ["LLD / HLD", "L2", "Should", "Day 6", "Draw MerchFlow's HLD, the shell's class diagram, one small LLD (student ranks)."],
- ["Coursework (Agentic AI etc.)", "L1", "If time", "Day 8 buffer", "A 2-minute summary per course, only in case they ask. DSA / OS / DBMS / DS are covered by the days above."],
+ ["POSIX shell (C++)", "L3", "Must", "Sun 22 - Mon 23", "fork / exec / pipe / dup2 / waitpid / sigaction, pipe code in C, signals, zombies. Overlaps with OS, so it's double value."],
+ ["C++ (proficient)", "L3", "Must", "Sat 21 - Sun 22", "OOPS, pointers, memory, smart pointers, special members. Write code without an IDE."],
+ ["C++ concurrency", "L2", "Should", "Mon 23 - Tue 24", "std::thread, join / detach, mutex + lock_guard / unique_lock / scoped_lock, condition_variable, atomic, thread-safe singleton, a blocking queue on notepad. Your Kafka log is C++17, so expect a follow-up."],
+ ["SOLID + design patterns", "L2, Strategy + Observer at L3", "Must", "Wed 25", "Each principle with a violation and a fix; where each pattern sits in MerchFlow; code Strategy for the warning-stack question."],
+ ["LLD / HLD", "L2", "Should", "Wed 25 - Thu 26", "One small LLD (student ranks), the shell's class diagram, MerchFlow's HLD, the HLD basics quiz."],
+ ["MerchFlow", "L2, checkout at L3", "Must", "Thu 26", "HLD drawing, one order end to end, Redis lock + idempotency + Saga in depth, why each database."],
+ ["Kafka-style event log", "L2, your part at L3", "Must", "Fri 27", "Partitions, replication + watermark, Raft, leader epochs, idempotent producer, CAP, gRPC. Know exactly what YOU built."],
+ ["SQL (proficient)", "L2", "Should", "Wed 25 + Fri 27", "Write a join, GROUP BY / HAVING, nth highest salary; indexes; transactions."],
+ ["JavaScript / Node.js (familiar)", "L2", "Should", "Thu 26", "Single thread, event loop, promises vs setTimeout order, async/await, why Node for the gateway. Skip prototypes and V8 internals."],
+ ["Express / REST (familiar)", "L1", "Should", "Thu 26 extra", "Middleware chain (JWT, RBAC, rate limit), verbs, status codes, which methods are idempotent."],
+ ["PostgreSQL (familiar)", "L2", "Should", "Thu 26", "ACID, isolation levels, the lost-update race, SELECT ... FOR UPDATE, indexes."],
+ ["MongoDB (familiar)", "L1", "Should", "Thu 26 extra", "Document model and why it suits a catalog with varying attributes. Skip aggregation pipelines."],
+ ["Redis (familiar)", "L2", "Must", "Thu 26", "Cache-aside + invalidation, TTL, SET NX PX lock with a token, INCR for rate limiting, single-threaded."],
+ ["RabbitMQ (familiar)", "L1-L2", "Should", "Thu 26", "Queue, ack, redelivery, dead-letter queue, why async for notifications, vs Kafka."],
+ ["Coursework (Agentic AI etc.)", "L1", "If time", "Sat 28 buffer", "A 2-minute summary per course, only in case they ask. DSA / OS / DBMS / DS are covered by the days above."],
  ["Java, Python, Docker, Kubernetes", "Skip", "Skip", "-", "Not on your resume. If asked, say so honestly. Seniors got snippets in every language they named."],
 ]
 
@@ -523,14 +569,14 @@ for key, (title, qs) in T.items():
         else:
             res.append(q)
     TQ[key] = res; TT[key] = title
-for d in days:
-    for bi, b in enumerate(d["blocks"]):
-        b.pop("quiz", None); b.pop("quizName", None)
-        for ii, it in enumerate(b["items"]):
-            k = f"{d['id']}-{bi}-{ii}"
-            if k in TQ: it["quiz"] = k
-missing = [k for k in TQ if not any(it.get("quiz") == k for d in days for b in d["blocks"] for it in b["items"])]
+used = [it["quiz"] for d in days for b in d["blocks"] for it in b["items"] if it.get("quiz")]
+assert all(k in TQ for k in used), [k for k in used if k not in TQ]
+assert len(used) == len(set(used)), sorted(k for k in used if used.count(k) > 1)
+missing = [k for k in TQ if k not in used]
 assert not missing, missing
+for d in days:
+    assert all(0 <= r[2] < len(d["blocks"]) for r in d["plan"] if r[2] is not None and r[2] >= 0)
+    assert sorted(r[2] for r in d["plan"] if r[2] >= 0) == list(range(len(d["blocks"]))), d["id"]
 data = {"days": days, "quiz": TQ, "titles": TT, "depth": depth}
 js = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
 
